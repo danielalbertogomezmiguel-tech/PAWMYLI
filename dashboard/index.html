@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Clínica</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="contenedor">
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="perfilDoctor">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <h2>Dr. Daniel Ozuna</h2>
+            </div>
+
+            <nav>
+                <a href="index.html" class="activo">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="../pacientes/paciente.html">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="../agenda/agenda.html">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="../configuracion/configuracion.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+        </div>
+
+        <button class="cerrar" onclick="cerrarSesion()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Cerrar Sesión
+        </button>
+
+    </aside>
+
+    <main>
+
+        <header>
+            <h1>Inicio</h1>
+        </header>
+
+        <section class="dashboard">
+
+            <div class="stats">
+
+                <h2>Stats Generales</h2>
+
+                <div class="card">
+                    <div class="circulo">3</div>
+                    <p>Pacientes Hoy</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">7</div>
+                    <p>Consultas Semana</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">1</div>
+                    <p>Recordatorios Pendientes</p>
+                </div>
+
+            </div>
+
+            <div class="right">
+
+                <button class="scan">
+                    <i class="fa-solid fa-camera"></i> Escanear Código
+                </button>
+
+                <div class="panel">
+                    <div class="contenido">
+                        <h2>Próximas consultas del día</h2>
+                        <ul id="listaConsultas"></ul>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="contenido">
+                        <h2>Recordatorios Vencidos</h2>
+                        <ul id="listaRecordatorios"></ul>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

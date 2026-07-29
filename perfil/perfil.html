@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil del Paciente</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+
+<div class="contenedor">
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="perfilDoctor">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <h2>Dr. Daniel Ozuna</h2>
+            </div>
+
+            <nav>
+                <a href="../dashboard/index.html">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="../pacientes/paciente.html">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="../agenda/agenda.html">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="../configuracion/configuracion.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+        </div>
+
+        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Cerrar Sesión
+        </button>
+
+    </aside>
+
+    <main>
+
+        <header>
+            <button class="volver">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1>Perfil del Paciente</h1>
+        </header>
+
+        <section class="perfilMascota">
+
+            <div class="foto">
+                <img id="fotoPaciente" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616408.png'">
+            </div>
+
+            <div class="informacion">
+
+                <div class="encabezado">
+                    <h2 id="nombrePaciente">Nombre</h2>
+                    <button class="editar">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                </div>
+
+                <div class="grid">
+                    <div class="dato">
+                        <label>Especie</label>
+                        <span id="especie"></span>
+                    </div>
+                    <div class="dato">
+                        <label>Raza</label>
+                        <span id="raza"></span>
+                    </div>
+                    <div class="dato">
+                        <label>Edad</label>
+                        <span id="edad"></span>
+                    </div>
+                    <div class="dato">
+                        <label>Sexo</label>
+                        <span id="sexo"></span>
+                    </div>
+                    <div class="dato">
+                        <label>Peso</label>
+                        <span id="peso"></span>
+                    </div>
+                    <div class="dato">
+                        <label>Color</label>
+                        <span id="color"></span>
+                    </div>
+                    <div class="dato">
+                        <label>Microchip</label>
+                        <span id="microchip"></span>
+                    </div>
+                </div>
+
+                <div class="codigoBarra">
+                    <label>Código único</label>
+                    <p id="codigoPaciente"></p>
+                    <img id="barcodeImg" alt="Código de barras">
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="panel">
+            <h2>Propietario</h2>
+            <div class="contenido">
+                <p><strong>Nombre:</strong> <span id="propietario"></span></p>
+                <p><strong>Teléfono:</strong> <span id="telefono"></span></p>
+                <p><strong>Correo:</strong> <span id="correo"></span></p>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Alimentación</h2>
+            <div class="contenido">
+                <ul id="listaAlimentacion"></ul>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="tituloPanel">
+                <h2>Historial Médico</h2>
+                <button class="consulta"><i class="fa-solid fa-plus"></i> Nueva Consulta</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Motivo</th>
+                        <th>Veterinario</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="historial"></tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<div class="modal" id="modalConsulta">
+    <div class="ventana">
+        <button class="cerrarModalConsulta">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2>Nueva Consulta</h2>
+        <form id="formConsulta">
+            <div class="fila">
+                <div>
+                    <label>Fecha</label>
+                    <input type="date" id="consultaFecha" required>
+                </div>
+                <div>
+                    <label>Veterinario</label>
+                    <input type="text" id="consultaVet" value="Dr. Daniel Ozuna">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Motivo</label>
+                    <input type="text" id="consultaMotivo" placeholder="Ej: Vacunación" required>
+                </div>
+                <div>
+                    <label>Estado</label>
+                    <select id="consultaEstado">
+                        <option>En proceso</option>
+                        <option>Finalizada</option>
+                        <option>Cancelada</option>
+                    </select>
+                </div>
+            </div>
+            <label>Notas adicionales</label>
+            <textarea id="consultaNotas" rows="3" placeholder="Escriba notas..."></textarea>
+            <button class="guardar" type="submit">Guardar Consulta</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="modalEditar">
+    <div class="ventana">
+        <button class="cerrarModal">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2>Editar Paciente</h2>
+        <form id="formEditar">
+            <div class="fila">
+                <div>
+                    <label>Nombre</label>
+                    <input type="text" id="editNombre">
+                </div>
+                <div>
+                    <label>Especie</label>
+                    <input type="text" id="editEspecie">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Raza</label>
+                    <input type="text" id="editRaza">
+                </div>
+                <div>
+                    <label>Edad</label>
+                    <input type="text" id="editEdad">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Sexo</label>
+                    <select id="editSexo">
+                        <option>Macho</option>
+                        <option>Hembra</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Peso</label>
+                    <input type="text" id="editPeso">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Color</label>
+                    <input type="text" id="editColor">
+                </div>
+                <div>
+                    <label>Microchip</label>
+                    <select id="editMicrochip">
+                        <option>No</option>
+                        <option>Sí</option>
+                    </select>
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Propietario</label>
+                    <input type="text" id="editPropietario">
+                </div>
+            </div>
+            <button class="guardar" type="submit">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<script src="perfil.js"></script>
+
+</body>
+</html>

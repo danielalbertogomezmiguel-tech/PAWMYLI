@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacientes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="paciente.css">
+</head>
+<body>
+
+<div class="contenedor">
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="perfil">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <h2>Dr. Daniel Ozuna</h2>
+            </div>
+
+            <nav>
+                <a href="../dashboard/index.html">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="paciente.html" class="activo">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="../agenda/agenda.html">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="../configuracion/configuracion.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+        </div>
+
+        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Cerrar Sesión
+        </button>
+
+    </aside>
+
+    <main>
+
+        <header>
+            <h1>Pacientes</h1>
+            <button id="nuevoPaciente" class="nuevo">
+                <i class="fa-solid fa-plus"></i> Registrar Mascota
+            </button>
+        </header>
+
+        <section class="busqueda">
+            <div class="input">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="buscar" placeholder="Buscar paciente...">
+            </div>
+            <button class="qr">
+                <i class="fa-solid fa-camera"></i>
+            </button>
+        </section>
+
+        <section class="lista">
+            <div id="contenedorPacientes"></div>
+        </section>
+
+    </main>
+
+</div>
+
+<div class="modal" id="modal">
+    <div class="ventana">
+        <button class="cerrarModal">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2>Registrar mascota</h2>
+        <form id="formMascota">
+            <div class="fila">
+                <div>
+                    <label>Nombre</label>
+                    <input type="text" id="nombre">
+                </div>
+                <div>
+                    <label>Especie</label>
+                    <input type="text" id="especie">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Raza</label>
+                    <input type="text" id="raza">
+                </div>
+                <div>
+                    <label>Edad</label>
+                    <input type="number" id="edad">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Sexo</label>
+                    <select id="sexo">
+                        <option>Macho</option>
+                        <option>Hembra</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Propietario</label>
+                    <input type="text" id="propietario">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Peso (kg)</label>
+                    <input type="text" id="peso" placeholder="Ej: 12.5">
+                </div>
+                <div>
+                    <label>Color</label>
+                    <input type="text" id="color" placeholder="Ej: Blanco">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Microchip</label>
+                    <select id="microchip">
+                        <option>No</option>
+                        <option>Sí</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Foto</label>
+                    <input type="file" id="foto">
+                </div>
+            </div>
+            <button class="guardar">Guardar Paciente</button>
+        </form>
+    </div>
+</div>
+
+<script src="paciente.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="agenda.css">
+</head>
+<body>
+
+<div class="contenedor">
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="perfilDoctor">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <h2>Dr. Daniel Ozuna</h2>
+            </div>
+
+            <nav>
+                <a href="../dashboard/index.html">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="../pacientes/paciente.html">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="agenda.html" class="activo">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="../configuracion/configuracion.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+        </div>
+
+        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Cerrar Sesión
+        </button>
+
+    </aside>
+
+    <main>
+        <header>
+            <h1>Agenda</h1>
+        </header>
+
+        <section class="agenda">
+
+            <div class="panelIzquierdo">
+
+                <div class="tituloDia">
+                    Día <span id="numeroDia">22</span>
+                </div>
+
+                <div id="listaCitas" class="listaCitas"></div>
+
+            </div>
+
+            <div class="panelDerecho">
+
+                <div class="calendario">
+
+                    <div class="cabeceraCalendario">
+                        <button id="anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <h2 id="mesActual"></h2>
+                        <button id="siguiente">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="diasSemana">
+                        <div>Lun</div>
+                        <div>Mar</div>
+                        <div>Mié</div>
+                        <div>Jue</div>
+                        <div>Vie</div>
+                        <div>Sáb</div>
+                        <div>Dom</div>
+                    </div>
+
+                    <div id="diasCalendario" class="diasCalendario"></div>
+
+                </div>
+
+                <div class="crearCita">
+                    <h2>Crear cita</h2>
+                    <form id="formCita">
+                        <div class="fila">
+                            <div>
+                                <label>Nombre de la mascota</label>
+                                <input type="text" id="nombreMascota" required>
+                            </div>
+                            <div>
+                                <label>Fecha</label>
+                                <input type="date" id="fecha" required>
+                            </div>
+                        </div>
+                        <div class="fila">
+                            <div>
+                                <label>Nombre del dueño</label>
+                                <input type="text" id="dueno" required>
+                            </div>
+                            <div>
+                                <label>Hora</label>
+                                <input type="time" id="hora" required>
+                            </div>
+                        </div>
+                        <label>Nota</label>
+                        <textarea id="nota" rows="4" placeholder="Escriba una nota..."></textarea>
+                        <button type="submit" class="guardar">Confirmar cita</button>
+                    </form>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="agenda.js"></script>
+
+</body>
+</html>

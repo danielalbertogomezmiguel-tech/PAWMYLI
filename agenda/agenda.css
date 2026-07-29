@@ -1,0 +1,565 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    background: #eef2f5;
+    overflow: hidden;
+}
+
+.contenedor {
+    display: flex;
+    height: 100vh;
+}
+
+/* ─── SIDEBAR ─── */
+
+.sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, #2c5f5a 0%, #1e4440 100%);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.perfilDoctor {
+    text-align: center;
+    color: #fff;
+}
+
+.perfilDoctor img {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 4px solid #8fc3a7;
+    object-fit: cover;
+}
+
+.perfilDoctor h2 {
+    margin-top: 12px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+nav {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+nav a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #d9e6e3;
+    padding: 14px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 20px;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+nav a:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+nav a.activo {
+    background: #8fc3a7;
+    color: #1e4440;
+    font-weight: 600;
+}
+
+nav a i {
+    font-size: 22px;
+    width: 26px;
+    text-align: center;
+}
+
+.cerrar {
+    background: #e8556d;
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.cerrar:hover {
+    background: #d13d56;
+}
+
+/* ─── MAIN ─── */
+
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+main::-webkit-scrollbar {
+    width: 8px;
+}
+
+main::-webkit-scrollbar-thumb {
+    background: #c8d0d8;
+    border-radius: 10px;
+}
+
+/* ─── HEADER ─── */
+
+header {
+    background: linear-gradient(135deg, #8fc3a7, #6dab8a);
+    padding: 18px 30px;
+    border-radius: 14px;
+    margin-bottom: 28px;
+}
+
+header h1 {
+    color: #fff;
+    font-size: 36px;
+    font-weight: 700;
+}
+
+/* ─── ESTRUCTURA ─── */
+
+.agenda {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    min-height: 0;
+}
+
+/* ─── PANEL IZQUIERDO ─── */
+
+.panelIzquierdo {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+}
+
+.tituloDia {
+    background: linear-gradient(135deg, #7d9e49, #6b8a3e);
+    color: white;
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.listaCitas {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.listaCitas::-webkit-scrollbar {
+    width: 6px;
+}
+
+.listaCitas::-webkit-scrollbar-thumb {
+    background: #d0d8e0;
+    border-radius: 10px;
+}
+
+.cita {
+    background: #f0f5f3;
+    border-radius: 12px;
+    padding: 18px;
+    border-left: 4px solid #8fc3a7;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cita:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.cita h3 {
+    font-size: 20px;
+    color: #2c5f5a;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.cita p {
+    font-size: 15px;
+    color: #3d5a59;
+    line-height: 1.5;
+}
+
+.cita strong {
+    color: #2c5f5a;
+}
+
+.eliminar {
+    margin-top: 10px;
+    background: transparent;
+    border: 2px solid #e8556d;
+    color: #e8556d;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s;
+}
+
+.eliminar:hover {
+    background: #e8556d;
+    color: #fff;
+}
+
+/* ─── PANEL DERECHO ─── */
+
+.panelDerecho {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+/* ─── CALENDARIO ─── */
+
+.calendario {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.cabeceraCalendario {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.cabeceraCalendario h2 {
+    font-size: 26px;
+    color: #2c5f5a;
+    font-weight: 700;
+}
+
+.cabeceraCalendario button {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: #eef2f5;
+    color: #2c5f5a;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.cabeceraCalendario button:hover {
+    background: #2c5f5a;
+    color: #fff;
+}
+
+.diasSemana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #8a9aa8;
+    font-size: 14px;
+}
+
+.diasSemana div {
+    padding: 8px 0;
+}
+
+.diasCalendario {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.dia {
+    height: 52px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    background: #f5f7fa;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.dia:hover {
+    background: #8fc3a7;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.hoy {
+    background: #2c5f5a;
+    color: #fff;
+    font-weight: 700;
+}
+
+.seleccionado {
+    background: #1e4440;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(30, 68, 64, 0.3);
+}
+
+.vacio {
+    background: transparent;
+    cursor: default;
+}
+
+.vacio:hover {
+    background: transparent;
+    transform: none;
+}
+
+.dia.citaCalendario::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: #e8556d;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 6px;
+}
+
+/* ─── CREAR CITA ─── */
+
+.crearCita {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.crearCita h2 {
+    text-align: center;
+    margin-bottom: 22px;
+    color: #2c5f5a;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+#formCita {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#formCita .fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+#formCita label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #3d5a59;
+    font-size: 15px;
+}
+
+#formCita input,
+#formCita textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #dce3ea;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fafbfc;
+}
+
+#formCita input:focus,
+#formCita textarea:focus {
+    border-color: #8fc3a7;
+}
+
+#formCita textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.crearCita .guardar {
+    align-self: flex-end;
+    background: #2c5f5a;
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.crearCita .guardar:hover {
+    background: #1e4440;
+}
+
+/* ─── RESPONSIVE ─── */
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+        padding: 20px 14px;
+    }
+
+    .perfilDoctor img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .perfilDoctor h2 {
+        font-size: 17px;
+    }
+
+    nav a {
+        font-size: 17px;
+        padding: 12px 14px;
+    }
+
+    .agenda {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+
+    .contenedor {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        align-items: center;
+        padding: 12px 16px;
+        gap: 10px;
+    }
+
+    .sidebar > div {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .perfilDoctor {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .perfilDoctor img {
+        width: 44px;
+        height: 44px;
+        border-width: 2px;
+    }
+
+    .perfilDoctor h2 {
+        margin-top: 0;
+        font-size: 15px;
+    }
+
+    nav {
+        flex-direction: row;
+        margin-top: 0;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    nav a {
+        font-size: 13px;
+        padding: 6px 10px;
+        gap: 4px;
+    }
+
+    nav a span {
+        display: none;
+    }
+
+    nav a i {
+        font-size: 18px;
+        width: auto;
+    }
+
+    .cerrar {
+        padding: 8px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    header h1 {
+        font-size: 26px;
+    }
+
+    header {
+        padding: 14px 20px;
+    }
+
+    .agenda {
+        padding: 14px;
+        gap: 16px;
+    }
+
+    .tituloDia {
+        font-size: 24px;
+    }
+
+    .cabeceraCalendario h2 {
+        font-size: 20px;
+    }
+
+    .dia {
+        height: 42px;
+        font-size: 14px;
+    }
+
+    #formCita .fila {
+        grid-template-columns: 1fr;
+    }
+
+    .crearCita .guardar {
+        width: 100%;
+    }
+}

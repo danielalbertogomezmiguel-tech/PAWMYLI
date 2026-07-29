@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="configuracion.css">
+</head>
+<body>
+
+<div class="contenedor">
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="perfilDoctor">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <h2>Dr. Daniel Ozuna</h2>
+            </div>
+
+            <nav>
+                <a href="../dashboard/index.html">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="../pacientes/paciente.html">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="../agenda/agenda.html">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="configuracion.html" class="activo">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+        </div>
+
+        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Cerrar Sesión
+        </button>
+
+    </aside>
+
+    <main>
+
+        <header>
+            <h1>Configuración</h1>
+        </header>
+
+        <section class="contenidoConfig">
+
+            <div class="card">
+                <h2><i class="fa-solid fa-user-md"></i> Mi Perfil</h2>
+
+                <div class="fotoPerfil">
+                    <img id="fotoUsuario" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+                    <label class="cambiarFoto">
+                        <i class="fa-solid fa-camera"></i> Cambiar Foto
+                        <input type="file" id="foto" hidden>
+                    </label>
+                </div>
+
+                <div class="grupo">
+                    <label>Nombre</label>
+                    <input type="text" id="nombre">
+                </div>
+                <div class="grupo">
+                    <label>Correo</label>
+                    <input type="email" id="correo">
+                </div>
+                <div class="grupo">
+                    <label>Teléfono</label>
+                    <input type="text" id="telefono">
+                </div>
+                <div class="grupo">
+                    <label>Licencia</label>
+                    <input type="text" id="licencia">
+                </div>
+                <div class="grupo">
+                    <label>Nueva contraseña</label>
+                    <input type="password" id="password">
+                </div>
+
+                <button id="guardarPerfil"><i class="fa-solid fa-floppy-disk"></i> Guardar Perfil</button>
+            </div>
+
+            <div class="card">
+                <h2><i class="fa-solid fa-clinic-medical"></i> Mi Clínica</h2>
+
+                <div class="grupo">
+                    <label>Nombre de la Clínica</label>
+                    <input type="text" id="clinica">
+                </div>
+                <div class="grupo">
+                    <label>Dirección</label>
+                    <input type="text" id="direccion">
+                </div>
+                <div class="grupo">
+                    <label>Teléfono</label>
+                    <input type="text" id="telefonoClinica">
+                </div>
+                <div class="grupo">
+                    <label>Correo</label>
+                    <input type="email" id="correoClinica">
+                </div>
+                <div class="grupo">
+                    <label>Horario</label>
+                    <input type="text" id="horario" placeholder="Ej: Lun-Vie 8:00-18:00">
+                </div>
+                <div class="grupo">
+                    <label>Ubicación (Google Maps)</label>
+                    <input type="text" id="mapa" placeholder="Ej: 14.1234,-87.1234">
+                </div>
+
+                <button id="guardarClinica"><i class="fa-solid fa-floppy-disk"></i> Guardar Clínica</button>
+            </div>
+
+        </section>
+
+        <section class="preferencias">
+            <h2><i class="fa-solid fa-sliders"></i> Preferencias</h2>
+
+            <div class="gridPrefs">
+                <div class="grupo">
+                    <label>Idioma</label>
+                    <select id="idioma">
+                        <option>Español</option>
+                        <option>English</option>
+                    </select>
+                </div>
+                <div class="grupo">
+                    <label>Zona Horaria</label>
+                    <select id="zona">
+                        <option>GMT-6</option>
+                        <option>GMT-5</option>
+                    </select>
+                </div>
+                <div class="grupo">
+                    <label>Formato Fecha</label>
+                    <select id="fecha">
+                        <option>DD/MM/AAAA</option>
+                        <option>MM/DD/AAAA</option>
+                    </select>
+                </div>
+                <div class="grupo">
+                    <label>Tema</label>
+                    <select id="tema">
+                        <option>Claro</option>
+                        <option>Oscuro</option>
+                    </select>
+                </div>
+                <div class="grupo check">
+                    <input type="checkbox" id="notificaciones">
+                    <label for="notificaciones">Notificaciones</label>
+                </div>
+                <div class="grupo check">
+                    <input type="checkbox" id="sonidos">
+                    <label for="sonidos">Sonidos</label>
+                </div>
+            </div>
+
+            <button id="guardarPrefs"><i class="fa-solid fa-floppy-disk"></i> Guardar Preferencias</button>
+        </section>
+
+    </main>
+
+</div>
+
+<script src="configuracion.js"></script>
+
+</body>
+</html>

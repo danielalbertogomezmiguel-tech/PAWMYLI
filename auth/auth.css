@@ -1,0 +1,274 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #eef2f5 0%, #dce3ea 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.auth-container--wide {
+    max-width: 720px;
+}
+
+.auth-card,
+.registro-card {
+    text-align: left;
+}
+
+.auth-card h1,
+.auth-card .subtitulo,
+.auth-card .logo,
+.auth-card .auth-link {
+    text-align: center;
+}
+
+.auth-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.registro-card {
+    padding: 28px 32px;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.logo i {
+    font-size: 56px;
+    color: #2c5f5a;
+    background: #eef2f5;
+    padding: 20px;
+    border-radius: 50%;
+}
+
+h1 {
+    text-align: center;
+    font-size: 30px;
+    color: #2c5f5a;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.subtitulo {
+    text-align: center;
+    color: #8a9aa8;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+/* ─── INPUTS ─── */
+
+.input-group {
+    margin-bottom: 18px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #3d5a59;
+    margin-bottom: 6px;
+}
+
+.input-icon {
+    display: flex;
+    align-items: center;
+    border: 2px solid #dce3ea;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fafbfc;
+    transition: border-color 0.2s;
+}
+
+.input-icon:focus-within {
+    border-color: #8fc3a7;
+}
+
+.input-icon i {
+    padding: 0 14px;
+    color: #8a9aa8;
+    font-size: 18px;
+}
+
+.input-icon input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    padding: 14px 14px 14px 0;
+    background: transparent;
+    min-width: 0;
+}
+
+.input-icon input::placeholder {
+    color: #bcc6d0;
+}
+
+.togglePassword,
+#mostrarPassword {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 14px;
+    color: #8a9aa8;
+    font-size: 18px;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px dashed #dce3ea;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #fafbfc;
+    font-size: 14px;
+    color: #8a9aa8;
+    text-align: center;
+}
+
+input[type="file"]::file-selector-button {
+    background: #eef2f5;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #2c5f5a;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+/* ─── EXTRAS ─── */
+
+.extras {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 18px 0;
+    font-size: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.extras label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #3d5a59;
+    cursor: pointer;
+}
+
+.extras input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #2c5f5a;
+}
+
+.extras a {
+    color: #2c5f5a;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.extras a:hover {
+    text-decoration: underline;
+}
+
+/* ─── BOTÓN ─── */
+
+.btn-auth {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2c5f5a, #1e4440);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-auth:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* ─── LINK ─── */
+
+.auth-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 15px;
+    color: #3d5a59;
+}
+
+.auth-link a {
+    color: #e8556d;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
+}
+
+/* ─── GRID (registro) ─── */
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.grid .input-group {
+    margin-bottom: 0;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* ─── RESPONSIVE ─── */
+
+@media (max-width: 768px) {
+    .auth-card {
+        padding: 28px 24px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .logo i {
+        font-size: 42px;
+        padding: 16px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}

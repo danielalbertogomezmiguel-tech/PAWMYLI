@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+
+<div class="auth-container auth-container--wide">
+
+    <div class="auth-card registro-card">
+
+        <h1>Registro</h1>
+        <p class="subtitulo">Crea tu cuenta para administrar tu clínica veterinaria</p>
+
+        <form id="registroForm">
+
+            <div class="grid">
+                <div class="input-group">
+                    <label>Nombre Completo</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="nombre" placeholder="Ingrese su nombre" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Nombre de la Clínica</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-hospital"></i>
+                        <input type="text" id="clinica" placeholder="Nombre de la clínica" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Correo Electrónico</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="correo" placeholder="correo@ejemplo.com" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Dirección</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <input type="text" id="direccion" placeholder="Dirección de la clínica" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Número de Licencia</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-id-card"></i>
+                        <input type="text" id="licencia" placeholder="Número de licencia" required>
+                    </div>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Adjuntar Licencia</label>
+                    <input type="file" id="documento" accept=".pdf,.png,.jpg,.jpeg">
+                </div>
+
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" placeholder="Contraseña" required>
+                        <button type="button" class="togglePassword">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Confirmar Contraseña</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="confirmar" placeholder="Repita la contraseña" required>
+                        <button type="button" class="togglePassword">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-auth" type="submit">
+                <i class="fa-solid fa-user-plus"></i> Registrarse
+            </button>
+
+        </form>
+
+        <p class="auth-link">
+            ¿Ya tienes una cuenta? <a href="login.html">Inicia Sesión</a>
+        </p>
+
+    </div>
+
+</div>
+
+<script src="auth.js"></script>
+
+</body>
+</html>
