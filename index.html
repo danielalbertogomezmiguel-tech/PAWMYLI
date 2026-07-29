@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pawmyli — Gestión Veterinaria</title>
+    <meta name="description" content="Pawmyli organiza pacientes, citas e historial médico de tu clínica veterinaria en un solo lugar.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+
+<header class="topbar">
+    <a class="brand" href="index.html" aria-label="Pawmyli inicio">
+        <i class="fa-solid fa-paw" aria-hidden="true"></i>
+        <span>Pawmyli</span>
+    </a>
+    <nav class="topbar-nav" aria-label="Acceso">
+        <a href="auth/login.html">Iniciar sesión</a>
+        <a class="btn btn-primary btn-sm" href="auth/registro.html">Registrarse</a>
+    </nav>
+</header>
+
+<section class="hero" aria-label="Presentación">
+    <div class="hero-media" aria-hidden="true">
+        <img
+            src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?auto=format&fit=crop&w=2000&q=80"
+            alt=""
+            width="2000"
+            height="1333"
+        >
+        <div class="hero-shade"></div>
+    </div>
+
+    <div class="hero-content">
+        <p class="hero-brand">Pawmyli</p>
+        <h1>Tu clínica, ordenada y al día</h1>
+        <p class="hero-lead">
+            Administra pacientes, agenda y perfiles clínicos desde un panel pensado para veterinarios.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="auth/registro.html">
+                Crear cuenta
+                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+            <a class="btn btn-ghost" href="auth/login.html">Iniciar sesión</a>
+        </div>
+    </div>
+</section>
+
+<section class="features" id="modulos" aria-labelledby="features-title">
+    <div class="features-inner">
+        <h2 id="features-title">Todo lo que tu consulta necesita</h2>
+        <p class="features-lead">
+            Un flujo claro para el día a día de la clínica, sin herramientas dispersas.
+        </p>
+
+        <ul class="feature-list">
+            <li class="feature-item">
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                <div>
+                    <h3>Pacientes</h3>
+                    <p>Registro con código único PAW, foto, búsqueda y ficha completa del animal y su propietario.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                <div>
+                    <h3>Agenda</h3>
+                    <p>Calendario mensual para crear, revisar y eliminar citas con persistencia inmediata.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <i class="fa-solid fa-notes-medical" aria-hidden="true"></i>
+                <div>
+                    <h3>Perfil clínico</h3>
+                    <p>Historial médico, alimentación y código de barras generado para identificar a cada paciente.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                <div>
+                    <h3>Configuración</h3>
+                    <p>Datos del veterinario, de la clínica y preferencias de idioma, zona horaria y notificaciones.</p>
+                </div>
+            </li>
+        </ul>
+    </div>
+</section>
+
+<section class="closing" aria-labelledby="closing-title">
+    <div class="closing-inner">
+        <h2 id="closing-title">Empieza a gestionar tu clínica hoy</h2>
+        <p>Regístrate en minutos y entra al panel de Pawmyli.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="auth/registro.html">Registrarse</a>
+            <a class="btn btn-outline" href="auth/login.html">Ya tengo cuenta</a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-brand">
+        <i class="fa-solid fa-paw" aria-hidden="true"></i>
+        <span>Pawmyli</span>
+    </div>
+    <p>Sistema de gestión veterinaria</p>
+</footer>
+
+<script src="landing.js"></script>
+</body>
+</html>
