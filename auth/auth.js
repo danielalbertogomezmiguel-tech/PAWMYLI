@@ -2,56 +2,33 @@
 // MOSTRAR / OCULTAR CONTRASEÑA
 // ===============================
 
-document.querySelectorAll(".togglePassword").forEach(btn => {
-
+document.querySelectorAll(".togglePassword").forEach((btn) => {
     btn.addEventListener("click", () => {
-
         const input = btn.parentElement.querySelector("input");
-
         const icon = btn.querySelector("i");
-
         if (input.type === "password") {
-
             input.type = "text";
             icon.classList.replace("fa-eye", "fa-eye-slash");
-
         } else {
-
             input.type = "password";
             icon.classList.replace("fa-eye-slash", "fa-eye");
-
         }
-
     });
-
 });
 
-// Botón del login
-
 const mostrar = document.getElementById("mostrarPassword");
-
 if (mostrar) {
-
     mostrar.addEventListener("click", () => {
-
         const input = document.getElementById("password");
-
         const icon = mostrar.querySelector("i");
-
         if (input.type === "password") {
-
             input.type = "text";
             icon.classList.replace("fa-eye", "fa-eye-slash");
-
         } else {
-
             input.type = "password";
             icon.classList.replace("fa-eye-slash", "fa-eye");
-
         }
-
     });
-
 }
 
 // ===============================
@@ -59,11 +36,8 @@ if (mostrar) {
 // ===============================
 
 const registroForm = document.getElementById("registroForm");
-
 if (registroForm) {
-
-    registroForm.addEventListener("submit", function(e){
-
+    registroForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const nombre = document.getElementById("nombre").value.trim();
@@ -74,43 +48,33 @@ if (registroForm) {
         const direccion = document.getElementById("direccion").value.trim();
         const licencia = document.getElementById("licencia").value.trim();
 
-        if(password !== confirmar){
-
+        if (password !== confirmar) {
             alert("Las contraseñas no coinciden.");
             return;
-
         }
 
-        let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
-
-        const existe = usuarios.find(user => user.correo === correo);
-
-        if(existe){
-
-            alert("Este correo ya está registrado.");
+        if (password.length < 6) {
+            alert("La contraseña debe tener al menos 6 caracteres.");
             return;
-
         }
 
-        usuarios.push({
-
-            nombre,
-            correo,
-            password,
-            clinica,
-            direccion,
-            licencia
-
-        });
-
-        localStorage.setItem("usuarios", JSON.stringify(usuarios));
-
-        alert("Registro exitoso.");
-
-        window.location.href = "login.html";
-
+        try {
+            const result = await PawApi.api.register({
+                name: nombre,
+                email: correo,
+                password,
+                role: "vet",
+                clinic: clinica,
+                address: direccion,
+                license: licencia,
+            });
+            PawApi.setSession(result.accessToken, result.user);
+            alert("Registro exitoso. Bienvenido " + result.user.name);
+            window.location.href = "../dashboard/index.html";
+        } catch (err) {
+            alert(err.message || "No se pudo registrar.");
+        }
     });
-
 }
 
 // ===============================
@@ -118,66 +82,35 @@ if (registroForm) {
 // ===============================
 
 const loginForm = document.getElementById("loginForm");
+if (loginForm) {
+    if (PawApi.getToken() && PawApi.getUser()) {
+        window.location.href = "../dashboard/index.html";
+    }
 
-if(loginForm){
-
-    loginForm.addEventListener("submit", function(e){
-
+    loginForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const correo = document.getElementById("correo").value.trim();
-
         const password = document.getElementById("password").value;
 
-        let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+        try {
+            const result = await PawApi.api.login({ email: correo, password });
+            PawApi.setSession(result.accessToken, result.user);
 
-        const usuario = usuarios.find(user =>
+            if (document.getElementById("recordar")?.checked) {
+                localStorage.setItem("recordarSesion", "true");
+            } else {
+                localStorage.removeItem("recordarSesion");
+            }
 
-            user.correo === correo &&
-            user.password === password
-
-        );
-
-        if(!usuario){
-
-            alert("Correo o contraseña incorrectos.");
-
-            return;
-
+            alert("Bienvenido " + result.user.name);
+            window.location.href = "../dashboard/index.html";
+        } catch (err) {
+            alert(err.message || "Correo o contraseña incorrectos.");
         }
-
-        // Guardar sesión
-
-        localStorage.setItem("usuarioActivo", JSON.stringify(usuario));
-
-        // Recordar sesión
-
-        if(document.getElementById("recordar")?.checked){
-
-            localStorage.setItem("recordarSesion","true");
-
-        }else{
-
-            localStorage.removeItem("recordarSesion");
-
-        }
-
-        alert("Bienvenido " + usuario.nombre);
-
-        window.location.href="../dashboard/index.html";
-
     });
-
 }
 
-// ===============================
-// CERRAR SESIÓN
-// ===============================
-
-function cerrarSesion(){
-
-    localStorage.removeItem("usuarioActivo");
-
-    window.location.href="../auth/login.html";
-
+function cerrarSesion() {
+    PawApi.logout();
 }

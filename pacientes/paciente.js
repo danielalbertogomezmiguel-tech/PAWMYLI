@@ -1,80 +1,9 @@
-function generarCodigo() {
-    return "PAW-" + String(Date.now() + Math.floor(Math.random() * 1000)).slice(-6);
+if (!PawApi.requireAuth()) {
+    throw new Error("Auth required");
 }
 
-const datosBase = [
-    {
-        id: 1,
-        codigo: "PAW-000001",
-        nombre: "Horchata",
-        especie: "Gato",
-        raza: "Europeo",
-        edad: "6 años",
-        sexo: "Hembra",
-        propietario: "Sofia Carmendia",
-        foto: "../img/horchata.jpg",
-        peso: "",
-        color: "",
-        microchip: "No"
-    },
-    {
-        id: 2,
-        codigo: "PAW-000002",
-        nombre: "Princesa",
-        especie: "Perro",
-        raza: "Chihuahua",
-        edad: "8 años",
-        sexo: "Hembra",
-        propietario: "Leonardo Da Vinci",
-        foto: "../img/princesa.jpg",
-        peso: "",
-        color: "",
-        microchip: "Sí"
-    },
-    {
-        id: 3,
-        codigo: "PAW-000003",
-        nombre: "Milo",
-        especie: "Perro",
-        raza: "Golden Retriever",
-        edad: "3 años",
-        sexo: "Macho",
-        propietario: "Carlos Méndez",
-        foto: "../img/milo.jpg",
-        peso: "",
-        color: "",
-        microchip: "No"
-    }
-];
-
-function inicializarStorage() {
-    localStorage.setItem("pacientesData", JSON.stringify(datosBase));
-}
-
-function obtenerPacientes() {
-    try {
-        const data = localStorage.getItem("pacientesData");
-        if (!data) {
-            inicializarStorage();
-            return JSON.parse(localStorage.getItem("pacientesData"));
-        }
-        const parsed = JSON.parse(data);
-        if (!Array.isArray(parsed) || parsed.length === 0) {
-            inicializarStorage();
-            return JSON.parse(localStorage.getItem("pacientesData"));
-        }
-        return parsed;
-    } catch {
-        inicializarStorage();
-        return JSON.parse(localStorage.getItem("pacientesData"));
-    }
-}
-
-const pacientes = obtenerPacientes();
-
-function guardarStorage() {
-    localStorage.setItem("pacientesData", JSON.stringify(pacientes));
-}
+const DEFAULT_FOTO = "https://cdn-icons-png.flaticon.com/512/616/616408.png";
+let pacientes = [];
 
 const contenedor = document.getElementById("contenedorPacientes");
 const buscar = document.getElementById("buscar");
@@ -83,15 +12,26 @@ const btnNuevo = document.getElementById("nuevoPaciente");
 const cerrarModal = document.querySelector(".cerrarModal");
 const formulario = document.getElementById("formMascota");
 
+function pintarSidebar() {
+    const user = PawApi.getUser();
+    const title = document.querySelector(".perfil h2, .perfilDoctor h2");
+    if (user && title) title.textContent = user.name;
+}
+
 function mostrarPacientes(lista) {
     contenedor.innerHTML = "";
-    lista.forEach(paciente => {
+    if (!lista.length) {
+        contenedor.innerHTML = "<p style='padding:20px;color:#8a9aa8;'>No hay pacientes registrados.</p>";
+        return;
+    }
+
+    lista.forEach((paciente) => {
         contenedor.innerHTML += `
         <div class="tarjeta">
             <img
                 class="foto"
-                src="${paciente.foto}"
-                onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616408.png'">
+                src="${paciente.foto || DEFAULT_FOTO}"
+                onerror="this.src='${DEFAULT_FOTO}'">
             <div class="info">
                 <h2>${paciente.nombre}</h2>
                 <p style="font-size:14px;color:#8a9aa8;margin-bottom:6px;">Código: ${paciente.codigo}</p>
@@ -109,78 +49,85 @@ function mostrarPacientes(lista) {
                     ${paciente.propietario}
                 </p>
             </div>
-            <button
-                class="expediente"
-                onclick="abrirPerfil(${paciente.id})">
+            <button class="expediente" data-id="${paciente.id}">
                 <i class="fa-solid fa-file-medical"></i>
             </button>
-        </div>
-        `;
+        </div>`;
+    });
+
+    contenedor.querySelectorAll(".expediente").forEach((btn) => {
+        btn.addEventListener("click", () => abrirPerfil(btn.dataset.id));
     });
 }
 
-mostrarPacientes(pacientes);
-
-buscar.addEventListener("keyup", () => {
-    const texto = buscar.value.toLowerCase();
-    const resultado = pacientes.filter(p =>
-        p.nombre.toLowerCase().includes(texto) ||
-        p.propietario.toLowerCase().includes(texto) ||
-        p.especie.toLowerCase().includes(texto) ||
-        p.raza.toLowerCase().includes(texto)
-    );
-    mostrarPacientes(resultado);
-});
-
-btnNuevo.addEventListener("click", () => {
-    modal.classList.add("activo");
-});
-
-cerrarModal.addEventListener("click", () => {
-    modal.classList.remove("activo");
-});
-
-window.addEventListener("click", e => {
-    if (e.target === modal) {
-        modal.classList.remove("activo");
-    }
-});
-
-formulario.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const nuevo = {
-        id: pacientes.length + 1,
-        codigo: generarCodigo(),
-        nombre: document.getElementById("nombre").value,
-        especie: document.getElementById("especie").value,
-        raza: document.getElementById("raza").value,
-        edad: document.getElementById("edad").value + " años",
-        sexo: document.getElementById("sexo").value,
-        propietario: document.getElementById("propietario").value,
-        peso: document.getElementById("peso").value + " kg",
-        color: document.getElementById("color").value,
-        microchip: document.getElementById("microchip").value,
-        telefono: "",
-        correo: "",
-        foto: "https://cdn-icons-png.flaticon.com/512/616/616408.png",
-        alimentacion: [],
-        historial: []
-    };
-    pacientes.push(nuevo);
-    guardarStorage();
+async function cargarPacientes(search) {
+    const result = await PawApi.api.listPatients({ search, limit: 100 });
+    pacientes = (result.data || []).map(PawApi.mapPatient);
     mostrarPacientes(pacientes);
-    formulario.reset();
-    modal.classList.remove("activo");
-    alert("Paciente registrado correctamente.");
-});
+}
 
 function abrirPerfil(id) {
     localStorage.setItem("pacienteID", id);
     window.location.href = "../perfil/perfil.html";
 }
 
-document.querySelector(".cerrar").addEventListener("click", () => {
-    if (confirm("¿Desea cerrar sesión?")) {
-        window.location.href = "../auth/login.html";
+btnNuevo.addEventListener("click", () => modal.classList.add("activo"));
+cerrarModal.addEventListener("click", () => modal.classList.remove("activo"));
+window.addEventListener("click", (e) => {
+    if (e.target === modal) modal.classList.remove("activo");
+});
+
+let searchTimer;
+buscar.addEventListener("keyup", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+        try {
+            await cargarPacientes(buscar.value.trim());
+        } catch (err) {
+            alert(err.message);
+        }
+    }, 300);
+});
+
+formulario.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const edadVal = document.getElementById("edad").value;
+    const pesoVal = document.getElementById("peso").value.trim();
+
+    const body = {
+        name: document.getElementById("nombre").value.trim(),
+        species: document.getElementById("especie").value.trim(),
+        breed: document.getElementById("raza").value.trim(),
+        age: edadVal ? edadVal + " años" : "",
+        sex: document.getElementById("sexo").value,
+        ownerName: document.getElementById("propietario").value.trim(),
+        weight: pesoVal ? pesoVal + " kg" : undefined,
+        color: document.getElementById("color").value.trim() || undefined,
+        microchip: document.getElementById("microchip").value,
+        photo: DEFAULT_FOTO,
+    };
+
+    if (!body.name || !body.species || !body.breed || !body.age || !body.ownerName) {
+        alert("Completa los campos obligatorios.");
+        return;
     }
+
+    try {
+        await PawApi.api.createPatient(body);
+        formulario.reset();
+        modal.classList.remove("activo");
+        await cargarPacientes(buscar.value.trim());
+        alert("Paciente registrado correctamente.");
+    } catch (err) {
+        alert(err.message || "No se pudo registrar el paciente.");
+    }
+});
+
+document.querySelector(".cerrar").addEventListener("click", () => {
+    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
+});
+
+pintarSidebar();
+cargarPacientes().catch((err) => {
+    contenedor.innerHTML = `<p style="padding:20px;color:#e8556d;">${err.message}</p>`;
 });

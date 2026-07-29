@@ -1,122 +1,135 @@
-const CONFIG_KEY = "configuracionClinica";
-
-const datosBase = {
-    perfil: {
-        nombre: "Dr. Daniel Ozuna",
-        correo: "daniel@clinica.com",
-        telefono: "8888-8888",
-        licencia: "VET-12345",
-        password: ""
-    },
-    clinica: {
-        nombre: "Clínica Pawmyli",
-        direccion: "Av. Principal #123",
-        telefono: "2222-2222",
-        correo: "info@pawmyli.com",
-        horario: "Lun-Vie 8:00-18:00",
-        mapa: ""
-    },
-    preferencias: {
-        idioma: "Español",
-        zona: "GMT-6",
-        fecha: "DD/MM/AAAA",
-        tema: "Claro",
-        notificaciones: true,
-        sonidos: false
-    }
-};
-
-function cargarConfig() {
-    try {
-        const data = localStorage.getItem(CONFIG_KEY);
-        if (!data) return null;
-        return JSON.parse(data);
-    } catch {
-        return null;
-    }
+if (!PawApi.requireAuth()) {
+    throw new Error("Auth required");
 }
 
-function guardarConfig(config) {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-}
+let profile = null;
+let clinicConfig = null;
 
-const config = cargarConfig() || datosBase;
-
-if (!localStorage.getItem(CONFIG_KEY)) {
-    guardarConfig(config);
+function pintarSidebar() {
+    const user = PawApi.getUser();
+    const title = document.querySelector(".perfilDoctor h2, .perfil h2");
+    if (user && title) title.textContent = user.name;
+    if (profile?.photo) {
+        const img = document.getElementById("fotoUsuario");
+        if (img) img.src = profile.photo;
+    }
 }
 
 function cargarFormularios() {
-    document.getElementById("nombre").value = config.perfil.nombre || "";
-    document.getElementById("correo").value = config.perfil.correo || "";
-    document.getElementById("telefono").value = config.perfil.telefono || "";
-    document.getElementById("licencia").value = config.perfil.licencia || "";
+    if (profile) {
+        document.getElementById("nombre").value = profile.name || "";
+        document.getElementById("correo").value = profile.email || "";
+        document.getElementById("telefono").value = profile.phone || "";
+        document.getElementById("licencia").value = profile.license || "";
+        if (profile.photo) document.getElementById("fotoUsuario").src = profile.photo;
+    }
 
-    document.getElementById("clinica").value = config.clinica.nombre || "";
-    document.getElementById("direccion").value = config.clinica.direccion || "";
-    document.getElementById("telefonoClinica").value = config.clinica.telefono || "";
-    document.getElementById("correoClinica").value = config.clinica.correo || "";
-    document.getElementById("horario").value = config.clinica.horario || "";
-    document.getElementById("mapa").value = config.clinica.mapa || "";
-
-    document.getElementById("idioma").value = config.preferencias.idioma || "Español";
-    document.getElementById("zona").value = config.preferencias.zona || "GMT-6";
-    document.getElementById("fecha").value = config.preferencias.fecha || "DD/MM/AAAA";
-    document.getElementById("tema").value = config.preferencias.tema || "Claro";
-    document.getElementById("notificaciones").checked = config.preferencias.notificaciones || false;
-    document.getElementById("sonidos").checked = config.preferencias.sonidos || false;
+    if (clinicConfig) {
+        document.getElementById("clinica").value = clinicConfig.clinicName || profile?.clinic || "";
+        document.getElementById("direccion").value = clinicConfig.clinicAddress || profile?.address || "";
+        document.getElementById("telefonoClinica").value = clinicConfig.clinicPhone || "";
+        document.getElementById("correoClinica").value = clinicConfig.clinicEmail || "";
+        document.getElementById("horario").value = clinicConfig.clinicHours || "";
+        document.getElementById("mapa").value = clinicConfig.mapUrl || "";
+        document.getElementById("idioma").value = clinicConfig.language || "Español";
+        document.getElementById("zona").value = clinicConfig.timezone || "GMT-6";
+        document.getElementById("fecha").value = clinicConfig.dateFormat || "DD/MM/AAAA";
+        document.getElementById("tema").value = clinicConfig.theme || "Claro";
+        document.getElementById("notificaciones").checked = !!clinicConfig.notifications;
+        document.getElementById("sonidos").checked = !!clinicConfig.sounds;
+    }
 }
 
-cargarFormularios();
+async function cargarTodo() {
+    profile = await PawApi.api.profile();
+    clinicConfig = await PawApi.api.getConfig();
+    localStorage.setItem("usuarioActivo", JSON.stringify(profile));
+    pintarSidebar();
+    cargarFormularios();
+}
 
-document.getElementById("guardarPerfil").addEventListener("click", () => {
-    config.perfil.nombre = document.getElementById("nombre").value;
-    config.perfil.correo = document.getElementById("correo").value;
-    config.perfil.telefono = document.getElementById("telefono").value;
-    config.perfil.licencia = document.getElementById("licencia").value;
+document.getElementById("guardarPerfil").addEventListener("click", async () => {
+    const body = {
+        name: document.getElementById("nombre").value.trim(),
+        phone: document.getElementById("telefono").value.trim() || undefined,
+        license: document.getElementById("licencia").value.trim() || undefined,
+        clinic: document.getElementById("clinica").value.trim() || undefined,
+        address: document.getElementById("direccion").value.trim() || undefined,
+    };
     const pw = document.getElementById("password").value;
-    if (pw) config.perfil.password = pw;
-    guardarConfig(config);
-    alert("Perfil guardado correctamente.");
+    if (pw) body.password = pw;
+    if (profile?.photo) body.photo = profile.photo;
+
+    try {
+        profile = await PawApi.api.updateProfile(body);
+        localStorage.setItem("usuarioActivo", JSON.stringify(profile));
+        document.getElementById("password").value = "";
+        pintarSidebar();
+        alert("Perfil guardado correctamente.");
+    } catch (err) {
+        alert(err.message || "No se pudo guardar el perfil.");
+    }
 });
 
-document.getElementById("guardarClinica").addEventListener("click", () => {
-    config.clinica.nombre = document.getElementById("clinica").value;
-    config.clinica.direccion = document.getElementById("direccion").value;
-    config.clinica.telefono = document.getElementById("telefonoClinica").value;
-    config.clinica.correo = document.getElementById("correoClinica").value;
-    config.clinica.horario = document.getElementById("horario").value;
-    config.clinica.mapa = document.getElementById("mapa").value;
-    guardarConfig(config);
-    alert("Clínica guardada correctamente.");
+document.getElementById("guardarClinica").addEventListener("click", async () => {
+    const body = {
+        clinicName: document.getElementById("clinica").value.trim() || undefined,
+        clinicAddress: document.getElementById("direccion").value.trim() || undefined,
+        clinicPhone: document.getElementById("telefonoClinica").value.trim() || undefined,
+        clinicEmail: document.getElementById("correoClinica").value.trim() || undefined,
+        clinicHours: document.getElementById("horario").value.trim() || undefined,
+        mapUrl: document.getElementById("mapa").value.trim() || undefined,
+    };
+
+    try {
+        clinicConfig = await PawApi.api.updateConfig(body);
+        await PawApi.api.updateProfile({
+            clinic: body.clinicName,
+            address: body.clinicAddress,
+        });
+        alert("Clínica guardada correctamente.");
+    } catch (err) {
+        alert(err.message || "No se pudo guardar la clínica.");
+    }
 });
 
-document.getElementById("guardarPrefs").addEventListener("click", () => {
-    config.preferencias.idioma = document.getElementById("idioma").value;
-    config.preferencias.zona = document.getElementById("zona").value;
-    config.preferencias.fecha = document.getElementById("fecha").value;
-    config.preferencias.tema = document.getElementById("tema").value;
-    config.preferencias.notificaciones = document.getElementById("notificaciones").checked;
-    config.preferencias.sonidos = document.getElementById("sonidos").checked;
-    guardarConfig(config);
-    alert("Preferencias guardadas correctamente.");
+document.getElementById("guardarPrefs").addEventListener("click", async () => {
+    const body = {
+        language: document.getElementById("idioma").value,
+        timezone: document.getElementById("zona").value,
+        dateFormat: document.getElementById("fecha").value,
+        theme: document.getElementById("tema").value,
+        notifications: document.getElementById("notificaciones").checked,
+        sounds: document.getElementById("sonidos").checked,
+    };
+
+    try {
+        clinicConfig = await PawApi.api.updateConfig(body);
+        alert("Preferencias guardadas correctamente.");
+    } catch (err) {
+        alert(err.message || "No se pudieron guardar las preferencias.");
+    }
 });
 
 document.getElementById("foto").addEventListener("change", function (e) {
     const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-            document.getElementById("fotoUsuario").src = ev.target.result;
-            config.perfil.foto = ev.target.result;
-            guardarConfig(config);
-        };
-        reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function (ev) {
+        try {
+            profile = await PawApi.api.updateProfile({ photo: ev.target.result });
+            document.getElementById("fotoUsuario").src = profile.photo;
+            localStorage.setItem("usuarioActivo", JSON.stringify(profile));
+        } catch (err) {
+            alert(err.message || "No se pudo subir la foto.");
+        }
+    };
+    reader.readAsDataURL(file);
 });
 
 document.querySelector(".cerrar").addEventListener("click", () => {
-    if (confirm("¿Desea cerrar sesión?")) {
-        window.location.href = "../auth/login.html";
-    }
+    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
 });
+
+pintarSidebar();
+cargarTodo().catch((err) => alert(err.message || "No se pudo cargar la configuración."));

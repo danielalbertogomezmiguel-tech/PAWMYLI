@@ -1,0 +1,196 @@
+(function (global) {
+    const TOKEN_KEY = "pawmyliAccessToken";
+    const USER_KEY = "usuarioActivo";
+
+    function apiBase() {
+        return (global.PAWMYLI_CONFIG && global.PAWMYLI_CONFIG.apiBase) || "http://127.0.0.1:3000/api";
+    }
+
+    function getToken() {
+        return localStorage.getItem(TOKEN_KEY);
+    }
+
+    function setSession(accessToken, user) {
+        localStorage.setItem(TOKEN_KEY, accessToken);
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+
+    function clearSession() {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem("recordarSesion");
+        localStorage.removeItem("pacienteID");
+    }
+
+    function getUser() {
+        try {
+            return JSON.parse(localStorage.getItem(USER_KEY) || "null");
+        } catch {
+            return null;
+        }
+    }
+
+    function authPath() {
+        const path = global.location.pathname.replace(/\\/g, "/");
+        if (path.includes("/auth/")) return "login.html";
+        return "../auth/login.html";
+    }
+
+    function requireAuth() {
+        if (!getToken()) {
+            clearSession();
+            global.location.href = authPath();
+            return false;
+        }
+        return true;
+    }
+
+    function logout() {
+        clearSession();
+        global.location.href = authPath();
+    }
+
+    async function request(path, options = {}) {
+        const headers = Object.assign(
+            { "Content-Type": "application/json", Accept: "application/json" },
+            options.headers || {}
+        );
+
+        const token = getToken();
+        if (token) headers.Authorization = "Bearer " + token;
+
+        const response = await fetch(apiBase() + path, Object.assign({}, options, { headers }));
+
+        if (response.status === 204) return null;
+
+        let data = null;
+        const text = await response.text();
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch {
+                data = { message: text };
+            }
+        }
+
+        if (response.status === 401) {
+            clearSession();
+            if (!global.location.pathname.includes("/auth/")) {
+                global.location.href = authPath();
+            }
+            throw new Error((data && (data.message || data.error)) || "Sesión expirada");
+        }
+
+        if (!response.ok) {
+            const message =
+                (data && (data.message || data.error)) ||
+                (Array.isArray(data?.issues) && data.issues[0]?.message) ||
+                "Error de servidor (" + response.status + ")";
+            throw new Error(message);
+        }
+
+        return data;
+    }
+
+    const api = {
+        get: (path) => request(path),
+        post: (path, body) => request(path, { method: "POST", body: JSON.stringify(body) }),
+        put: (path, body) => request(path, { method: "PUT", body: JSON.stringify(body) }),
+        del: (path) => request(path, { method: "DELETE" }),
+        register: (body) => request("/auth/register", { method: "POST", body: JSON.stringify(body) }),
+        login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
+        profile: () => request("/auth/profile"),
+        updateProfile: (body) => request("/auth/profile", { method: "PUT", body: JSON.stringify(body) }),
+        listPatients: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.search) q.set("search", params.search);
+            q.set("page", String(params.page || 1));
+            q.set("limit", String(params.limit || 100));
+            return request("/patients?" + q.toString());
+        },
+        getPatient: (id) => request("/patients/" + encodeURIComponent(id)),
+        createPatient: (body) => request("/patients", { method: "POST", body: JSON.stringify(body) }),
+        updatePatient: (id, body) =>
+            request("/patients/" + encodeURIComponent(id), { method: "PUT", body: JSON.stringify(body) }),
+        listMedicalRecords: (id) => request("/patients/" + encodeURIComponent(id) + "/medical-records"),
+        addMedicalRecord: (id, body) =>
+            request("/patients/" + encodeURIComponent(id) + "/medical-records", {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+        updateFeeding: (id, body) =>
+            request("/patients/" + encodeURIComponent(id) + "/feeding", {
+                method: "PUT",
+                body: JSON.stringify(body),
+            }),
+        listReminders: (id) => request("/patients/" + encodeURIComponent(id) + "/reminders"),
+        listAppointments: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.date) q.set("date", params.date);
+            q.set("page", String(params.page || 1));
+            q.set("limit", String(params.limit || 100));
+            return request("/appointments?" + q.toString());
+        },
+        listAppointmentsByMonth: (year, month) =>
+            request("/appointments/month?year=" + year + "&month=" + month),
+        createAppointment: (body) =>
+            request("/appointments", { method: "POST", body: JSON.stringify(body) }),
+        deleteAppointment: (id) =>
+            request("/appointments/" + encodeURIComponent(id), { method: "DELETE" }),
+        getConfig: () => request("/config"),
+        updateConfig: (body) => request("/config", { method: "PUT", body: JSON.stringify(body) }),
+        health: () => request("/health"),
+    };
+
+    function mapPatient(p) {
+        if (!p) return null;
+        const feeding = p.feeding
+            ? [
+                  p.feeding.recommendedAmount,
+                  p.feeding.mealsPerDay + " veces al día",
+                  p.feeding.specialInstructions,
+                  p.feeding.schedule,
+              ].filter(Boolean)
+            : [];
+        const historial = (p.medicalRecords || []).map((r) => ({
+            id: r.id,
+            fecha: r.date,
+            motivo: r.reason,
+            veterinario: r.vetName,
+            estado: r.status || "Finalizada",
+            diagnostico: r.diagnosis,
+            tratamiento: r.treatment,
+        }));
+        return {
+            id: p.id,
+            codigo: p.code,
+            nombre: p.name,
+            especie: p.species,
+            raza: p.breed,
+            edad: p.age,
+            sexo: p.sex,
+            peso: p.weight || "",
+            color: p.color || "",
+            microchip: p.microchip || "No",
+            propietario: p.ownerName,
+            telefono: p.ownerPhone || "",
+            correo: p.ownerEmail || "",
+            foto: p.photo || "https://cdn-icons-png.flaticon.com/512/616/616408.png",
+            alimentacion: feeding,
+            historial,
+            raw: p,
+        };
+    }
+
+    global.PawApi = {
+        api,
+        apiBase,
+        getToken,
+        setSession,
+        clearSession,
+        getUser,
+        requireAuth,
+        logout,
+        mapPatient,
+    };
+})(window);
