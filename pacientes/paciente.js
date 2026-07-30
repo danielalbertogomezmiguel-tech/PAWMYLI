@@ -2,7 +2,7 @@ if (!PawApi.requireAuth()) {
     throw new Error("Auth required");
 }
 
-const DEFAULT_FOTO = "https://cdn-icons-png.flaticon.com/512/616/616408.png";
+const DEFAULT_FOTO = PawApi.defaultAvatar();
 let pacientes = [];
 
 const contenedor = document.getElementById("contenedorPacientes");

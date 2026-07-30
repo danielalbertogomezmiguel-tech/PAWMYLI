@@ -2,7 +2,10 @@ if (!PawApi.requireAuth()) {
     throw new Error("Auth required");
 }
 
-const DEFAULT_FOTO = "https://cdn-icons-png.flaticon.com/512/616/616408.png";
+const DEFAULT_FOTO = PawApi.defaultAvatar();
+const BARCODE_API =
+    (window.PAWMYLI_CONFIG && window.PAWMYLI_CONFIG.barcodeApiUrl) ||
+    "https://barcode.tec-it.com/barcode.ashx";
 const pacienteId = localStorage.getItem("pacienteID");
 let paciente = null;
 
@@ -37,7 +40,8 @@ function cargarPerfil() {
     document.getElementById("correo").textContent = paciente.correo || "—";
     document.getElementById("codigoPaciente").textContent = paciente.codigo || "—";
     document.getElementById("barcodeImg").src =
-        "https://barcode.tec-it.com/barcode.ashx?data=" +
+        BARCODE_API +
+        "?data=" +
         encodeURIComponent(paciente.codigo || "SIN-CODIGO") +
         "&code=Code128&dpi=96&imagetype=png";
 

@@ -1,0 +1,8 @@
+{
+  "name": "pawmyli",
+  "private": true,
+  "scripts": {
+    "env:export": "node scripts/export-env.js",
+    "build": "node scripts/export-env.js"
+  }
+}

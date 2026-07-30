@@ -3,7 +3,19 @@
     const USER_KEY = "usuarioActivo";
 
     function apiBase() {
-        return (global.PAWMYLI_CONFIG && global.PAWMYLI_CONFIG.apiBase) || "http://127.0.0.1:3000/api";
+        return (
+            (global.PAWMYLI_CONFIG && global.PAWMYLI_CONFIG.apiBase) ||
+            (global.PAWMYLI_ENV && global.PAWMYLI_ENV.PAWMYLI_API_BASE) ||
+            ""
+        );
+    }
+
+    function defaultAvatar() {
+        return (
+            (global.PAWMYLI_CONFIG && global.PAWMYLI_CONFIG.defaultAvatarUrl) ||
+            (global.PAWMYLI_ENV && global.PAWMYLI_ENV.PAWMYLI_DEFAULT_AVATAR_URL) ||
+            "https://cdn-icons-png.flaticon.com/512/616/616408.png"
+        );
     }
 
     function getToken() {
@@ -175,7 +187,7 @@
             propietario: p.ownerName,
             telefono: p.ownerPhone || "",
             correo: p.ownerEmail || "",
-            foto: p.photo || "https://cdn-icons-png.flaticon.com/512/616/616408.png",
+            foto: p.photo || defaultAvatar(),
             alimentacion: feeding,
             historial,
             raw: p,
@@ -185,6 +197,7 @@
     global.PawApi = {
         api,
         apiBase,
+        defaultAvatar,
         getToken,
         setSession,
         clearSession,
