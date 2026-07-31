@@ -105,6 +105,14 @@
                     <label>Código único</label>
                     <p id="codigoPaciente"></p>
                     <img id="barcodeImg" alt="Código de barras">
+                    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                        <button type="button" class="consulta" id="btnDescargarBarcode">
+                            <i class="fa-solid fa-download"></i> Descargar
+                        </button>
+                        <button type="button" class="consulta" id="btnImprimirBarcode">
+                            <i class="fa-solid fa-print"></i> Imprimir
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -121,16 +129,46 @@
         </section>
 
         <section class="panel">
-            <h2>Alimentación</h2>
+            <div class="tituloPanel">
+                <h2>Dieta</h2>
+            </div>
             <div class="contenido">
                 <ul id="listaAlimentacion"></ul>
+                <form id="formDieta" style="margin-top:16px;">
+                    <div class="fila">
+                        <div>
+                            <label>Peso (kg)</label>
+                            <input type="number" id="dietaPeso" step="0.1" min="0.1" required>
+                        </div>
+                        <div>
+                            <label>Comidas/día</label>
+                            <input type="number" id="dietaComidas" min="1" value="2">
+                        </div>
+                    </div>
+                    <label>Notas del veterinario</label>
+                    <textarea id="dietaNotas" rows="2" placeholder="Indicaciones especiales..."></textarea>
+                    <div class="fila" style="margin-top:10px;">
+                        <div>
+                            <label>Cantidad recomendada</label>
+                            <input type="text" id="dietaResultado" readonly>
+                        </div>
+                        <div>
+                            <label>kcal/día</label>
+                            <input type="text" id="dietaKcal" readonly>
+                        </div>
+                    </div>
+                    <button class="guardar" type="submit" style="margin-top:10px;">Generar dieta</button>
+                    <button class="consulta" type="button" id="btnGuardarDietaManual" style="margin-top:10px;">
+                        Guardar edición manual
+                    </button>
+                </form>
             </div>
         </section>
 
         <section class="panel">
             <div class="tituloPanel">
                 <h2>Historial Médico</h2>
-                <button class="consulta"><i class="fa-solid fa-plus"></i> Nueva Consulta</button>
+                <button class="consulta" id="btnNuevaConsulta"><i class="fa-solid fa-plus"></i> Nueva Consulta</button>
             </div>
             <table>
                 <thead>
@@ -180,8 +218,38 @@
                     </select>
                 </div>
             </div>
+            <div class="fila">
+                <div>
+                    <label>Peso en visita</label>
+                    <input type="text" id="consultaPeso" placeholder="Ej: 10.2 kg">
+                </div>
+                <div>
+                    <label>Temperatura</label>
+                    <input type="text" id="consultaTemp" placeholder="Ej: 38.5 °C">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Frecuencia cardiaca</label>
+                    <input type="text" id="consultaFC" placeholder="Ej: 90 lpm">
+                </div>
+                <div>
+                    <label>Frecuencia respiratoria</label>
+                    <input type="text" id="consultaFR" placeholder="Ej: 24 rpm">
+                </div>
+            </div>
+            <label>Examen físico</label>
+            <textarea id="consultaExamen" rows="2" placeholder="Hallazgos del examen..."></textarea>
+            <label>Diagnóstico</label>
+            <textarea id="consultaDiagnostico" rows="2"></textarea>
+            <label>Tratamiento</label>
+            <textarea id="consultaTratamiento" rows="2"></textarea>
+            <label>Receta / prescripciones</label>
+            <textarea id="consultaReceta" rows="2"></textarea>
             <label>Notas adicionales</label>
-            <textarea id="consultaNotas" rows="3" placeholder="Escriba notas..."></textarea>
+            <textarea id="consultaNotas" rows="2" placeholder="Escriba notas..."></textarea>
+            <label>Fecha de seguimiento</label>
+            <input type="date" id="consultaSeguimiento">
             <button class="guardar" type="submit">Guardar Consulta</button>
         </form>
     </div>

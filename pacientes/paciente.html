@@ -50,9 +50,14 @@
 
         <header>
             <h1>Pacientes</h1>
-            <button id="nuevoPaciente" class="nuevo">
-                <i class="fa-solid fa-plus"></i> Registrar Mascota
-            </button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button id="vincularCodigo" class="nuevo" style="display:none;">
+                    <i class="fa-solid fa-link"></i> Vincular por código
+                </button>
+                <button id="nuevoPaciente" class="nuevo">
+                    <i class="fa-solid fa-plus"></i> Registrar Mascota
+                </button>
+            </div>
         </header>
 
         <section class="busqueda">
@@ -138,6 +143,18 @@
             </div>
             <button class="guardar">Guardar Paciente</button>
         </form>
+    </div>
+</div>
+
+<div class="modal" id="modalExito">
+    <div class="ventana">
+        <button class="cerrarModalExito">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2>Paciente creado</h2>
+        <p>Código: <strong id="exitoCodigo"></strong></p>
+        <img id="exitoBarcode" alt="Código de barras" style="max-width:100%;margin:12px 0;">
+        <button class="guardar" type="button" id="btnVerExpediente">Ver expediente</button>
     </div>
 </div>
 

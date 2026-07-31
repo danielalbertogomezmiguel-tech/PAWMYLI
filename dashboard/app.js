@@ -54,14 +54,19 @@ async function cargarDashboard() {
         )
     );
     const reminders = reminderLists.flat();
-    const vencidos = reminders.filter((r) => r.date && r.date <= today);
+    const citasReminder = reminders
+        .filter((r) => r.type === "cita" && r.date && r.date >= today)
+        .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+    const vencidos = reminders.filter((r) => r.date && r.date <= today && r.type !== "cita");
+    const destacados = [...citasReminder.slice(0, 8), ...vencidos.slice(0, 8)];
 
     lista2.innerHTML = "";
-    if (!vencidos.length) {
+    if (!destacados.length) {
         lista2.innerHTML = "<li>Sin recordatorios pendientes</li>";
     } else {
-        vencidos.forEach((r) => {
-            lista2.innerHTML += `<li>${r.title}${r.date ? " - " + r.date : ""}${r.time ? " " + r.time : ""}</li>`;
+        destacados.forEach((r) => {
+            const tag = r.type === "cita" ? "[Cita] " : "";
+            lista2.innerHTML += `<li>${tag}${r.title}${r.date ? " - " + r.date : ""}${r.time ? " " + r.time : ""}</li>`;
         });
     }
 
@@ -78,7 +83,7 @@ async function cargarDashboard() {
         }).length;
         cards[1].textContent = String(count);
     }
-    if (cards[2]) cards[2].textContent = String(vencidos.length);
+    if (cards[2]) cards[2].textContent = String(citasReminder.length + vencidos.length);
 }
 
 document.querySelector(".scan").addEventListener("click", () => {

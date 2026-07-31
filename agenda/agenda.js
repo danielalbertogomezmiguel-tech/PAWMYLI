@@ -12,6 +12,7 @@ let mes = fecha.getMonth();
 let anio = fecha.getFullYear();
 let diaSeleccionado = fecha.getDate();
 let citas = [];
+let pacientesLista = [];
 
 const calendario = document.getElementById("diasCalendario");
 const tituloMes = document.getElementById("mesActual");
@@ -19,6 +20,7 @@ const lista = document.getElementById("listaCitas");
 const numeroDia = document.getElementById("numeroDia");
 const btnAnterior = document.getElementById("anterior");
 const btnSiguiente = document.getElementById("siguiente");
+const pacienteSelect = document.getElementById("pacienteSelect");
 
 function pintarSidebar() {
     const user = PawApi.getUser();
@@ -90,11 +92,36 @@ function mostrarCitas() {
             <p><strong>Mascota:</strong> ${cita.petName}</p>
             <p><strong>Dueño:</strong> ${cita.ownerName}</p>
             <p>${cita.notes || ""}</p>
+            ${cita.patientId ? "<p><em>Vinculada a expediente</em></p>" : ""}
             <button class="eliminar">Eliminar</button>`;
         item.querySelector(".eliminar").addEventListener("click", () => eliminarCita(cita.id));
         lista.appendChild(item);
     });
 }
+
+async function cargarPacientesSelect() {
+    try {
+        const result = await PawApi.api.listPatients({ limit: 100 });
+        pacientesLista = result.data || [];
+        pacienteSelect.innerHTML =
+            '<option value="">— Sin vincular a expediente —</option>' +
+            pacientesLista
+                .map(
+                    (p) =>
+                        `<option value="${p.id}">${p.name} (${p.code}) — ${p.ownerName}</option>`
+                )
+                .join("");
+    } catch {
+        /* selector opcional */
+    }
+}
+
+pacienteSelect.addEventListener("change", () => {
+    const p = pacientesLista.find((x) => x.id === pacienteSelect.value);
+    if (!p) return;
+    document.getElementById("nombreMascota").value = p.name;
+    document.getElementById("dueno").value = p.ownerName;
+});
 
 async function cargarMes() {
     citas = await PawApi.api.listAppointmentsByMonth(anio, mes + 1);
@@ -132,18 +159,25 @@ btnSiguiente.onclick = async () => {
 
 document.getElementById("formCita").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const patientId = pacienteSelect.value || undefined;
     const body = {
         petName: document.getElementById("nombreMascota").value.trim(),
         date: document.getElementById("fecha").value,
         ownerName: document.getElementById("dueno").value.trim(),
         time: document.getElementById("hora").value,
         notes: document.getElementById("nota").value.trim() || undefined,
+        patientId,
     };
 
     try {
         await PawApi.api.createAppointment(body);
-        alert("Cita registrada correctamente.");
+        alert(
+            patientId
+                ? "Cita registrada y recordatorio de tipo cita creado."
+                : "Cita registrada correctamente."
+        );
         e.target.reset();
+        pacienteSelect.value = "";
         const [y, m, d] = body.date.split("-").map(Number);
         anio = y;
         mes = m - 1;
@@ -161,6 +195,6 @@ document.querySelector(".cerrar").onclick = () => {
 
 pintarSidebar();
 numeroDia.textContent = diaSeleccionado;
-cargarMes().catch((err) => {
+Promise.all([cargarMes(), cargarPacientesSelect()]).catch((err) => {
     lista.innerHTML = `<div class="cita"><h3>Error</h3><p>${err.message}</p></div>`;
 });

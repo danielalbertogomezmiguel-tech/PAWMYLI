@@ -130,12 +130,45 @@
                 method: "POST",
                 body: JSON.stringify(body),
             }),
+        updateMedicalRecord: (id, recordId, body) =>
+            request(
+                "/patients/" +
+                    encodeURIComponent(id) +
+                    "/medical-records/" +
+                    encodeURIComponent(recordId),
+                { method: "PUT", body: JSON.stringify(body) }
+            ),
+        deleteMedicalRecord: (id, recordId) =>
+            request(
+                "/patients/" +
+                    encodeURIComponent(id) +
+                    "/medical-records/" +
+                    encodeURIComponent(recordId),
+                { method: "DELETE" }
+            ),
         updateFeeding: (id, body) =>
             request("/patients/" + encodeURIComponent(id) + "/feeding", {
                 method: "PUT",
                 body: JSON.stringify(body),
             }),
+        generateDiet: (id, body) =>
+            request("/patients/" + encodeURIComponent(id) + "/diet", {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+        getFeeding: (id) => request("/patients/" + encodeURIComponent(id) + "/feeding"),
         listReminders: (id) => request("/patients/" + encodeURIComponent(id) + "/reminders"),
+        linkPatient: (code) =>
+            request("/patients/link", { method: "POST", body: JSON.stringify({ code }) }),
+        unlinkPatient: (id) =>
+            request("/patients/" + encodeURIComponent(id) + "/link", { method: "DELETE" }),
+        myPatients: (params = {}) => {
+            const q = new URLSearchParams();
+            q.set("page", String(params.page || 1));
+            q.set("limit", String(params.limit || 100));
+            return request("/patients/mine?" + q.toString());
+        },
+        barcode: (id) => request("/patients/" + encodeURIComponent(id) + "/barcode"),
         listAppointments: (params = {}) => {
             const q = new URLSearchParams();
             if (params.date) q.set("date", params.date);
@@ -159,8 +192,14 @@
         const feeding = p.feeding
             ? [
                   p.feeding.recommendedAmount,
-                  p.feeding.mealsPerDay + " veces al día",
-                  p.feeding.specialInstructions,
+                  p.feeding.caloriesPerDay != null
+                      ? p.feeding.caloriesPerDay + " kcal/día"
+                      : null,
+                  p.feeding.mealsPerDay != null
+                      ? p.feeding.mealsPerDay + " veces al día"
+                      : null,
+                  p.feeding.weightKg != null ? "Peso dieta: " + p.feeding.weightKg + " kg" : null,
+                  p.feeding.vetNotes || p.feeding.specialInstructions,
                   p.feeding.schedule,
               ].filter(Boolean)
             : [];
@@ -172,10 +211,19 @@
             estado: r.status || "Finalizada",
             diagnostico: r.diagnosis,
             tratamiento: r.treatment,
+            weightAtVisit: r.weightAtVisit,
+            temperature: r.temperature,
+            heartRate: r.heartRate,
+            respiratoryRate: r.respiratoryRate,
+            physicalExam: r.physicalExam,
+            prescriptions: r.prescriptions,
+            notes: r.notes,
+            followUpDate: r.followUpDate,
         }));
         return {
             id: p.id,
             codigo: p.code,
+            barcodePayload: p.barcodePayload || p.code,
             nombre: p.name,
             especie: p.species,
             raza: p.breed,
@@ -189,6 +237,7 @@
             correo: p.ownerEmail || "",
             foto: p.photo || defaultAvatar(),
             alimentacion: feeding,
+            feeding: p.feeding || null,
             historial,
             raw: p,
         };
