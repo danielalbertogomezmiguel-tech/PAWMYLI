@@ -135,21 +135,30 @@ btnVincular.addEventListener("click", async () => {
     }
 });
 
-document.querySelector(".qr")?.addEventListener("click", async () => {
-    const code = prompt("Ingresa o escanea el código (PAW-XXXXXX):");
-    if (!code) return;
+async function resolverCodigo(code) {
+    const value = (code || "").trim();
+    if (!value) return;
     try {
         if (isOwner) {
-            const patient = await PawApi.api.linkPatient(code.trim());
+            const patient = await PawApi.api.linkPatient(value);
             abrirPerfil(patient.id);
             return;
         }
-        const patient = await PawApi.api.get("/patients/code/" + encodeURIComponent(code.trim()));
+        const patient = await PawApi.api.get("/patients/code/" + encodeURIComponent(value));
         abrirPerfil(patient.id);
     } catch (err) {
         alert(err.message || "Paciente no encontrado.");
     }
+}
+
+document.querySelector(".qr")?.addEventListener("click", async () => {
+    const code = prompt("Ingresa o escanea el código (PAW-XXXXXX):");
+    await resolverCodigo(code);
 });
+
+if (window.PawBarcodeHid) {
+    PawBarcodeHid.attach((code) => resolverCodigo(code));
+}
 
 let searchTimer;
 buscar.addEventListener("keyup", () => {

@@ -86,17 +86,26 @@ async function cargarDashboard() {
     if (cards[2]) cards[2].textContent = String(citasReminder.length + vencidos.length);
 }
 
-document.querySelector(".scan").addEventListener("click", () => {
-    const code = prompt("Ingresa el código del paciente (PAW-XXXXXX):");
-    if (!code) return;
+function abrirPorCodigo(code) {
+    const value = (code || "").trim();
+    if (!value) return;
     PawApi.api
-        .get("/patients/code/" + encodeURIComponent(code.trim()))
+        .get("/patients/code/" + encodeURIComponent(value))
         .then((patient) => {
             localStorage.setItem("pacienteID", patient.id);
             window.location.href = "../perfil/perfil.html";
         })
         .catch((err) => alert(err.message || "Paciente no encontrado."));
+}
+
+document.querySelector(".scan").addEventListener("click", () => {
+    const code = prompt("Ingresa o escanea el código del paciente (PAW-XXXXXX):");
+    abrirPorCodigo(code);
 });
+
+if (window.PawBarcodeHid) {
+    PawBarcodeHid.attach((code) => abrirPorCodigo(code));
+}
 
 function cerrarSesion() {
     if (confirm("¿Desea cerrar sesión?")) PawApi.logout();

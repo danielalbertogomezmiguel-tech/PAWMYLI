@@ -169,6 +169,27 @@
             return request("/patients/mine?" + q.toString());
         },
         barcode: (id) => request("/patients/" + encodeURIComponent(id) + "/barcode"),
+        updateReminder: (id, body) =>
+            request("/patients/reminders/" + encodeURIComponent(id), {
+                method: "PUT",
+                body: JSON.stringify(body),
+            }),
+        completeReminder: (id) =>
+            request("/patients/reminders/" + encodeURIComponent(id) + "/complete", {
+                method: "POST",
+                body: JSON.stringify({}),
+            }),
+        myAppointments: (params = {}) => {
+            const q = new URLSearchParams();
+            q.set("page", String(params.page || 1));
+            q.set("limit", String(params.limit || 100));
+            return request("/appointments/mine?" + q.toString());
+        },
+        confirmAppointment: (id) =>
+            request("/appointments/" + encodeURIComponent(id) + "/confirm", {
+                method: "POST",
+                body: JSON.stringify({}),
+            }),
         listAppointments: (params = {}) => {
             const q = new URLSearchParams();
             if (params.date) q.set("date", params.date);
