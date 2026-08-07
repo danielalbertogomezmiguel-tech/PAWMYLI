@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Base.Theme.PawMily" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/sage</item>
+        <item name="colorPrimaryDark">@color/primary_teal_deep</item>
+        <item name="colorSecondary">@color/primary_teal</item>
+        <item name="colorOnPrimary">@color/ink</item>
+        <item name="android:colorBackground">@color/primary_teal_deep</item>
+        <item name="colorSurface">@color/primary_teal</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:statusBarColor">@color/primary_teal_deep</item>
+    </style>
+</resources>

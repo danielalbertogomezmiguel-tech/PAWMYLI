@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.PawMily" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_teal</item>
+        <item name="colorPrimaryDark">@color/primary_teal_deep</item>
+        <item name="colorSecondary">@color/sage</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/ink</item>
+        <item name="android:colorBackground">@color/background_grey</item>
+        <item name="colorSurface">@color/card_surface</item>
+        <item name="colorOnSurface">@color/ink</item>
+        <item name="android:statusBarColor">@color/primary_teal_deep</item>
+        <item name="android:navigationBarColor">@color/background_grey</item>
+        <item name="materialCardViewStyle">@style/Widget.PawMily.Card</item>
+    </style>
+
+    <style name="Theme.PawMily" parent="Base.Theme.PawMily" />
+
+    <style name="Widget.PawMily.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardBackgroundColor">@color/card_surface</item>
+        <item name="cardElevation">2dp</item>
+    </style>
+</resources>

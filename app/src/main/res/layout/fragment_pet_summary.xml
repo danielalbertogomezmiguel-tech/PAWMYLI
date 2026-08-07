@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Datos Generales Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/dark_card"
+            app:cardCornerRadius="4dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Datos Generales:"
+                    android:textColor="@color/accent_pink"
+                    android:textStyle="bold" />
+                <!-- Grid of data -->
+                <TextView android:id="@+id/tvSpecies" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Especie: Perro" android:textColor="@color/accent_pink" android:layout_marginTop="8dp"/>
+                <TextView android:id="@+id/tvBreed" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Raza: Pastor Aleman" android:textColor="@color/accent_pink" />
+                <TextView android:id="@+id/tvGender" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Genero: Masculino" android:textColor="@color/accent_pink" />
+                <TextView android:id="@+id/tvAge" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Edad: 9 Meses" android:textColor="@color/accent_pink" />
+                <TextView android:id="@+id/tvColor" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Color: Tricolor" android:textColor="@color/accent_pink" />
+                <TextView android:id="@+id/tvMicrochip" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Micro Chip: No" android:textColor="@color/accent_pink" />
+                <TextView android:id="@+id/tvOwner" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Propietario: José Alberto Lemus MIjango" android:textColor="@color/accent_pink" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Peso Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/dark_card"
+            app:cardCornerRadius="4dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView android:id="@+id/tvCurrentWeight" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Peso Actual: 30 Kg" android:textColor="@color/accent_pink" android:textStyle="bold"/>
+                <TextView android:id="@+id/tvPreviousWeight" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Peso Anterior: 25 Kg" android:textColor="@color/accent_pink" android:textStyle="bold"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Proxima Cita Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/dark_card"
+            app:cardCornerRadius="4dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="PROXIMA CITA:" android:textColor="@color/accent_pink" android:textStyle="bold"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@android:drawable/ic_menu_today"
+                        app:tint="@color/accent_pink" />
+                    <TextView
+                        android:id="@+id/tvNextAppointment"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="Sin fecha"
+                        android:textColor="@color/accent_pink"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+</ScrollView>

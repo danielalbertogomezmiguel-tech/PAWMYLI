@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Clinic palette (aligned with web) -->
+    <color name="primary_teal">#2C5F5A</color>
+    <color name="primary_teal_deep">#1E4440</color>
+    <color name="sage">#8FC3A7</color>
+    <color name="sage_deep">#6DAB8A</color>
+    <color name="background_grey">#EEF2F5</color>
+    <color name="mist_deep">#DCE3EA</color>
+    <color name="ink">#1E4440</color>
+    <color name="text_muted">#5F7270</color>
+    <color name="accent_coral">#E8556D</color>
+    <color name="card_surface">#FFFFFFFF</color>
+
+    <!-- Legacy aliases used across layouts -->
+    <color name="accent_pink">@color/accent_coral</color>
+    <color name="dark_card">@color/card_surface</color>
+</resources>

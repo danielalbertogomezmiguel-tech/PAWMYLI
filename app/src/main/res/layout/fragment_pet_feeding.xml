@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/feedingRecordsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvEmptyFeeding"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingBottom="8dp"
+            android:text="@string/empty_feeding"
+            android:textColor="@color/text_muted"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/feedingForm"
+            layout="@layout/include_feeding_form" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSaveFeeding"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/rounded_button_white"
+            android:backgroundTint="@color/primary_teal"
+            android:text="@string/btn_save_feeding"
+            android:textColor="@color/white"
+            android:textStyle="bold" />
+    </LinearLayout>
+</ScrollView>

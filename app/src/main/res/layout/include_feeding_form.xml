@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    app:cardBackgroundColor="@color/card_surface"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_food_type"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etFoodType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_optional"
+            android:inputType="textCapSentences"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_brand"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etBrand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_optional"
+            android:inputType="textCapSentences"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_quantity"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etQuantity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_quantity"
+            android:inputType="text"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_frequency"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etFrequency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_frequency"
+            android:inputType="text"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_schedule"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_schedule"
+            android:inputType="text"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_meals_per_day"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etMealsPerDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="2"
+            android:inputType="number"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_recommended_amount"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etRecommendedAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_quantity"
+            android:inputType="text"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_restrictions"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etRestrictions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_optional"
+            android:inputType="textMultiLine"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_allergies"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etAllergies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_optional"
+            android:inputType="textMultiLine"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_observations"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+        <EditText
+            android:id="@+id/etObservations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_optional"
+            android:inputType="textMultiLine"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:id="@+id/labelVetNotes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_vet_notes"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold"
+            android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvVetNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/ink"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/labelVetRecommendations"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/label_vet_recommendations"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold"
+            android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvVetRecommendations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/ink"
+            android:visibility="gone" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
