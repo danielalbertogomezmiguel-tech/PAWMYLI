@@ -128,7 +128,10 @@ window.addEventListener("click", (e) => {
 });
 
 btnVincular.addEventListener("click", async () => {
-    const code = prompt("Ingresa el código de la mascota (PAW-XXXXXX):");
+    const code = await PawCodeModal.ask({
+        title: "Vincular mascota",
+        message: "Ingresa o escanea el código de la mascota (PAW-XXXXXX).",
+    });
     if (!code) return;
     try {
         const patient = await PawApi.api.linkPatient(code.trim());
@@ -156,8 +159,11 @@ async function resolverCodigo(code) {
 }
 
 document.querySelector(".qr")?.addEventListener("click", async () => {
-    const code = prompt("Ingresa o escanea el código (PAW-XXXXXX):");
-    await resolverCodigo(code);
+    const code = await PawCodeModal.ask({
+        title: "Buscar por código",
+        message: "Ingresa o escanea el código del paciente (PAW-XXXXXX).",
+    });
+    if (code) await resolverCodigo(code);
 });
 
 if (window.PawBarcodeHid) {

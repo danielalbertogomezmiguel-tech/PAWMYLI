@@ -92,9 +92,12 @@ function abrirPorCodigo(code) {
         .catch((err) => alert(err.message || "Paciente no encontrado."));
 }
 
-document.querySelector(".scan").addEventListener("click", () => {
-    const code = prompt("Ingresa o escanea el código del paciente (PAW-XXXXXX):");
-    abrirPorCodigo(code);
+document.querySelector(".scan").addEventListener("click", async () => {
+    const code = await PawCodeModal.ask({
+        title: "Escanear / ingresar código",
+        message: "Ingresa o escanea el código del paciente (PAW-XXXXXX).",
+    });
+    if (code) abrirPorCodigo(code);
 });
 
 if (window.PawBarcodeHid) {
