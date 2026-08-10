@@ -23,9 +23,7 @@ const btnSiguiente = document.getElementById("siguiente");
 const pacienteSelect = document.getElementById("pacienteSelect");
 
 function pintarSidebar() {
-    const user = PawApi.getUser();
-    const title = document.querySelector(".perfilDoctor h2, .perfil h2");
-    if (user && title) title.textContent = user.name;
+    PawApi.applySidebar();
 }
 
 function formatoFecha(dia) {
@@ -194,6 +192,7 @@ document.querySelector(".cerrar").onclick = () => {
 };
 
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 numeroDia.textContent = diaSeleccionado;
 Promise.all([cargarMes(), cargarPacientesSelect()]).catch((err) => {
     lista.innerHTML = `<div class="cita"><h3>Error</h3><p>${err.message}</p></div>`;

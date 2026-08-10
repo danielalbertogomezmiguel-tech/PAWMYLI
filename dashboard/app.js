@@ -3,13 +3,7 @@ if (!PawApi.requireAuth()) {
 }
 
 function pintarSidebar() {
-    const user = PawApi.getUser();
-    const title = document.querySelector(".perfilDoctor h2");
-    if (user && title) title.textContent = user.name;
-    if (user?.photo) {
-        const img = document.querySelector(".perfilDoctor img");
-        if (img) img.src = user.photo;
-    }
+    PawApi.applySidebar();
 }
 
 function hoyISO() {
@@ -112,6 +106,7 @@ function cerrarSesion() {
 }
 
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 cargarDashboard().catch((err) => {
     document.getElementById("listaConsultas").innerHTML = `<li>${err.message}</li>`;
     document.getElementById("listaRecordatorios").innerHTML = `<li>${err.message}</li>`;

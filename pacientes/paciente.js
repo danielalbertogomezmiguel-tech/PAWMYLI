@@ -21,8 +21,7 @@ const cerrarModal = document.querySelector(".cerrarModal");
 const formulario = document.getElementById("formMascota");
 
 function pintarSidebar() {
-    const title = document.querySelector(".perfil h2, .perfilDoctor h2");
-    if (user && title) title.textContent = user.name;
+    PawApi.applySidebar();
 }
 
 function configurarRol() {
@@ -101,11 +100,16 @@ function abrirPerfil(id) {
 function mostrarExito(patient) {
     ultimoCreadoId = patient.id;
     document.getElementById("exitoCodigo").textContent = patient.code;
-    document.getElementById("exitoBarcode").src =
-        BARCODE_API +
-        "?data=" +
-        encodeURIComponent(patient.code) +
-        "&code=Code128&dpi=96&imagetype=png";
+    const img = document.getElementById("exitoBarcode");
+    if (window.PawBarcodeLocal) {
+        PawBarcodeLocal.render(img, patient.code);
+    } else {
+        img.src =
+            BARCODE_API +
+            "?data=" +
+            encodeURIComponent(patient.code) +
+            "&code=Code128&dpi=96&imagetype=png";
+    }
     modalExito.classList.add("activo");
 }
 
@@ -172,10 +176,21 @@ buscar.addEventListener("keyup", () => {
     }, 300);
 });
 
+function readFotoAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
+        reader.readAsDataURL(file);
+    });
+}
+
 formulario.addEventListener("submit", async function (e) {
     e.preventDefault();
     const edadVal = document.getElementById("edad").value;
     const pesoVal = document.getElementById("peso").value.trim();
+    const fotoInput = document.getElementById("foto");
+    const file = fotoInput && fotoInput.files && fotoInput.files[0];
 
     const body = {
         name: document.getElementById("nombre").value.trim(),
@@ -196,6 +211,13 @@ formulario.addEventListener("submit", async function (e) {
     }
 
     try {
+        if (file) {
+            if (file.size > 1.5 * 1024 * 1024) {
+                alert("La foto debe pesar menos de 1.5 MB.");
+                return;
+            }
+            body.photo = await readFotoAsDataUrl(file);
+        }
         const created = await PawApi.api.createPatient(body);
         formulario.reset();
         modal.classList.remove("activo");
@@ -211,6 +233,7 @@ document.querySelector(".cerrar").addEventListener("click", () => {
 });
 
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 configurarRol();
 cargarPacientes().catch((err) => {
     contenedor.innerHTML = `<p style="padding:20px;color:#e8556d;">${err.message}</p>`;

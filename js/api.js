@@ -42,6 +42,32 @@
         }
     }
 
+    /** Paint vet/owner identity into sidebar; replaces hardcoded HTML placeholders. */
+    function applySidebar(user) {
+        const u = user || getUser();
+        const title = document.querySelector(".perfilDoctor h2, .perfil h2");
+        const img = document.querySelector(".perfilDoctor img, .perfil img");
+        if (u && title) title.textContent = u.name || "Usuario";
+        if (u && img) {
+            const src = u.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+            if (img.src !== src) img.src = src;
+        }
+        return u;
+    }
+
+    async function syncProfileToSession() {
+        try {
+            const profile = await api.profile();
+            const token = getToken();
+            if (token && profile) setSession(token, profile);
+            applySidebar(profile);
+            return profile;
+        } catch {
+            applySidebar();
+            return getUser();
+        }
+    }
+
     function authPath() {
         const path = global.location.pathname.replace(/\\/g, "/");
         if (path.includes("/auth/")) return "login.html";
@@ -272,6 +298,8 @@
         setSession,
         clearSession,
         getUser,
+        applySidebar,
+        syncProfileToSession,
         requireAuth,
         logout,
         mapPatient,

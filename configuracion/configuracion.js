@@ -6,12 +6,11 @@ let profile = null;
 let clinicConfig = null;
 
 function pintarSidebar() {
-    const user = PawApi.getUser();
-    const title = document.querySelector(".perfilDoctor h2, .perfil h2");
-    if (user && title) title.textContent = user.name;
-    if (profile?.photo) {
+    const u = profile || PawApi.getUser();
+    PawApi.applySidebar(u);
+    if (u?.photo) {
         const img = document.getElementById("fotoUsuario");
-        if (img) img.src = profile.photo;
+        if (img) img.src = u.photo;
     }
 }
 

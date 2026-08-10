@@ -16,8 +16,7 @@ if (!pacienteId) {
 }
 
 function pintarSidebar() {
-    const title = document.querySelector(".perfilDoctor h2");
-    if (user && title) title.textContent = user.name;
+    PawApi.applySidebar();
 }
 
 function barcodeUrl(code) {
@@ -49,7 +48,13 @@ function cargarPerfil() {
     document.getElementById("telefono").textContent = paciente.telefono || "—";
     document.getElementById("correo").textContent = paciente.correo || "—";
     document.getElementById("codigoPaciente").textContent = paciente.codigo || "—";
-    document.getElementById("barcodeImg").src = barcodeUrl(paciente.barcodePayload || paciente.codigo);
+    const bc = document.getElementById("barcodeImg");
+    const codeForBc = paciente.barcodePayload || paciente.codigo;
+    if (window.PawBarcodeLocal) {
+        PawBarcodeLocal.render(bc, codeForBc);
+    } else {
+        bc.src = barcodeUrl(codeForBc);
+    }
 
     const listaAlim = document.getElementById("listaAlimentacion");
     listaAlim.innerHTML = "";
@@ -298,6 +303,13 @@ document.querySelector(".cerrar").addEventListener("click", () => {
 });
 
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => {
+    pintarSidebar();
+    if (PawApi.getUser()?.name) {
+        const vetInput = document.getElementById("consultaVet");
+        if (vetInput && !vetInput.value.trim()) vetInput.value = PawApi.getUser().name;
+    }
+}).catch(() => {});
 refrescarPaciente().catch((err) => {
     document.querySelector(".perfilMascota").innerHTML =
         `<p style='text-align:center;padding:40px;color:#e8556d;'>${err.message}</p>`;
