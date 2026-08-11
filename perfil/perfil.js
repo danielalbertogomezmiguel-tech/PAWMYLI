@@ -298,10 +298,6 @@ document.getElementById("btnGuardarDietaManual").addEventListener("click", async
     }
 });
 
-document.querySelector(".cerrar").addEventListener("click", () => {
-    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
-});
-
 pintarSidebar();
 PawApi.syncProfileToSession().then(() => {
     pintarSidebar();

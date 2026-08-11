@@ -126,7 +126,7 @@ document.getElementById("foto").addEventListener("change", function (e) {
     reader.readAsDataURL(file);
 });
 
-document.querySelector(".cerrar").addEventListener("click", () => {
+document.getElementById("cerrarSesionPerfil").addEventListener("click", () => {
     if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
 });
 

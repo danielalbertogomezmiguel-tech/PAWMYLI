@@ -6,6 +6,7 @@
     <title>Pacientes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="../css/modals.css">
+    <link rel="stylesheet" href="../css/responsive.css">
     <link rel="stylesheet" href="paciente.css">
 </head>
 <body>
@@ -40,18 +41,13 @@
             </nav>
         </div>
 
-        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            Cerrar Sesión
-        </button>
-
     </aside>
 
     <main>
 
         <header>
             <h1>Pacientes</h1>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div class="header-actions">
                 <button id="vincularCodigo" class="nuevo" style="display:none;">
                     <i class="fa-solid fa-link"></i> Vincular por código
                 </button>
@@ -66,9 +62,21 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="buscar" placeholder="Buscar paciente...">
             </div>
-            <button class="qr">
-                <i class="fa-solid fa-camera"></i>
+            <button class="qr" type="button" title="Ingresar o escanear código">
+                <i class="fa-solid fa-barcode"></i>
             </button>
+        </section>
+
+        <section class="scan-panel">
+            <label for="scanHidInput"><i class="fa-solid fa-barcode"></i> Lector USB (Motorola LS1203)</label>
+            <input
+                type="text"
+                id="scanHidInput"
+                data-barcode-target="1"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Haz clic aquí y escanea el código de barras">
+            <p>El lector debe estar en modo teclado (HID). Al escanear se abre el expediente automáticamente.</p>
         </section>
 
         <section class="lista">

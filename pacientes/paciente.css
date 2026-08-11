@@ -322,6 +322,42 @@ header h1 {
     color: #fff;
 }
 
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.scan-panel {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #dce3ea;
+}
+
+.scan-panel label {
+    display: block;
+    color: #2c5f5a;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.scan-panel input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #2c5f5a;
+    border-radius: 10px;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+}
+
+.scan-panel p {
+    margin-top: 8px;
+    color: #5a6f6e;
+    font-size: 13px;
+}
+
 /* ─── MODAL (base + scroll; shared polish in ../css/modals.css) ─── */
 
 .modal {

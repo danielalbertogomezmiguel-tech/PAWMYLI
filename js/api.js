@@ -227,8 +227,13 @@
             request("/appointments/month?year=" + year + "&month=" + month),
         createAppointment: (body) =>
             request("/appointments", { method: "POST", body: JSON.stringify(body) }),
-        deleteAppointment: (id) =>
-            request("/appointments/" + encodeURIComponent(id), { method: "DELETE" }),
+        deleteAppointment: async (id) => {
+            const result = await request("/appointments/" + encodeURIComponent(id), {
+                method: "DELETE",
+            });
+            // Soft-cancel may return the appointment; 204 would be null
+            return result || { id: id, status: "Eliminada" };
+        },
         getConfig: () => request("/config"),
         updateConfig: (body) => request("/config", { method: "PUT", body: JSON.stringify(body) }),
         health: () => request("/health"),

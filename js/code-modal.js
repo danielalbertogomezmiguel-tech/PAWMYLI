@@ -15,9 +15,12 @@
             "</button>" +
             '<h2 id="pawModalCodigoTitle">Ingresar código</h2>' +
             '<p class="hint-codigo" data-paw-code-hint></p>' +
-            '<label for="pawInputCodigo">Código PAW</label>' +
-            '<input type="text" id="pawInputCodigo" autocomplete="off" spellcheck="false" ' +
-            'placeholder="PAW-000001" inputmode="text">' +
+            '<label for="pawInputCodigo">Código PAW / lector USB</label>' +
+            '<input type="text" id="pawInputCodigo" data-barcode-target="1" autocomplete="off" spellcheck="false" ' +
+            'placeholder="Escanea aquí o escribe PAW-000001" inputmode="text">' +
+            '<p class="hint-codigo" style="margin-top:10px;font-size:13px;">' +
+            "Con lector Motorola LS1203: deja el cursor en este campo y escanea." +
+            "</p>" +
             '<div class="modal-acciones">' +
             '<button type="button" class="btn-secundario" data-paw-code-cancel>Cancelar</button>' +
             '<button type="button" class="guardar" data-paw-code-confirm>Continuar</button>' +
@@ -27,10 +30,6 @@
         return modal;
     }
 
-    /**
-     * Custom code entry modal (replaces window.prompt).
-     * @returns {Promise<string|null>} trimmed code, or null if cancelled
-     */
     function askCode(options) {
         const opts = options || {};
         const modal = ensureModal();
@@ -49,19 +48,28 @@
         return new Promise((resolve) => {
             let settled = false;
 
-            function finish(value) {
-                if (settled) return;
-                settled = true;
-                modal.classList.remove("activo");
-                document.removeEventListener("keydown", onKey);
+            function cleanup() {
+                document.removeEventListener("keydown", onEsc);
                 modal.removeEventListener("click", onBackdrop);
                 confirmBtn.removeEventListener("click", onConfirm);
                 cancelBtns.forEach((btn) => btn.removeEventListener("click", onCancel));
+                input.removeEventListener("keydown", onInputKey);
+                input.removeEventListener("paw-barcode", onPawBarcode);
+            }
+
+            function finish(value) {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                modal.classList.remove("activo");
                 resolve(value);
             }
 
             function onConfirm() {
-                const code = (input.value || "").trim();
+                const raw = (input.value || "").trim();
+                const code =
+                    (global.PawBarcodeHid && PawBarcodeHid.normalize(raw)) ||
+                    raw.toUpperCase();
                 if (!code) {
                     input.focus();
                     input.style.borderColor = "#e8556d";
@@ -79,24 +87,37 @@
                 if (e.target === modal) onCancel();
             }
 
-            function onKey(e) {
+            function onEsc(e) {
                 if (e.key === "Escape") onCancel();
-                if (e.key === "Enter" && document.activeElement === input) {
+            }
+
+            function onInputKey(e) {
+                if (e.key === "Enter") {
                     e.preventDefault();
                     onConfirm();
+                }
+            }
+
+            function onPawBarcode(e) {
+                const code = e.detail && e.detail.code;
+                if (code) {
+                    input.value = code;
+                    finish(code);
                 }
             }
 
             confirmBtn.addEventListener("click", onConfirm);
             cancelBtns.forEach((btn) => btn.addEventListener("click", onCancel));
             modal.addEventListener("click", onBackdrop);
-            document.addEventListener("keydown", onKey);
+            document.addEventListener("keydown", onEsc);
+            input.addEventListener("keydown", onInputKey);
+            input.addEventListener("paw-barcode", onPawBarcode);
 
             modal.classList.add("activo");
             setTimeout(() => {
                 input.focus();
                 input.select();
-            }, 30);
+            }, 40);
         });
     }
 

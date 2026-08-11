@@ -168,6 +168,13 @@ document.querySelector(".qr")?.addEventListener("click", async () => {
 
 if (window.PawBarcodeHid) {
     PawBarcodeHid.attach((code) => resolverCodigo(code));
+    const scanInput = document.getElementById("scanHidInput");
+    if (scanInput) {
+        scanInput.addEventListener("paw-barcode", (e) => {
+            if (e.detail && e.detail.code) resolverCodigo(e.detail.code);
+        });
+        setTimeout(() => scanInput.focus(), 200);
+    }
 }
 
 let searchTimer;
@@ -232,10 +239,6 @@ formulario.addEventListener("submit", async function (e) {
     } catch (err) {
         alert(err.message || "No se pudo registrar el paciente.");
     }
-});
-
-document.querySelector(".cerrar").addEventListener("click", () => {
-    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
 });
 
 pintarSidebar();

@@ -1,0 +1,97 @@
+/* Shared responsive helpers for PawMily web */
+
+@media (max-width: 900px) {
+    .contenedor {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        position: static !important;
+        flex-direction: row;
+        align-items: center;
+        padding: 12px 14px !important;
+        gap: 10px;
+    }
+
+    .sidebar > div {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .perfilDoctor,
+    .perfil {
+        display: flex !important;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0 !important;
+        text-align: left !important;
+    }
+
+    .perfilDoctor img,
+    .perfil img {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .perfilDoctor h2,
+    .perfil h2 {
+        margin-top: 0 !important;
+        font-size: 15px !important;
+    }
+
+    nav {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 6px !important;
+        margin-top: 0 !important;
+    }
+
+    nav a span {
+        display: none;
+    }
+
+    main {
+        padding: 16px !important;
+    }
+
+    header {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    header h1 {
+        font-size: 24px !important;
+    }
+
+    .fila {
+        flex-direction: column;
+    }
+
+    .agenda {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard {
+        grid-template-columns: 1fr !important;
+    }
+
+    .scan-panel input {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 520px) {
+    .stats .card,
+    .tarjeta {
+        width: 100%;
+    }
+
+    .modal .ventana {
+        padding: 20px 16px;
+    }
+}
