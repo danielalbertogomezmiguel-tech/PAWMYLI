@@ -6,6 +6,7 @@
     <title>Pacientes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="../css/modals.css">
+    <link rel="stylesheet" href="../css/toast.css">
     <link rel="stylesheet" href="../css/responsive.css">
     <link rel="stylesheet" href="paciente.css">
 </head>
@@ -17,7 +18,7 @@
 
         <div>
             <div class="perfil">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
                 <h2>Usuario</h2>
             </div>
 
@@ -48,14 +49,32 @@
         <header>
             <h1>Pacientes</h1>
             <div class="header-actions">
-                <button id="vincularCodigo" class="nuevo" style="display:none;">
-                    <i class="fa-solid fa-link"></i> Vincular por código
+                <button id="btnMigrarCodigos" class="nuevo" type="button" title="Migrar códigos a formato seguro">
+                    <i class="fa-solid fa-print"></i> Reimprimir códigos
+                </button>
+                <button id="vincularCodigo" class="nuevo btn-vinculaciones" type="button" style="display:none;">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="vincularCodigoLabel">Vinculaciones</span>
+                    <span id="badgePendientes" class="badge-pendientes" hidden>0</span>
+                </button>
+                <button id="btnSolicitarVinculo" class="nuevo" type="button" style="display:none;">
+                    <i class="fa-solid fa-link"></i> Solicitar vinculación
                 </button>
                 <button id="nuevoPaciente" class="nuevo">
                     <i class="fa-solid fa-plus"></i> Registrar Mascota
                 </button>
             </div>
         </header>
+
+        <section id="panelVinculaciones" class="panel-vinculaciones" hidden>
+            <div class="panel-vinculaciones-head">
+                <h2><i class="fa-solid fa-link"></i> Vinculaciones pendientes</h2>
+                <button type="button" id="cerrarPanelVinculaciones" class="btn-cerrar-panel" aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="contenedorVinculaciones" class="vinculaciones-lista"></div>
+        </section>
 
         <section class="busqueda">
             <div class="input">
@@ -65,18 +84,16 @@
             <button class="qr" type="button" title="Ingresar o escanear código">
                 <i class="fa-solid fa-barcode"></i>
             </button>
-        </section>
-
-        <section class="scan-panel">
-            <label for="scanHidInput"><i class="fa-solid fa-barcode"></i> Lector USB (Motorola LS1203)</label>
+            <!-- HID wedge: visually hidden but focusable for LS1203 -->
             <input
                 type="text"
                 id="scanHidInput"
+                class="scan-hid-compact"
                 data-barcode-target="1"
                 autocomplete="off"
                 spellcheck="false"
-                placeholder="Haz clic aquí y escanea el código de barras">
-            <p>El lector debe estar en modo teclado (HID). Al escanear se abre el expediente automáticamente.</p>
+                aria-label="Lector USB de código de barras"
+                tabindex="-1">
         </section>
 
         <section class="lista">
@@ -150,6 +167,111 @@
                     <input type="file" id="foto">
                 </div>
             </div>
+
+            <h3 class="form-seccion">Dieta (opcional)</h3>
+            <div class="fila">
+                <div>
+                    <label>Cantidad recomendada</label>
+                    <input type="text" id="dietaCantidad" placeholder="Ej: 250 g/día">
+                </div>
+                <div>
+                    <label>Comidas/día</label>
+                    <input type="number" id="dietaComidasDia" min="1" max="6" value="2">
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Alimentos permitidos</label>
+                    <input type="text" id="dietaPermitidos" placeholder="Ej: croquetas, pollo">
+                </div>
+                <div>
+                    <label>Alimentos prohibidos</label>
+                    <input type="text" id="dietaProhibidos" placeholder="Ej: chocolate, uvas">
+                </div>
+            </div>
+            <p class="form-hint">Hasta 3 comidas (etiqueta, hora, cantidad, alimento)</p>
+            <div id="mealRows">
+                <div class="fila meal-row" data-meal="0">
+                    <div>
+                        <label>Comida 1</label>
+                        <input type="text" class="meal-label" placeholder="Desayuno">
+                    </div>
+                    <div>
+                        <label>Hora</label>
+                        <input type="time" class="meal-time" value="08:00">
+                    </div>
+                    <div>
+                        <label>Cantidad</label>
+                        <input type="text" class="meal-amount" placeholder="120 g">
+                    </div>
+                    <div>
+                        <label>Alimento</label>
+                        <input type="text" class="meal-food" placeholder="Croqueta">
+                    </div>
+                </div>
+                <div class="fila meal-row" data-meal="1">
+                    <div>
+                        <label>Comida 2</label>
+                        <input type="text" class="meal-label" placeholder="Cena">
+                    </div>
+                    <div>
+                        <label>Hora</label>
+                        <input type="time" class="meal-time" value="18:00">
+                    </div>
+                    <div>
+                        <label>Cantidad</label>
+                        <input type="text" class="meal-amount" placeholder="130 g">
+                    </div>
+                    <div>
+                        <label>Alimento</label>
+                        <input type="text" class="meal-food" placeholder="Croqueta">
+                    </div>
+                </div>
+                <div class="fila meal-row" data-meal="2">
+                    <div>
+                        <label>Comida 3 (opcional)</label>
+                        <input type="text" class="meal-label" placeholder="">
+                    </div>
+                    <div>
+                        <label>Hora</label>
+                        <input type="time" class="meal-time">
+                    </div>
+                    <div>
+                        <label>Cantidad</label>
+                        <input type="text" class="meal-amount" placeholder="">
+                    </div>
+                    <div>
+                        <label>Alimento</label>
+                        <input type="text" class="meal-food" placeholder="">
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="form-seccion">Primera consulta (opcional)</h3>
+            <div class="fila">
+                <div>
+                    <label>Tipo</label>
+                    <select id="consultaTipo">
+                        <option value="GENERAL">General</option>
+                        <option value="PREVENTIVA">Preventiva</option>
+                        <option value="VACUNACION">Vacunación</option>
+                        <option value="DESPARASITACION">Desparasitación</option>
+                        <option value="ENFERMEDAD">Enfermedad</option>
+                        <option value="TRAUMATOLOGIA">Traumatología</option>
+                        <option value="REPRODUCTIVA">Reproductiva</option>
+                        <option value="SEGUIMIENTO">Seguimiento</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Motivo</label>
+                    <input type="text" id="consultaMotivo" placeholder="Ej: Chequeo inicial">
+                </div>
+            </div>
+            <label>Diagnóstico</label>
+            <textarea id="consultaDiagnostico" rows="2" placeholder="Opcional"></textarea>
+            <label>Tratamiento</label>
+            <textarea id="consultaTratamiento" rows="2" placeholder="Opcional"></textarea>
+
             <button class="guardar">Guardar Paciente</button>
         </form>
     </div>
@@ -171,6 +293,7 @@
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/toast.js"></script>
 <script src="../js/code-modal.js"></script>
 <script src="../js/barcode-local.js"></script>
 <script src="../js/barcode-hid.js"></script>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer contraseña — PawMily</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="logo"><i class="fa-solid fa-paw"></i></div>
+        <h1>Restablecer contraseña</h1>
+        <p class="subtitulo" id="subtitle">Te enviaremos un enlace a tu correo</p>
+        <form id="resetRequestForm">
+            <div class="input-group">
+                <label>Correo Electrónico</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="correo" placeholder="Ingrese su correo" required>
+                </div>
+            </div>
+            <button class="btn-auth" type="submit">Enviar enlace</button>
+        </form>
+        <form id="resetConfirmForm" style="display:none">
+            <div class="input-group">
+                <label>Nueva contraseña</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="password" minlength="6" required>
+                </div>
+            </div>
+            <button class="btn-auth" type="submit">Guardar contraseña</button>
+        </form>
+        <p class="auth-link"><a href="login.html">Volver al inicio de sesión</a></p>
+    </div>
+</div>
+<script src="../js/env.js"></script>
+<script src="../js/config.js"></script>
+<script src="../js/api.js"></script>
+<script>
+(function () {
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token");
+    const requestForm = document.getElementById("resetRequestForm");
+    const confirmForm = document.getElementById("resetConfirmForm");
+    if (token) {
+        requestForm.style.display = "none";
+        confirmForm.style.display = "block";
+        document.getElementById("subtitle").textContent = "Elige una nueva contraseña";
+        confirmForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                await PawApi.api.confirmPasswordReset(token, document.getElementById("password").value);
+                alert("Contraseña actualizada. Ya puedes iniciar sesión.");
+                location.href = "login.html";
+            } catch (err) {
+                alert(err.message || "No se pudo restablecer.");
+            }
+        });
+    } else {
+        requestForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                await PawApi.api.requestPasswordReset(document.getElementById("correo").value.trim());
+                alert("Si el correo existe, enviamos un enlace de restablecimiento.");
+            } catch (err) {
+                alert(err.message || "No se pudo enviar el correo.");
+            }
+        });
+    }
+})();
+</script>
+</body>
+</html>

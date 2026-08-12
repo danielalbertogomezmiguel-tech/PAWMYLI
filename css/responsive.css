@@ -80,8 +80,14 @@
         grid-template-columns: 1fr !important;
     }
 
-    .scan-panel input {
-        font-size: 16px;
+    .vinculo-acciones {
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .btn-aceptar,
+    .btn-rechazar {
+        flex: 1;
     }
 }
 

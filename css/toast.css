@@ -1,0 +1,157 @@
+/* PawToast — integrado con paleta PawMily (#2c5f5a, #8fc3a7, #e8556d) */
+
+.paw-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: min(380px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.paw-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(30, 68, 64, 0.16);
+    border-left: 4px solid #8fc3a7;
+    animation: pawToastIn 0.28s ease forwards;
+}
+
+.paw-toast-out {
+    animation: pawToastOut 0.28s ease forwards;
+}
+
+.paw-toast--success {
+    border-left-color: #6dab8a;
+}
+
+.paw-toast--error {
+    border-left-color: #e8556d;
+}
+
+.paw-toast--warning {
+    border-left-color: #d4a017;
+}
+
+.paw-toast--info {
+    border-left-color: #2c5f5a;
+}
+
+.paw-toast-icon {
+    font-size: 1.25rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.paw-toast--success .paw-toast-icon {
+    color: #2c5f5a;
+}
+
+.paw-toast--error .paw-toast-icon {
+    color: #e8556d;
+}
+
+.paw-toast--warning .paw-toast-icon {
+    color: #b8860b;
+}
+
+.paw-toast--info .paw-toast-icon {
+    color: #2c5f5a;
+}
+
+.paw-toast-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.paw-toast-title {
+    display: block;
+    font-size: 0.95rem;
+    color: #1e4440;
+    margin-bottom: 2px;
+}
+
+.paw-toast-message {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #5f7383;
+    line-height: 1.35;
+}
+
+.paw-toast-close {
+    border: none;
+    background: transparent;
+    color: #8a9aa8;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 6px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.paw-toast-close:hover {
+    background: #eef2f5;
+    color: #1e4440;
+}
+
+@keyframes pawToastIn {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pawToastOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+}
+
+@media (max-width: 640px) {
+    .paw-toast-container {
+        top: auto;
+        bottom: 16px;
+        left: 16px;
+        right: 16px;
+        max-width: none;
+    }
+
+    @keyframes pawToastIn {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pawToastOut {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+    }
+}

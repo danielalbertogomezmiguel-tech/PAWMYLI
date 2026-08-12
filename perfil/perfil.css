@@ -212,6 +212,88 @@ header h1 {
     font-weight: 700;
 }
 
+.badge-link {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.badge-link.link-linked {
+    background: #d4f7dd;
+    color: #18794e;
+}
+
+.badge-link.link-unlinked {
+    background: #eef2f5;
+    color: #5f7383;
+}
+
+.badge-link.link-pending {
+    background: #fff3cd;
+    color: #9a6a00;
+}
+
+.lista-comidas .comida-item {
+    background: #fff;
+    border: 1px solid #e2e8ee;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #1e4440;
+}
+
+.lista-comidas .comida-item strong {
+    color: #2c5f5a;
+}
+
+.lista-logs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-logs li {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8ee;
+    font-size: 14px;
+    color: #1e4440;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lista-logs li:last-child {
+    border-bottom: none;
+}
+
+.log-status {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.log-status.eaten {
+    background: #d4f7dd;
+    color: #18794e;
+}
+
+.log-status.pending {
+    background: #fff3cd;
+    color: #9a6a00;
+}
+
+.log-status.unlogged {
+    background: #eef2f5;
+    color: #5f7383;
+}
+
 .editar {
     border: none;
     background: #eef2f5;

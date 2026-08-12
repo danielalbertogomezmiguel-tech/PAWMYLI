@@ -28,6 +28,95 @@ function barcodeUrl(code) {
     );
 }
 
+function linkStatusLabel(status) {
+    const map = {
+        LINKED: "Vinculado",
+        UNLINKED: "Sin vincular",
+        PENDING: "Pendiente",
+    };
+    return map[status] || status || "—";
+}
+
+function linkStatusClass(status) {
+    const map = {
+        LINKED: "link-linked",
+        UNLINKED: "link-unlinked",
+        PENDING: "link-pending",
+    };
+    return map[status] || "link-unlinked";
+}
+
+function consultationTypeLabel(type) {
+    const map = {
+        GENERAL: "General",
+        PREVENTIVA: "Preventiva",
+        VACUNACION: "Vacunación",
+        DESPARASITACION: "Desparasitación",
+        ENFERMEDAD: "Enfermedad",
+        TRAUMATOLOGIA: "Traumatología",
+        REPRODUCTIVA: "Reproductiva",
+        SEGUIMIENTO: "Seguimiento",
+    };
+    return map[type] || type || "—";
+}
+
+function pintarComidas(feeding) {
+    const box = document.getElementById("listaComidas");
+    if (!box) return;
+    box.innerHTML = "";
+    const meals = feeding && Array.isArray(feeding.meals) ? feeding.meals : [];
+    if (!meals.length) {
+        if (isOwner) {
+            box.innerHTML = "<p style='color:#8a9aa8;font-size:14px;'>Sin comidas programadas</p>";
+        }
+        return;
+    }
+    meals.forEach((m) => {
+        const parts = [m.time, m.amount, m.food].filter(Boolean).join(" · ");
+        box.innerHTML += `<div class="comida-item"><strong>${m.label || "Comida"}</strong>${
+            parts ? " — " + parts : ""
+        }</div>`;
+    });
+}
+
+function feedingLogStatusClass(status) {
+    if (status === "EATEN") return "eaten";
+    if (status === "PENDING") return "pending";
+    return "unlogged";
+}
+
+function feedingLogStatusLabel(status) {
+    if (status === "EATEN") return "Comido";
+    if (status === "PENDING") return "Pendiente";
+    return "Sin registro";
+}
+
+async function cargarFeedingLogs() {
+    const lista = document.getElementById("listaFeedingLogs");
+    if (!lista || !pacienteId) return;
+    lista.innerHTML = "<li>Cargando registros...</li>";
+    try {
+        const logs = await PawApi.api.listFeedingLogs(pacienteId);
+        const items = Array.isArray(logs) ? logs : logs?.data || [];
+        if (!items.length) {
+            lista.innerHTML = "<li>Sin registros de alimentación</li>";
+            return;
+        }
+        lista.innerHTML = "";
+        items.forEach((log) => {
+            const mealLabel = (log.meal && (log.meal.label || log.meal.time)) || log.mealId || "Comida";
+            const date = log.scheduledDate || "—";
+            const status = log.status || "UNLOGGED";
+            lista.innerHTML += `<li>
+                <span><strong>${date}</strong> · ${mealLabel}</span>
+                <span class="log-status ${feedingLogStatusClass(status)}">${feedingLogStatusLabel(status)}</span>
+            </li>`;
+        });
+    } catch (_) {
+        lista.innerHTML = "<li>No se pudieron cargar los registros</li>";
+    }
+}
+
 function cargarPerfil() {
     if (!paciente) {
         document.querySelector(".perfilMascota").innerHTML =
@@ -36,7 +125,15 @@ function cargarPerfil() {
     }
 
     document.getElementById("fotoPaciente").src = paciente.foto || DEFAULT_FOTO;
-    document.getElementById("nombrePaciente").textContent = paciente.nombre;
+    document.getElementById("nombrePaciente").textContent = paciente.nombre || "";
+    const badge = document.getElementById("badgeLinkStatus");
+    if (badge) {
+        const status = paciente.linkStatus || "UNLINKED";
+        badge.hidden = false;
+        badge.textContent = linkStatusLabel(status);
+        badge.className = "badge-link " + linkStatusClass(status);
+        badge.title = status;
+    }
     document.getElementById("especie").textContent = paciente.especie;
     document.getElementById("raza").textContent = paciente.raza;
     document.getElementById("edad").textContent = paciente.edad;
@@ -58,15 +155,33 @@ function cargarPerfil() {
 
     const listaAlim = document.getElementById("listaAlimentacion");
     listaAlim.innerHTML = "";
-    if (paciente.alimentacion && paciente.alimentacion.length) {
+    const feeding = paciente.feeding;
+    if (isOwner && feeding) {
+        const ownerLines = [
+            feeding.recommendedAmount ? "Cantidad: " + feeding.recommendedAmount : null,
+            feeding.mealsPerDay != null ? "Comidas/día: " + feeding.mealsPerDay : null,
+            feeding.allowedFoods ? "Permitidos: " + feeding.allowedFoods : null,
+            feeding.forbiddenFoods ? "Prohibidos: " + feeding.forbiddenFoods : null,
+            feeding.vetNotes || feeding.specialInstructions
+                ? "Notas: " + (feeding.vetNotes || feeding.specialInstructions)
+                : null,
+        ].filter(Boolean);
+        if (ownerLines.length) {
+            ownerLines.forEach((item) => {
+                listaAlim.innerHTML += `<li>${item}</li>`;
+            });
+        } else {
+            listaAlim.innerHTML = "<li>Sin información</li>";
+        }
+    } else if (paciente.alimentacion && paciente.alimentacion.length) {
         paciente.alimentacion.forEach((item) => {
             listaAlim.innerHTML += `<li>${item}</li>`;
         });
     } else {
         listaAlim.innerHTML = "<li>Sin información</li>";
     }
+    pintarComidas(feeding);
 
-    const feeding = paciente.feeding;
     if (feeding) {
         document.getElementById("dietaPeso").value = feeding.weightKg ?? "";
         document.getElementById("dietaComidas").value = feeding.mealsPerDay ?? 2;
@@ -91,16 +206,20 @@ function cargarPerfil() {
                 default:
                     clase = "cancelada";
             }
+            const num = item.consultationNumber || "—";
+            const tipo = consultationTypeLabel(item.type);
             tabla.innerHTML += `
             <tr>
+                <td>${num}</td>
                 <td>${item.fecha}</td>
-                <td>${item.motivo}</td>
-                <td>${item.veterinario}</td>
+                <td>${tipo}</td>
+                <td>${item.motivo || "—"}</td>
+                <td>${item.veterinario || "—"}</td>
                 <td><span class="estado ${clase}">${item.estado}</span></td>
             </tr>`;
         });
     } else {
-        tabla.innerHTML = `<tr><td colspan="4">Sin historial médico</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="6">Sin historial médico</td></tr>`;
     }
 
     if (isOwner) {
@@ -121,7 +240,11 @@ function cargarPerfil() {
 async function refrescarPaciente() {
     const data = await PawApi.api.getPatient(pacienteId);
     paciente = PawApi.mapPatient(data);
+    if (PawApi.enrichPatientPhoto) {
+        paciente = await PawApi.enrichPatientPhoto(paciente);
+    }
     cargarPerfil();
+    cargarFeedingLogs().catch(() => {});
 }
 
 document.querySelector(".volver").addEventListener("click", () => {
@@ -204,6 +327,8 @@ document.getElementById("btnNuevaConsulta").addEventListener("click", () => {
     if (isOwner) return;
     document.getElementById("consultaFecha").value = new Date().toISOString().split("T")[0];
     if (user?.name) document.getElementById("consultaVet").value = user.name;
+    const numEl = document.getElementById("consultaNumero");
+    if (numEl) numEl.value = "";
     modalConsulta.classList.add("activo");
 });
 
@@ -219,6 +344,7 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
     e.preventDefault();
     const body = {
         date: document.getElementById("consultaFecha").value,
+        type: document.getElementById("consultaTipo").value || "GENERAL",
         reason: document.getElementById("consultaMotivo").value.trim(),
         vetName: document.getElementById("consultaVet").value.trim(),
         status: document.getElementById("consultaEstado").value,
@@ -235,11 +361,18 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
     };
 
     try {
-        await PawApi.api.addMedicalRecord(pacienteId, body);
+        const created = await PawApi.api.addMedicalRecord(pacienteId, body);
+        if (created && created.consultationNumber) {
+            document.getElementById("consultaNumero").value = created.consultationNumber;
+        }
         await refrescarPaciente();
         this.reset();
         modalConsulta.classList.remove("activo");
-        alert("Consulta registrada correctamente.");
+        alert(
+            created && created.consultationNumber
+                ? "Consulta registrada: " + created.consultationNumber
+                : "Consulta registrada correctamente."
+        );
     } catch (err) {
         alert(err.message || "No se pudo registrar la consulta.");
     }

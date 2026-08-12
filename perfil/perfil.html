@@ -17,7 +17,7 @@
 
         <div>
             <div class="perfilDoctor">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
                 <h2>Usuario</h2>
             </div>
 
@@ -55,13 +55,16 @@
         <section class="perfilMascota">
 
             <div class="foto">
-                <img id="fotoPaciente" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616408.png'">
+                <img id="fotoPaciente" src="../assets/placeholder-pet.svg" onerror="this.src='../assets/placeholder-pet.svg'">
             </div>
 
             <div class="informacion">
 
                 <div class="encabezado">
-                    <h2 id="nombrePaciente">Nombre</h2>
+                    <h2>
+                        <span id="nombrePaciente">Nombre</span>
+                        <span id="badgeLinkStatus" class="badge-link link-unlinked" hidden></span>
+                    </h2>
                     <button class="editar">
                         <i class="fa-solid fa-pen"></i> Editar
                     </button>
@@ -131,6 +134,7 @@
             </div>
             <div class="contenido">
                 <ul id="listaAlimentacion"></ul>
+                <div id="listaComidas" class="lista-comidas" style="margin-top:12px;"></div>
                 <form id="formDieta" style="margin-top:16px;">
                     <div class="fila">
                         <div>
@@ -162,6 +166,15 @@
             </div>
         </section>
 
+        <section class="panel" id="panelCalendarioAlimentacion">
+            <div class="tituloPanel">
+                <h2>Calendario de alimentación</h2>
+            </div>
+            <div class="contenido">
+                <ul id="listaFeedingLogs" class="lista-logs"></ul>
+            </div>
+        </section>
+
         <section class="panel">
             <div class="tituloPanel">
                 <h2>Historial Médico</h2>
@@ -170,7 +183,9 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Nº</th>
                         <th>Fecha</th>
+                        <th>Tipo</th>
                         <th>Motivo</th>
                         <th>Veterinario</th>
                         <th>Estado</th>
@@ -197,14 +212,23 @@
                     <input type="date" id="consultaFecha" required>
                 </div>
                 <div>
-                    <label>Veterinario</label>
-                    <input type="text" id="consultaVet" value="" placeholder="Nombre del veterinario">
+                    <label>Tipo</label>
+                    <select id="consultaTipo">
+                        <option value="GENERAL">General</option>
+                        <option value="PREVENTIVA">Preventiva</option>
+                        <option value="VACUNACION">Vacunación</option>
+                        <option value="DESPARASITACION">Desparasitación</option>
+                        <option value="ENFERMEDAD">Enfermedad</option>
+                        <option value="TRAUMATOLOGIA">Traumatología</option>
+                        <option value="REPRODUCTIVA">Reproductiva</option>
+                        <option value="SEGUIMIENTO">Seguimiento</option>
+                    </select>
                 </div>
             </div>
             <div class="fila">
                 <div>
-                    <label>Motivo</label>
-                    <input type="text" id="consultaMotivo" placeholder="Ej: Vacunación" required>
+                    <label>Veterinario</label>
+                    <input type="text" id="consultaVet" value="" placeholder="Nombre del veterinario">
                 </div>
                 <div>
                     <label>Estado</label>
@@ -213,6 +237,16 @@
                         <option>Finalizada</option>
                         <option>Cancelada</option>
                     </select>
+                </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Motivo</label>
+                    <input type="text" id="consultaMotivo" placeholder="Ej: Vacunación" required>
+                </div>
+                <div>
+                    <label>Nº consulta</label>
+                    <input type="text" id="consultaNumero" readonly placeholder="Se asigna al guardar">
                 </div>
             </div>
             <div class="fila">
