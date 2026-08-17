@@ -540,8 +540,13 @@ function collectCreateMeals() {
     return meals;
 }
 
+let creatingPatient = false;
+
 formulario.addEventListener("submit", async function (e) {
     e.preventDefault();
+    if (creatingPatient) return;
+
+    const submitBtn = formulario.querySelector("button.guardar, button[type='submit']");
     const edadVal = document.getElementById("edad").value;
     const pesoVal = document.getElementById("peso").value.trim();
     const fotoInput = document.getElementById("foto");
@@ -590,6 +595,16 @@ formulario.addEventListener("submit", async function (e) {
         };
     }
 
+    creatingPatient = true;
+    const originalLabel = submitBtn ? submitBtn.textContent : "";
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creando perfil...";
+    }
+    const idempotencyKey =
+        (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+        "idemp-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+
     try {
         if (file) {
             if (file.size > 1.5 * 1024 * 1024) {
@@ -598,7 +613,7 @@ formulario.addEventListener("submit", async function (e) {
             }
             body.photo = await readFotoAsDataUrl(file);
         }
-        const created = await PawApi.api.createPatient(body);
+        const created = await PawApi.api.createPatient(body, { idempotencyKey: idempotencyKey });
         formulario.reset();
         modal.classList.remove("activo");
         await cargarPacientes(buscar.value.trim());
@@ -606,6 +621,12 @@ formulario.addEventListener("submit", async function (e) {
         toast("success", "Paciente registrado");
     } catch (err) {
         toast("error", "No se pudo registrar", friendlyError(err));
+    } finally {
+        creatingPatient = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel || "Guardar Paciente";
+        }
     }
 });
 

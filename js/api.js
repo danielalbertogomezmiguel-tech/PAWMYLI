@@ -267,7 +267,18 @@
             return request("/patients?" + q.toString());
         },
         getPatient: (id) => request("/patients/" + encodeURIComponent(id)),
-        createPatient: (body) => request("/patients", { method: "POST", body: JSON.stringify(body) }),
+        createPatient: (body, opts) => {
+            const key =
+                (opts && opts.idempotencyKey) ||
+                (global.crypto && global.crypto.randomUUID
+                    ? global.crypto.randomUUID()
+                    : "idemp-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+            return request("/patients", {
+                method: "POST",
+                body: JSON.stringify(body),
+                headers: { "Idempotency-Key": key },
+            });
+        },
         updatePatient: (id, body) =>
             request("/patients/" + encodeURIComponent(id), { method: "PUT", body: JSON.stringify(body) }),
         listMedicalRecords: (id) => request("/patients/" + encodeURIComponent(id) + "/medical-records"),

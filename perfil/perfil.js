@@ -558,8 +558,11 @@ window.addEventListener("click", (e) => {
     if (e.target === modal) modal.classList.remove("activo");
 });
 
+let updatingPaciente = false;
+
 document.getElementById("formEditar").addEventListener("submit", async function (e) {
     e.preventDefault();
+    if (updatingPaciente) return;
     const body = {
         name: document.getElementById("editNombre").value.trim(),
         species: document.getElementById("editEspecie").value.trim(),
@@ -577,6 +580,13 @@ document.getElementById("formEditar").addEventListener("submit", async function 
         photo: paciente.foto,
     };
 
+    const submitBtn = this.querySelector("button[type='submit'], button.guardar");
+    const originalLabel = submitBtn ? submitBtn.textContent : "";
+    updatingPaciente = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Guardando...";
+    }
     try {
         await PawApi.api.updatePatient(pacienteId, body);
         await refrescarPaciente();
@@ -584,6 +594,12 @@ document.getElementById("formEditar").addEventListener("submit", async function 
         alert("Paciente actualizado correctamente.");
     } catch (err) {
         alert(err.message || "No se pudo actualizar.");
+    } finally {
+        updatingPaciente = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel || "Guardar Cambios";
+        }
     }
 });
 
@@ -645,8 +661,11 @@ document.getElementById("historial").addEventListener("click", (e) => {
     if (item) mostrarDetalleConsulta(item);
 });
 
+let creatingConsulta = false;
+
 document.getElementById("formConsulta").addEventListener("submit", async function (e) {
     e.preventDefault();
+    if (creatingConsulta) return;
     const type = document.getElementById("consultaTipo").value || "GENERAL";
     const typePayload = collectTypePayload(type);
     const body = {
@@ -685,6 +704,13 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
     if (typePayload.results) body.results = typePayload.results;
     if (typePayload.notes) body.notes = typePayload.notes;
 
+    const submitBtn = this.querySelector("button[type='submit'], button.guardar");
+    const originalLabel = submitBtn ? submitBtn.textContent : "";
+    creatingConsulta = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Guardando...";
+    }
     try {
         const created = await PawApi.api.addMedicalRecord(pacienteId, body);
         if (created && created.consultationNumber) {
@@ -701,6 +727,12 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
         );
     } catch (err) {
         alert(err.message || "No se pudo registrar la consulta.");
+    } finally {
+        creatingConsulta = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel || "Guardar Consulta";
+        }
     }
 });
 

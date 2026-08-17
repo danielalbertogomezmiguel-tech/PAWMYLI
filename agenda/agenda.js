@@ -185,8 +185,11 @@ btnSiguiente.onclick = async () => {
     await cargarMes();
 };
 
+let creatingCita = false;
+
 document.getElementById("formCita").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (creatingCita) return;
     const patientId = pacienteSelect.value || undefined;
     const body = {
         petName: document.getElementById("nombreMascota").value.trim(),
@@ -197,6 +200,13 @@ document.getElementById("formCita").addEventListener("submit", async (e) => {
         patientId,
     };
 
+    const submitBtn = e.target.querySelector("button[type='submit'], button.guardar");
+    const originalLabel = submitBtn ? submitBtn.textContent : "";
+    creatingCita = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Guardando...";
+    }
     try {
         await PawApi.api.createAppointment(body);
         alert(
@@ -214,6 +224,12 @@ document.getElementById("formCita").addEventListener("submit", async (e) => {
         await cargarMes();
     } catch (err) {
         alert(err.message || "No se pudo registrar la cita.");
+    } finally {
+        creatingCita = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel || "Confirmar cita";
+        }
     }
 });
 
