@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Clínica</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../css/modals.css">
+    <link rel="stylesheet" href="../css/responsive.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,8 +17,8 @@
 
         <div>
             <div class="perfilDoctor">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
-                <h2>Dr. Daniel Ozuna</h2>
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
+                <h2>Usuario</h2>
             </div>
 
             <nav>
@@ -39,11 +41,6 @@
             </nav>
         </div>
 
-        <button class="cerrar" onclick="cerrarSesion()">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            Cerrar Sesión
-        </button>
-
     </aside>
 
     <main>
@@ -59,27 +56,23 @@
                 <h2>Stats Generales</h2>
 
                 <div class="card">
-                    <div class="circulo">3</div>
-                    <p>Pacientes Hoy</p>
+                    <div class="circulo">—</div>
+                    <p>Citas Hoy</p>
                 </div>
 
                 <div class="card">
-                    <div class="circulo">7</div>
+                    <div class="circulo">—</div>
                     <p>Consultas Semana</p>
                 </div>
 
                 <div class="card">
-                    <div class="circulo">1</div>
+                    <div class="circulo">—</div>
                     <p>Recordatorios Pendientes</p>
                 </div>
 
             </div>
 
             <div class="right">
-
-                <button class="scan">
-                    <i class="fa-solid fa-camera"></i> Escanear Código
-                </button>
 
                 <div class="panel">
                     <div class="contenido">

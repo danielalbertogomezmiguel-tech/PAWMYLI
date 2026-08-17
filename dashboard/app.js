@@ -3,13 +3,7 @@ if (!PawApi.requireAuth()) {
 }
 
 function pintarSidebar() {
-    const user = PawApi.getUser();
-    const title = document.querySelector(".perfilDoctor h2");
-    if (user && title) title.textContent = user.name;
-    if (user?.photo) {
-        const img = document.querySelector(".perfilDoctor img");
-        if (img) img.src = user.photo;
-    }
+    PawApi.applySidebar();
 }
 
 function hoyISO() {
@@ -86,23 +80,8 @@ async function cargarDashboard() {
     if (cards[2]) cards[2].textContent = String(citasReminder.length + vencidos.length);
 }
 
-document.querySelector(".scan").addEventListener("click", () => {
-    const code = prompt("Ingresa el código del paciente (PAW-XXXXXX):");
-    if (!code) return;
-    PawApi.api
-        .get("/patients/code/" + encodeURIComponent(code.trim()))
-        .then((patient) => {
-            localStorage.setItem("pacienteID", patient.id);
-            window.location.href = "../perfil/perfil.html";
-        })
-        .catch((err) => alert(err.message || "Paciente no encontrado."));
-});
-
-function cerrarSesion() {
-    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
-}
-
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 cargarDashboard().catch((err) => {
     document.getElementById("listaConsultas").innerHTML = `<li>${err.message}</li>`;
     document.getElementById("listaRecordatorios").innerHTML = `<li>${err.message}</li>`;

@@ -68,7 +68,7 @@ if (registroForm) {
                 address: direccion,
                 license: licencia,
             });
-            PawApi.setSession(result.accessToken, result.user);
+            PawApi.setSession(result.accessToken, result.user, result.refreshToken);
             alert("Registro exitoso. Bienvenido " + result.user.name);
             window.location.href = "../dashboard/index.html";
         } catch (err) {
@@ -95,7 +95,7 @@ if (loginForm) {
 
         try {
             const result = await PawApi.api.login({ email: correo, password });
-            PawApi.setSession(result.accessToken, result.user);
+            PawApi.setSession(result.accessToken, result.user, result.refreshToken);
 
             if (document.getElementById("recordar")?.checked) {
                 localStorage.setItem("recordarSesion", "true");

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="../css/toast.css">
     <link rel="stylesheet" href="configuracion.css">
 </head>
 <body>
@@ -15,8 +17,8 @@
 
         <div>
             <div class="perfilDoctor">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
-                <h2>Dr. Daniel Ozuna</h2>
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
+                <h2>Usuario</h2>
             </div>
 
             <nav>
@@ -39,11 +41,6 @@
             </nav>
         </div>
 
-        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            Cerrar Sesión
-        </button>
-
     </aside>
 
     <main>
@@ -58,7 +55,7 @@
                 <h2><i class="fa-solid fa-user-md"></i> Mi Perfil</h2>
 
                 <div class="fotoPerfil">
-                    <img id="fotoUsuario" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+                    <img id="fotoUsuario" src="../assets/placeholder-user.svg">
                     <label class="cambiarFoto">
                         <i class="fa-solid fa-camera"></i> Cambiar Foto
                         <input type="file" id="foto" hidden>
@@ -87,6 +84,9 @@
                 </div>
 
                 <button id="guardarPerfil"><i class="fa-solid fa-floppy-disk"></i> Guardar Perfil</button>
+                <button type="button" id="cerrarSesionPerfil" class="btn-logout-perfil">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                </button>
             </div>
 
             <div class="card">
@@ -147,13 +147,6 @@
                         <option>MM/DD/AAAA</option>
                     </select>
                 </div>
-                <div class="grupo">
-                    <label>Tema</label>
-                    <select id="tema">
-                        <option>Claro</option>
-                        <option>Oscuro</option>
-                    </select>
-                </div>
                 <div class="grupo check">
                     <input type="checkbox" id="notificaciones">
                     <label for="notificaciones">Notificaciones</label>
@@ -174,6 +167,7 @@
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/toast.js"></script>
 <script src="configuracion.js"></script>
 
 </body>
