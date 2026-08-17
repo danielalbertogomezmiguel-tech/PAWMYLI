@@ -96,8 +96,8 @@ function roleLabel(role) {
 
 function linkStatusLabel(status) {
     const map = {
-        LINKED: "Vinculado",
-        UNLINKED: "Sin vincular",
+        LINKED: "Vinculada",
+        UNLINKED: "Desvinculada",
         PENDING: "Pendiente",
     };
     return map[status] || status || "—";
@@ -201,14 +201,23 @@ async function cargarPacientes(search) {
             )
         );
         const filtro = (search || "").toLowerCase();
-        const lista =
+        let lista =
             isOwner && filtro
                 ? pacientes.filter(
                       (p) =>
                           p.nombre.toLowerCase().includes(filtro) ||
                           (p.codigo || "").toLowerCase().includes(filtro)
                   )
-                : pacientes;
+                : pacientes.slice();
+        // Desvinculadas primero, luego pendientes, luego vinculadas (orden estable dentro).
+        const rank = (s) =>
+            s === "UNLINKED" ? 0 : s === "PENDING" ? 1 : s === "LINKED" ? 2 : 3;
+        lista = lista.slice().sort((a, b) => {
+            const ra = rank(a.linkStatus || "UNLINKED");
+            const rb = rank(b.linkStatus || "UNLINKED");
+            if (ra !== rb) return ra - rb;
+            return 0;
+        });
         mostrarPacientes(lista);
     } catch (err) {
         mostrarEstadoPacientes(

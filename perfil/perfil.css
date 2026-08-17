@@ -294,6 +294,27 @@ header h1 {
     color: #5f7383;
 }
 
+.encabezado-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-desvincular {
+    background: transparent;
+    border: 1px solid #e8556d;
+    color: #e8556d;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-desvincular:hover {
+    background: rgba(232, 85, 109, 0.08);
+}
+
 .editar {
     border: none;
     background: #eef2f5;
@@ -656,6 +677,151 @@ select:focus {
     background: #1e4440;
 }
 
+/* ─── Consulta tipada ─── */
+
+.ventana-consulta {
+    width: 720px;
+}
+
+.consulta-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e4ecea;
+}
+
+.consulta-meta > div {
+    flex: 1;
+}
+
+.dato-readonly label {
+    margin-bottom: 6px;
+}
+
+.dato-readonly span {
+    display: block;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 2px solid #e4ecea;
+    background: #f3f6f7;
+    color: #2c5f5a;
+    font-weight: 600;
+}
+
+.consulta-seccion,
+.consulta-tipo-seccion {
+    border: 1px solid #dce8e5;
+    border-radius: 12px;
+    padding: 16px 16px 8px;
+    margin: 0 0 18px;
+    background: #f9fbfb;
+}
+
+.consulta-seccion legend,
+.consulta-tipo-seccion legend {
+    padding: 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #2c5f5a;
+}
+
+.label-hint {
+    font-weight: 500;
+    color: #8a9aa8;
+    font-size: 13px;
+}
+
+.modal .ventana textarea,
+.ventana textarea {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 2px solid #dce3ea;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fafbfc;
+    resize: vertical;
+    margin-bottom: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.modal .ventana textarea:focus,
+.ventana textarea:focus {
+    border-color: #8fc3a7;
+}
+
+.consulta-seccion > label,
+.consulta-tipo-seccion > label {
+    margin-top: 4px;
+}
+
+.cerrarModalConsulta,
+.cerrarModalDetalle {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    border: none;
+    background: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #8a9aa8;
+    transition: color 0.2s;
+}
+
+.cerrarModalConsulta:hover,
+.cerrarModalDetalle:hover {
+    color: #e8556d;
+}
+
+.historial-fila {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.historial-fila:hover {
+    background: #eef5f3;
+}
+
+.detalle-consulta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detalle-subtitulo {
+    margin: 12px 0 4px;
+    font-size: 17px;
+    color: #2c5f5a;
+    font-weight: 700;
+}
+
+.detalle-fila {
+    display: grid;
+    grid-template-columns: minmax(140px, 38%) 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f7fafb;
+    border: 1px solid #e4ecea;
+}
+
+.detalle-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3d5a59;
+}
+
+.detalle-valor {
+    font-size: 15px;
+    color: #2a3f3e;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 /* ─── ANIMACIONES ─── */
 
 @keyframes aparecer {
@@ -830,5 +996,20 @@ select:focus {
     table {
         display: block;
         overflow-x: auto;
+    }
+
+    .consulta-meta {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .detalle-fila {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .ventana-consulta {
+        width: 100%;
+        padding: 24px 18px;
     }
 }

@@ -65,9 +65,14 @@
                         <span id="nombrePaciente">Nombre</span>
                         <span id="badgeLinkStatus" class="badge-link link-unlinked" hidden></span>
                     </h2>
-                    <button class="editar">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
+                    <div class="encabezado-acciones">
+                        <button type="button" class="btn-desvincular" id="btnDesvincular" hidden>
+                            <i class="fa-solid fa-link-slash"></i> Desvincular mascota
+                        </button>
+                        <button class="editar">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid">
@@ -200,89 +205,594 @@
 </div>
 
 <div class="modal" id="modalConsulta">
-    <div class="ventana">
-        <button class="cerrarModalConsulta">
+    <div class="ventana ventana-consulta">
+        <button type="button" class="cerrarModalConsulta" aria-label="Cerrar">
             <i class="fa-solid fa-xmark"></i>
         </button>
         <h2>Nueva Consulta</h2>
         <form id="formConsulta">
-            <div class="fila">
-                <div>
-                    <label>Fecha</label>
-                    <input type="date" id="consultaFecha" required>
-                </div>
-                <div>
-                    <label>Tipo</label>
-                    <select id="consultaTipo">
-                        <option value="GENERAL">General</option>
-                        <option value="PREVENTIVA">Preventiva</option>
-                        <option value="VACUNACION">Vacunación</option>
-                        <option value="DESPARASITACION">Desparasitación</option>
-                        <option value="ENFERMEDAD">Enfermedad</option>
-                        <option value="TRAUMATOLOGIA">Traumatología</option>
-                        <option value="REPRODUCTIVA">Reproductiva</option>
-                        <option value="SEGUIMIENTO">Seguimiento</option>
-                    </select>
-                </div>
-            </div>
-            <div class="fila">
-                <div>
-                    <label>Veterinario</label>
-                    <input type="text" id="consultaVet" value="" placeholder="Nombre del veterinario">
-                </div>
-                <div>
-                    <label>Estado</label>
-                    <select id="consultaEstado">
-                        <option>En proceso</option>
-                        <option>Finalizada</option>
-                        <option>Cancelada</option>
-                    </select>
-                </div>
-            </div>
-            <div class="fila">
-                <div>
-                    <label>Motivo</label>
-                    <input type="text" id="consultaMotivo" placeholder="Ej: Vacunación" required>
+            <div class="consulta-meta">
+                <div class="dato-readonly">
+                    <label>Paciente</label>
+                    <span id="consultaPacienteNombre">—</span>
                 </div>
                 <div>
                     <label>Nº consulta</label>
                     <input type="text" id="consultaNumero" readonly placeholder="Se asigna al guardar">
                 </div>
             </div>
-            <div class="fila">
-                <div>
-                    <label>Peso en visita</label>
-                    <input type="text" id="consultaPeso" placeholder="Ej: 10.2 kg">
+
+            <fieldset class="consulta-seccion">
+                <legend>Datos generales</legend>
+                <div class="fila">
+                    <div>
+                        <label for="consultaFecha">Fecha</label>
+                        <input type="date" id="consultaFecha" name="date" required>
+                    </div>
+                    <div>
+                        <label for="consultaHora">Hora</label>
+                        <input type="time" id="consultaHora" name="time">
+                    </div>
                 </div>
-                <div>
-                    <label>Temperatura</label>
-                    <input type="text" id="consultaTemp" placeholder="Ej: 38.5 °C">
+                <div class="fila">
+                    <div>
+                        <label for="consultaTipo">Tipo</label>
+                        <select id="consultaTipo" name="type">
+                            <option value="GENERAL">General</option>
+                            <option value="PREVENTIVA">Preventiva</option>
+                            <option value="VACUNACION">Vacunación</option>
+                            <option value="DESPARASITACION">Desparasitación</option>
+                            <option value="ENFERMEDAD">Enfermedad</option>
+                            <option value="TRAUMATOLOGIA">Traumatología</option>
+                            <option value="REPRODUCTIVA">Reproductiva</option>
+                            <option value="SEGUIMIENTO">Seguimiento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="consultaEstado">Estado</label>
+                        <select id="consultaEstado" name="status">
+                            <option>En proceso</option>
+                            <option>Finalizada</option>
+                            <option>Cancelada</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="fila">
-                <div>
-                    <label>Frecuencia cardiaca</label>
-                    <input type="text" id="consultaFC" placeholder="Ej: 90 lpm">
+                <div class="fila">
+                    <div>
+                        <label for="consultaMotivo">Motivo</label>
+                        <input type="text" id="consultaMotivo" name="reason" placeholder="Motivo de la consulta" required>
+                    </div>
+                    <div>
+                        <label for="consultaVet">Veterinario</label>
+                        <input type="text" id="consultaVet" name="vetName" list="listaVeterinarios" placeholder="Nombre del veterinario" autocomplete="name">
+                        <datalist id="listaVeterinarios"></datalist>
+                    </div>
                 </div>
-                <div>
-                    <label>Frecuencia respiratoria</label>
-                    <input type="text" id="consultaFR" placeholder="Ej: 24 rpm">
+                <div class="fila">
+                    <div>
+                        <label for="consultaPropietario">Propietario</label>
+                        <input type="text" id="consultaPropietario" name="ownerName" readonly>
+                    </div>
+                    <div>
+                        <label for="consultaPeso">Peso</label>
+                        <input type="text" id="consultaPeso" name="weight" placeholder="Ej: 10.2 kg">
+                    </div>
                 </div>
-            </div>
-            <label>Examen físico</label>
-            <textarea id="consultaExamen" rows="2" placeholder="Hallazgos del examen..."></textarea>
-            <label>Diagnóstico</label>
-            <textarea id="consultaDiagnostico" rows="2"></textarea>
-            <label>Tratamiento</label>
-            <textarea id="consultaTratamiento" rows="2"></textarea>
-            <label>Receta / prescripciones</label>
-            <textarea id="consultaReceta" rows="2"></textarea>
-            <label>Notas adicionales</label>
-            <textarea id="consultaNotas" rows="2" placeholder="Escriba notas..."></textarea>
-            <label>Fecha de seguimiento</label>
-            <input type="date" id="consultaSeguimiento">
+                <div class="fila">
+                    <div>
+                        <label for="consultaTemp">Temperatura</label>
+                        <input type="text" id="consultaTemp" name="temperature" placeholder="Ej: 38.5 °C">
+                    </div>
+                    <div>
+                        <label for="consultaFC">Frecuencia cardiaca</label>
+                        <input type="text" id="consultaFC" name="heartRate" placeholder="Ej: 90 lpm">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label for="consultaFR">Frecuencia respiratoria</label>
+                        <input type="text" id="consultaFR" name="respiratoryRate" placeholder="Ej: 24 rpm">
+                    </div>
+                    <div>
+                        <label for="consultaSeguimiento">Fecha de seguimiento</label>
+                        <input type="date" id="consultaSeguimiento" name="followUpDate">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label for="consultaSeguimientoHora">Hora de seguimiento</label>
+                        <input type="time" id="consultaSeguimientoHora" name="followUpTime">
+                    </div>
+                    <div></div>
+                </div>
+                <label for="consultaObservaciones">Observaciones</label>
+                <textarea id="consultaObservaciones" name="observations" rows="2" placeholder="Observaciones generales..."></textarea>
+                <label for="consultaNotasPrivadas">Notas privadas <span class="label-hint">(solo veterinario)</span></label>
+                <textarea id="consultaNotasPrivadas" name="privateNotes" rows="2" placeholder="Notas internas del veterinario..."></textarea>
+            </fieldset>
+
+            <!-- GENERAL -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="GENERAL" id="seccionGENERAL">
+                <legend>Consulta general</legend>
+                <label>Anamnesis</label>
+                <textarea name="anamnesis" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Hidratación</label>
+                        <input type="text" name="hydration">
+                    </div>
+                    <div>
+                        <label>Mucosas</label>
+                        <input type="text" name="mucousMembranes">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Condición corporal</label>
+                        <input type="text" name="bodyCondition">
+                    </div>
+                    <div>
+                        <label>Próximo control</label>
+                        <input type="text" name="nextControl">
+                    </div>
+                </div>
+                <label>Examen físico</label>
+                <textarea name="physicalExam" rows="2"></textarea>
+                <label>Hallazgos</label>
+                <textarea name="findings" rows="2"></textarea>
+                <label>Diagnóstico</label>
+                <textarea name="diagnosis" rows="2"></textarea>
+                <label>Tratamiento</label>
+                <textarea name="treatment" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Medicamento</label>
+                        <input type="text" name="medication">
+                    </div>
+                    <div>
+                        <label>Dosis</label>
+                        <input type="text" name="dose">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Frecuencia</label>
+                        <input type="text" name="medFrequency">
+                    </div>
+                    <div>
+                        <label>Duración</label>
+                        <input type="text" name="duration">
+                    </div>
+                </div>
+                <label>Indicaciones</label>
+                <textarea name="indications" rows="2"></textarea>
+            </fieldset>
+
+            <!-- PREVENTIVA -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="PREVENTIVA" id="seccionPREVENTIVA" hidden>
+                <legend>Consulta preventiva</legend>
+                <div class="fila">
+                    <div>
+                        <label>Condición corporal</label>
+                        <input type="text" name="bodyCondition">
+                    </div>
+                    <div>
+                        <label>Próximo control</label>
+                        <input type="text" name="nextControl">
+                    </div>
+                </div>
+                <label>Examen físico</label>
+                <textarea name="physicalExam" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Vacunas revisadas</label>
+                        <input type="text" name="vaccinesReviewed">
+                    </div>
+                    <div>
+                        <label>Desparasitación revisada</label>
+                        <input type="text" name="dewormingReviewed">
+                    </div>
+                </div>
+                <label>Prevención de parásitos</label>
+                <textarea name="parasitePrevention" rows="2"></textarea>
+                <label>Recomendaciones</label>
+                <textarea name="recommendations" rows="2"></textarea>
+                <label>Notas de alimentación</label>
+                <textarea name="feedingNotes" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Higiene</label>
+                        <input type="text" name="hygiene">
+                    </div>
+                    <div>
+                        <label>Actividad</label>
+                        <input type="text" name="activity">
+                    </div>
+                </div>
+                <label>Valoración</label>
+                <textarea name="assessment" rows="2"></textarea>
+                <label>Indicaciones</label>
+                <textarea name="indications" rows="2"></textarea>
+            </fieldset>
+
+            <!-- VACUNACION -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="VACUNACION" id="seccionVACUNACION" hidden>
+                <legend>Vacunación</legend>
+                <div class="fila">
+                    <div>
+                        <label>Vacuna</label>
+                        <input type="text" name="vaccine">
+                    </div>
+                    <div>
+                        <label>Enfermedad prevenida</label>
+                        <input type="text" name="diseasePrevented">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Fabricante</label>
+                        <input type="text" name="manufacturer">
+                    </div>
+                    <div>
+                        <label>Lote</label>
+                        <input type="text" name="lot">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Fecha de aplicación</label>
+                        <input type="date" name="applicationDate">
+                    </div>
+                    <div>
+                        <label>Fecha de caducidad</label>
+                        <input type="date" name="expiryDate">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Dosis</label>
+                        <input type="text" name="dose">
+                    </div>
+                    <div>
+                        <label>Vía</label>
+                        <input type="text" name="route">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Sitio de aplicación</label>
+                        <input type="text" name="site">
+                    </div>
+                    <div>
+                        <label>Próxima dosis</label>
+                        <input type="text" name="nextDose">
+                    </div>
+                </div>
+                <label>Reacciones previas</label>
+                <textarea name="priorReactions" rows="2"></textarea>
+                <label>Reacciones posteriores</label>
+                <textarea name="postReactions" rows="2"></textarea>
+                <label>Notas de vacuna</label>
+                <textarea name="vaccineNotes" rows="2"></textarea>
+            </fieldset>
+
+            <!-- DESPARASITACION -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="DESPARASITACION" id="seccionDESPARASITACION" hidden>
+                <legend>Desparasitación</legend>
+                <div class="fila">
+                    <div>
+                        <label>Tipo de parásito</label>
+                        <input type="text" name="parasiteType">
+                    </div>
+                    <div>
+                        <label>Producto</label>
+                        <input type="text" name="product">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Principio activo</label>
+                        <input type="text" name="activeIngredient">
+                    </div>
+                    <div>
+                        <label>Dosis</label>
+                        <input type="text" name="dose">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Frecuencia</label>
+                        <input type="text" name="frequency">
+                    </div>
+                    <div>
+                        <label>Vía</label>
+                        <input type="text" name="route">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Fecha de aplicación</label>
+                        <input type="date" name="applicationDate">
+                    </div>
+                    <div>
+                        <label>Peso para dosis</label>
+                        <input type="text" name="weightForDose">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Próxima desparasitación</label>
+                        <input type="text" name="nextDeworming">
+                    </div>
+                    <div></div>
+                </div>
+                <label>Notas</label>
+                <textarea name="notes" rows="2"></textarea>
+                <label>Recomendaciones</label>
+                <textarea name="recommendations" rows="2"></textarea>
+            </fieldset>
+
+            <!-- ENFERMEDAD -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="ENFERMEDAD" id="seccionENFERMEDAD" hidden>
+                <legend>Enfermedad</legend>
+                <label>Síntomas</label>
+                <textarea name="symptoms" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Inicio de síntomas</label>
+                        <input type="text" name="symptomOnset">
+                    </div>
+                    <div>
+                        <label>Evolución</label>
+                        <input type="text" name="evolution">
+                    </div>
+                </div>
+                <label>Antecedentes relevantes</label>
+                <textarea name="relevantHistory" rows="2"></textarea>
+                <label>Signos clínicos</label>
+                <textarea name="clinicalSigns" rows="2"></textarea>
+                <label>Examen físico</label>
+                <textarea name="physicalExam" rows="2"></textarea>
+                <label>Estudios realizados</label>
+                <textarea name="testsDone" rows="2"></textarea>
+                <label>Resultados</label>
+                <textarea name="results" rows="2"></textarea>
+                <label>Diagnóstico presuntivo</label>
+                <textarea name="presumptiveDiagnosis" rows="2"></textarea>
+                <label>Diagnóstico definitivo</label>
+                <textarea name="definitiveDiagnosis" rows="2"></textarea>
+                <label>Tratamiento</label>
+                <textarea name="treatment" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Medicamento</label>
+                        <input type="text" name="medication">
+                    </div>
+                    <div>
+                        <label>Dosis</label>
+                        <input type="text" name="dose">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Frecuencia</label>
+                        <input type="text" name="medFrequency">
+                    </div>
+                    <div>
+                        <label>Duración</label>
+                        <input type="text" name="duration">
+                    </div>
+                </div>
+                <label>Indicaciones</label>
+                <textarea name="indications" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Pronóstico</label>
+                        <input type="text" name="prognosis">
+                    </div>
+                    <div>
+                        <label>Próximo control</label>
+                        <input type="text" name="nextControl">
+                    </div>
+                </div>
+                <label>Notas</label>
+                <textarea name="notes" rows="2"></textarea>
+            </fieldset>
+
+            <!-- TRAUMATOLOGIA -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="TRAUMATOLOGIA" id="seccionTRAUMATOLOGIA" hidden>
+                <legend>Traumatología</legend>
+                <label>Motivo del trauma</label>
+                <textarea name="traumaReason" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Fecha y hora del evento</label>
+                        <input type="datetime-local" name="eventDateTime">
+                    </div>
+                    <div>
+                        <label>Tipo de lesión</label>
+                        <input type="text" name="injuryType">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Zona afectada</label>
+                        <input type="text" name="affectedZone">
+                    </div>
+                    <div>
+                        <label>Cómo ocurrió</label>
+                        <input type="text" name="howOccurred">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Dolor</label>
+                        <input type="text" name="pain">
+                    </div>
+                    <div>
+                        <label>Inflamación</label>
+                        <input type="text" name="inflammation">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Heridas</label>
+                        <input type="text" name="wounds">
+                    </div>
+                    <div>
+                        <label>Movilidad</label>
+                        <input type="text" name="mobility">
+                    </div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Cojera</label>
+                        <input type="text" name="limp">
+                    </div>
+                    <div>
+                        <label>Próximo control</label>
+                        <input type="text" name="nextControl">
+                    </div>
+                </div>
+                <label>Examen físico</label>
+                <textarea name="physicalExam" rows="2"></textarea>
+                <label>Estudios</label>
+                <textarea name="studies" rows="2"></textarea>
+                <label>Notas de imagen</label>
+                <textarea name="imagingNotes" rows="2"></textarea>
+                <label>Resultados</label>
+                <textarea name="results" rows="2"></textarea>
+                <label>Diagnóstico</label>
+                <textarea name="diagnosis" rows="2"></textarea>
+                <label>Tratamiento</label>
+                <textarea name="treatment" rows="2"></textarea>
+                <div class="fila">
+                    <div>
+                        <label>Medicamento</label>
+                        <input type="text" name="medication">
+                    </div>
+                    <div>
+                        <label>Inmovilización</label>
+                        <input type="text" name="immobilization">
+                    </div>
+                </div>
+                <label>Recomendaciones</label>
+                <textarea name="recommendations" rows="2"></textarea>
+                <label>Notas</label>
+                <textarea name="notes" rows="2"></textarea>
+            </fieldset>
+
+            <!-- REPRODUCTIVA -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="REPRODUCTIVA" id="seccionREPRODUCTIVA" hidden>
+                <legend>Consulta reproductiva</legend>
+                <div class="fila">
+                    <div>
+                        <label>Estado reproductivo</label>
+                        <input type="text" name="reproductiveStatus">
+                    </div>
+                    <div class="campo-sexo-hembra">
+                        <label>Ciclo / celo</label>
+                        <input type="text" name="cycleHeat">
+                    </div>
+                </div>
+                <label>Historial reproductivo</label>
+                <textarea name="reproductiveHistory" rows="2"></textarea>
+                <div class="fila campo-sexo-hembra">
+                    <div>
+                        <label>Último celo</label>
+                        <input type="date" name="lastHeatDate">
+                    </div>
+                    <div></div>
+                </div>
+                <div class="fila">
+                    <div>
+                        <label>Gestaciones previas</label>
+                        <input type="text" name="priorGestations">
+                    </div>
+                    <div>
+                        <label>Partos previos</label>
+                        <input type="text" name="priorBirths">
+                    </div>
+                </div>
+                <label>Problemas previos</label>
+                <textarea name="priorProblems" rows="2"></textarea>
+                <label>Examen reproductivo</label>
+                <textarea name="reproductiveExam" rows="2"></textarea>
+                <label>Hallazgos</label>
+                <textarea name="findings" rows="2"></textarea>
+                <label>Estudios realizados</label>
+                <textarea name="testsDone" rows="2"></textarea>
+                <label>Resultados</label>
+                <textarea name="results" rows="2"></textarea>
+                <label>Diagnóstico</label>
+                <textarea name="diagnosis" rows="2"></textarea>
+                <label>Tratamiento</label>
+                <textarea name="treatment" rows="2"></textarea>
+                <label>Recomendaciones</label>
+                <textarea name="recommendations" rows="2"></textarea>
+                <label>Seguimiento</label>
+                <textarea name="followUp" rows="2"></textarea>
+                <label>Notas</label>
+                <textarea name="notes" rows="2"></textarea>
+            </fieldset>
+
+            <!-- SEGUIMIENTO -->
+            <fieldset class="consulta-tipo-seccion" data-tipo="SEGUIMIENTO" id="seccionSEGUIMIENTO" hidden>
+                <legend>Seguimiento</legend>
+                <div class="fila">
+                    <div>
+                        <label for="relatedConsultationId">Consulta relacionada</label>
+                        <select name="relatedConsultationId" id="relatedConsultationId">
+                            <option value="">— Sin seleccionar —</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Próximo control</label>
+                        <input type="text" name="nextControl">
+                    </div>
+                </div>
+                <label>Motivo de seguimiento</label>
+                <textarea name="followUpReason" rows="2"></textarea>
+                <label>Evolución</label>
+                <textarea name="evolution" rows="2"></textarea>
+                <label>Cambios desde última visita</label>
+                <textarea name="changesSince" rows="2"></textarea>
+                <label>Signos actuales</label>
+                <textarea name="currentSigns" rows="2"></textarea>
+                <label>Respuesta al tratamiento</label>
+                <textarea name="treatmentResponse" rows="2"></textarea>
+                <label>Medicación actual</label>
+                <textarea name="currentMeds" rows="2"></textarea>
+                <label>Cumplimiento del tratamiento</label>
+                <textarea name="treatmentCompliance" rows="2"></textarea>
+                <label>Nuevos hallazgos</label>
+                <textarea name="newFindings" rows="2"></textarea>
+                <label>Nuevos estudios</label>
+                <textarea name="newTests" rows="2"></textarea>
+                <label>Resultados</label>
+                <textarea name="results" rows="2"></textarea>
+                <label>Estado actual</label>
+                <textarea name="currentStatus" rows="2"></textarea>
+                <label>Modificación del tratamiento</label>
+                <textarea name="treatmentModification" rows="2"></textarea>
+                <label>Nuevas indicaciones</label>
+                <textarea name="newIndications" rows="2"></textarea>
+                <label>Notas</label>
+                <textarea name="notes" rows="2"></textarea>
+            </fieldset>
+
             <button class="guardar" type="submit">Guardar Consulta</button>
         </form>
+    </div>
+</div>
+
+<div class="modal" id="modalDetalleConsulta">
+    <div class="ventana ventana-consulta">
+        <button type="button" class="cerrarModalDetalle" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h2>Detalle de consulta</h2>
+        <div id="detalleConsultaContenido" class="detalle-consulta"></div>
     </div>
 </div>
 

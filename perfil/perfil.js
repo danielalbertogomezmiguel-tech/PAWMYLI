@@ -30,8 +30,8 @@ function barcodeUrl(code) {
 
 function linkStatusLabel(status) {
     const map = {
-        LINKED: "Vinculado",
-        UNLINKED: "Sin vincular",
+        LINKED: "Vinculada",
+        UNLINKED: "Desvinculada",
         PENDING: "Pendiente",
     };
     return map[status] || status || "—";
@@ -46,6 +46,94 @@ function linkStatusClass(status) {
     return map[status] || "link-unlinked";
 }
 
+const TYPE_PAYLOAD_LABELS = {
+    anamnesis: "Anamnesis",
+    hydration: "Hidratación",
+    mucousMembranes: "Mucosas",
+    bodyCondition: "Condición corporal",
+    physicalExam: "Examen físico",
+    findings: "Hallazgos",
+    diagnosis: "Diagnóstico",
+    treatment: "Tratamiento",
+    medication: "Medicamento",
+    dose: "Dosis",
+    medFrequency: "Frecuencia",
+    duration: "Duración",
+    indications: "Indicaciones",
+    nextControl: "Próximo control",
+    vaccinesReviewed: "Vacunas revisadas",
+    dewormingReviewed: "Desparasitación revisada",
+    parasitePrevention: "Prevención de parásitos",
+    recommendations: "Recomendaciones",
+    feedingNotes: "Notas de alimentación",
+    hygiene: "Higiene",
+    activity: "Actividad",
+    assessment: "Valoración",
+    vaccine: "Vacuna",
+    diseasePrevented: "Enfermedad prevenida",
+    manufacturer: "Fabricante",
+    lot: "Lote",
+    applicationDate: "Fecha de aplicación",
+    expiryDate: "Fecha de caducidad",
+    route: "Vía",
+    site: "Sitio de aplicación",
+    priorReactions: "Reacciones previas",
+    postReactions: "Reacciones posteriores",
+    nextDose: "Próxima dosis",
+    vaccineNotes: "Notas de vacuna",
+    parasiteType: "Tipo de parásito",
+    product: "Producto",
+    activeIngredient: "Principio activo",
+    frequency: "Frecuencia",
+    weightForDose: "Peso para dosis",
+    nextDeworming: "Próxima desparasitación",
+    notes: "Notas",
+    symptoms: "Síntomas",
+    symptomOnset: "Inicio de síntomas",
+    evolution: "Evolución",
+    relevantHistory: "Antecedentes relevantes",
+    clinicalSigns: "Signos clínicos",
+    testsDone: "Estudios realizados",
+    results: "Resultados",
+    presumptiveDiagnosis: "Diagnóstico presuntivo",
+    definitiveDiagnosis: "Diagnóstico definitivo",
+    prognosis: "Pronóstico",
+    traumaReason: "Motivo del trauma",
+    eventDateTime: "Fecha y hora del evento",
+    injuryType: "Tipo de lesión",
+    affectedZone: "Zona afectada",
+    howOccurred: "Cómo ocurrió",
+    pain: "Dolor",
+    inflammation: "Inflamación",
+    wounds: "Heridas",
+    mobility: "Movilidad",
+    limp: "Cojera",
+    studies: "Estudios",
+    imagingNotes: "Notas de imagen",
+    immobilization: "Inmovilización",
+    reproductiveStatus: "Estado reproductivo",
+    reproductiveHistory: "Historial reproductivo",
+    cycleHeat: "Ciclo / celo",
+    lastHeatDate: "Último celo",
+    priorGestations: "Gestaciones previas",
+    priorBirths: "Partos previos",
+    priorProblems: "Problemas previos",
+    reproductiveExam: "Examen reproductivo",
+    followUp: "Seguimiento",
+    relatedConsultationId: "Consulta relacionada",
+    followUpReason: "Motivo de seguimiento",
+    changesSince: "Cambios desde última visita",
+    currentSigns: "Signos actuales",
+    treatmentResponse: "Respuesta al tratamiento",
+    currentMeds: "Medicación actual",
+    treatmentCompliance: "Cumplimiento del tratamiento",
+    newFindings: "Nuevos hallazgos",
+    newTests: "Nuevos estudios",
+    currentStatus: "Estado actual",
+    treatmentModification: "Modificación del tratamiento",
+    newIndications: "Nuevas indicaciones",
+};
+
 function consultationTypeLabel(type) {
     const map = {
         GENERAL: "General",
@@ -58,6 +146,160 @@ function consultationTypeLabel(type) {
         SEGUIMIENTO: "Seguimiento",
     };
     return map[type] || type || "—";
+}
+
+function typePayloadLabel(key) {
+    return TYPE_PAYLOAD_LABELS[key] || key;
+}
+
+function isFemaleSex(sexo) {
+    const s = String(sexo || "").toLowerCase();
+    return s.includes("hembra") || s === "f" || s === "female";
+}
+
+function currentTimeValue() {
+    const now = new Date();
+    return (
+        String(now.getHours()).padStart(2, "0") +
+        ":" +
+        String(now.getMinutes()).padStart(2, "0")
+    );
+}
+
+function showConsultaTipoSection(tipo) {
+    const selected = tipo || "GENERAL";
+    document.querySelectorAll(".consulta-tipo-seccion").forEach((section) => {
+        const match = section.getAttribute("data-tipo") === selected;
+        section.hidden = !match;
+    });
+    applyReproductivaSexVisibility();
+}
+
+function applyReproductivaSexVisibility() {
+    const seccion = document.getElementById("seccionREPRODUCTIVA");
+    if (!seccion || seccion.hidden) return;
+    const female = isFemaleSex(paciente && paciente.sexo);
+    seccion.querySelectorAll(".campo-sexo-hembra").forEach((el) => {
+        el.hidden = !female;
+        if (!female) {
+            el.querySelectorAll("input, textarea, select").forEach((field) => {
+                field.value = "";
+            });
+        }
+    });
+}
+
+function collectTypePayload(tipo) {
+    const section = document.querySelector(
+        '.consulta-tipo-seccion[data-tipo="' + (tipo || "GENERAL") + '"]'
+    );
+    const payload = {};
+    if (!section) return payload;
+    section.querySelectorAll("input[name], textarea[name], select[name]").forEach((el) => {
+        if (el.closest("[hidden]")) return;
+        const key = el.getAttribute("name");
+        if (!key) return;
+        const value = String(el.value || "").trim();
+        if (value) payload[key] = value;
+    });
+    return payload;
+}
+
+function fillRelatedConsultationSelect() {
+    const select = document.getElementById("relatedConsultationId");
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">— Sin seleccionar —</option>';
+    const list = (paciente && paciente.historial) || [];
+    list.forEach((item) => {
+        if (!item.id) return;
+        const label =
+            (item.consultationNumber || item.id) +
+            " · " +
+            (item.fecha || "") +
+            " · " +
+            consultationTypeLabel(item.type);
+        select.innerHTML += `<option value="${item.id}">${label}</option>`;
+    });
+    if (current) select.value = current;
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function detalleRow(label, value) {
+    if (value == null || value === "") return "";
+    return `<div class="detalle-fila"><span class="detalle-label">${escapeHtml(
+        label
+    )}</span><span class="detalle-valor">${escapeHtml(value)}</span></div>`;
+}
+
+function resolveRelatedConsultaLabel(id) {
+    if (!id || !paciente || !paciente.historial) return id;
+    const found = paciente.historial.find((h) => h.id === id);
+    if (!found) return id;
+    return (
+        (found.consultationNumber || found.id) +
+        " · " +
+        (found.fecha || "") +
+        " · " +
+        consultationTypeLabel(found.type)
+    );
+}
+
+function mostrarDetalleConsulta(item) {
+    const box = document.getElementById("detalleConsultaContenido");
+    const modal = document.getElementById("modalDetalleConsulta");
+    if (!box || !modal || !item) return;
+
+    let html = "";
+    html += detalleRow("Nº consulta", item.consultationNumber);
+    html += detalleRow("Fecha", item.fecha);
+    html += detalleRow("Hora", item.time);
+    html += detalleRow("Tipo", consultationTypeLabel(item.type));
+    html += detalleRow("Motivo", item.motivo || item.reason);
+    html += detalleRow("Veterinario", item.veterinario || item.vetName);
+    html += detalleRow("Propietario", item.ownerName);
+    html += detalleRow("Estado", item.estado || item.status);
+    html += detalleRow("Peso", item.weightAtVisit);
+    html += detalleRow("Temperatura", item.temperature);
+    html += detalleRow("Frecuencia cardiaca", item.heartRate);
+    html += detalleRow("Frecuencia respiratoria", item.respiratoryRate);
+    html += detalleRow("Observaciones", item.observations);
+    html += detalleRow("Diagnóstico", item.diagnostico || item.diagnosis);
+    html += detalleRow("Tratamiento", item.tratamiento || item.treatment);
+    html += detalleRow("Medicamento", item.medication);
+    html += detalleRow("Examen físico", item.physicalExam);
+    html += detalleRow("Prescripciones", item.prescriptions);
+    html += detalleRow("Resultados", item.results);
+    html += detalleRow("Notas", item.notes);
+    html += detalleRow("Seguimiento", item.followUpDate);
+    html += detalleRow("Hora seguimiento", item.followUpTime);
+
+    if (!isOwner) {
+        html += detalleRow("Notas privadas", item.privateNotes);
+    }
+
+    const payload = item.typePayload && typeof item.typePayload === "object" ? item.typePayload : null;
+    if (payload && Object.keys(payload).length) {
+        html += `<h3 class="detalle-subtitulo">Detalle por tipo</h3>`;
+        Object.keys(payload).forEach((key) => {
+            let val = payload[key];
+            if (key === "relatedConsultationId") val = resolveRelatedConsultaLabel(val);
+            html += detalleRow(typePayloadLabel(key), val);
+        });
+    } else if (isOwner && (item.recomendaciones || item.motivo)) {
+        html += detalleRow("Recomendaciones", item.recomendaciones);
+    }
+
+    if (!html) html = "<p>Sin datos de consulta.</p>";
+    box.innerHTML = html;
+    modal.classList.add("activo");
 }
 
 function pintarComidas(feeding) {
@@ -134,6 +376,30 @@ function cargarPerfil() {
         badge.className = "badge-link " + linkStatusClass(status);
         badge.title = status;
     }
+    const btnUnlink = document.getElementById("btnDesvincular");
+    if (btnUnlink) {
+        const isVet = (PawApi.getUser()?.role || "").toLowerCase() === "vet";
+        const linked = (paciente.linkStatus || "") === "LINKED";
+        btnUnlink.hidden = !(isVet && linked);
+        btnUnlink.onclick = async () => {
+            const ok = window.confirm(
+                "¿Desvincular esta mascota del usuario?\n\n" +
+                    "La mascota seguirá en el sistema veterinario con su historial y datos médicos. " +
+                    "Solo se elimina la relación con el usuario; no se borra la mascota."
+            );
+            if (!ok) return;
+            btnUnlink.disabled = true;
+            try {
+                await PawApi.api.unlinkPatient(paciente.id);
+                await refrescarPaciente();
+                alert("Mascota desvinculada. Sigue disponible en tu listado de pacientes.");
+            } catch (err) {
+                alert(err.message || "No se pudo desvincular.");
+            } finally {
+                btnUnlink.disabled = false;
+            }
+        };
+    }
     document.getElementById("especie").textContent = paciente.especie;
     document.getElementById("raza").textContent = paciente.raza;
     document.getElementById("edad").textContent = paciente.edad;
@@ -194,7 +460,7 @@ function cargarPerfil() {
     const tabla = document.getElementById("historial");
     tabla.innerHTML = "";
     if (paciente.historial && paciente.historial.length) {
-        paciente.historial.forEach((item) => {
+        paciente.historial.forEach((item, index) => {
             let clase = "";
             switch (item.estado) {
                 case "Finalizada":
@@ -209,7 +475,7 @@ function cargarPerfil() {
             const num = item.consultationNumber || "—";
             const tipo = consultationTypeLabel(item.type);
             tabla.innerHTML += `
-            <tr>
+            <tr class="historial-fila" data-historial-index="${index}" title="Ver detalle">
                 <td>${num}</td>
                 <td>${item.fecha}</td>
                 <td>${tipo}</td>
@@ -322,43 +588,102 @@ document.getElementById("formEditar").addEventListener("submit", async function 
 });
 
 const modalConsulta = document.getElementById("modalConsulta");
+const modalDetalleConsulta = document.getElementById("modalDetalleConsulta");
+
+function prepareConsultaForm() {
+    const form = document.getElementById("formConsulta");
+    if (form) form.reset();
+    document.getElementById("consultaFecha").value = new Date().toISOString().split("T")[0];
+    document.getElementById("consultaHora").value = currentTimeValue();
+    const sessionUser = PawApi.getUser() || user;
+    if (sessionUser?.name) {
+        document.getElementById("consultaVet").value = sessionUser.name;
+        const list = document.getElementById("listaVeterinarios");
+        if (list) list.innerHTML = `<option value="${sessionUser.name}">`;
+    }
+    document.getElementById("consultaPropietario").value = (paciente && paciente.propietario) || "";
+    document.getElementById("consultaPacienteNombre").textContent =
+        (paciente && paciente.nombre) || "—";
+    if (paciente && paciente.peso) {
+        document.getElementById("consultaPeso").value = paciente.peso;
+    }
+    const numEl = document.getElementById("consultaNumero");
+    if (numEl) numEl.value = "";
+    document.getElementById("consultaTipo").value = "GENERAL";
+    fillRelatedConsultationSelect();
+    showConsultaTipoSection("GENERAL");
+}
 
 document.getElementById("btnNuevaConsulta").addEventListener("click", () => {
     if (isOwner) return;
-    document.getElementById("consultaFecha").value = new Date().toISOString().split("T")[0];
-    if (user?.name) document.getElementById("consultaVet").value = user.name;
-    const numEl = document.getElementById("consultaNumero");
-    if (numEl) numEl.value = "";
+    prepareConsultaForm();
     modalConsulta.classList.add("activo");
+});
+
+document.getElementById("consultaTipo").addEventListener("change", (e) => {
+    showConsultaTipoSection(e.target.value);
 });
 
 document.querySelector(".cerrarModalConsulta").addEventListener("click", () => {
     modalConsulta.classList.remove("activo");
 });
 
+document.querySelector(".cerrarModalDetalle").addEventListener("click", () => {
+    modalDetalleConsulta.classList.remove("activo");
+});
+
 window.addEventListener("click", (e) => {
     if (e.target === modalConsulta) modalConsulta.classList.remove("activo");
+    if (e.target === modalDetalleConsulta) modalDetalleConsulta.classList.remove("activo");
+});
+
+document.getElementById("historial").addEventListener("click", (e) => {
+    const row = e.target.closest("tr.historial-fila");
+    if (!row || !paciente || !paciente.historial) return;
+    const idx = Number(row.getAttribute("data-historial-index"));
+    const item = paciente.historial[idx];
+    if (item) mostrarDetalleConsulta(item);
 });
 
 document.getElementById("formConsulta").addEventListener("submit", async function (e) {
     e.preventDefault();
+    const type = document.getElementById("consultaTipo").value || "GENERAL";
+    const typePayload = collectTypePayload(type);
     const body = {
         date: document.getElementById("consultaFecha").value,
-        type: document.getElementById("consultaTipo").value || "GENERAL",
+        time: document.getElementById("consultaHora").value || undefined,
+        type,
         reason: document.getElementById("consultaMotivo").value.trim(),
         vetName: document.getElementById("consultaVet").value.trim(),
+        ownerName: document.getElementById("consultaPropietario").value.trim() || undefined,
         status: document.getElementById("consultaEstado").value,
         weightAtVisit: document.getElementById("consultaPeso").value.trim() || undefined,
         temperature: document.getElementById("consultaTemp").value.trim() || undefined,
         heartRate: document.getElementById("consultaFC").value.trim() || undefined,
         respiratoryRate: document.getElementById("consultaFR").value.trim() || undefined,
-        physicalExam: document.getElementById("consultaExamen").value.trim() || undefined,
-        diagnosis: document.getElementById("consultaDiagnostico").value.trim() || undefined,
-        treatment: document.getElementById("consultaTratamiento").value.trim() || undefined,
-        prescriptions: document.getElementById("consultaReceta").value.trim() || undefined,
-        notes: document.getElementById("consultaNotas").value.trim() || undefined,
+        observations: document.getElementById("consultaObservaciones").value.trim() || undefined,
+        privateNotes: document.getElementById("consultaNotasPrivadas").value.trim() || undefined,
         followUpDate: document.getElementById("consultaSeguimiento").value || undefined,
+        followUpTime: document.getElementById("consultaSeguimientoHora").value || undefined,
     };
+
+    if (Object.keys(typePayload).length) {
+        body.typePayload = typePayload;
+    }
+    if (typePayload.relatedConsultationId) {
+        body.relatedConsultationId = typePayload.relatedConsultationId;
+    }
+    // Promote common clinical fields for owner projection / list views
+    if (typePayload.diagnosis) body.diagnosis = typePayload.diagnosis;
+    else if (typePayload.definitiveDiagnosis) body.diagnosis = typePayload.definitiveDiagnosis;
+    else if (typePayload.presumptiveDiagnosis) body.diagnosis = typePayload.presumptiveDiagnosis;
+    if (typePayload.treatment) body.treatment = typePayload.treatment;
+    if (typePayload.medication) body.medication = typePayload.medication;
+    else if (typePayload.vaccine) body.medication = typePayload.vaccine;
+    else if (typePayload.product) body.medication = typePayload.product;
+    if (typePayload.physicalExam) body.physicalExam = typePayload.physicalExam;
+    if (typePayload.results) body.results = typePayload.results;
+    if (typePayload.notes) body.notes = typePayload.notes;
 
     try {
         const created = await PawApi.api.addMedicalRecord(pacienteId, body);
@@ -367,6 +692,7 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
         }
         await refrescarPaciente();
         this.reset();
+        showConsultaTipoSection("GENERAL");
         modalConsulta.classList.remove("activo");
         alert(
             created && created.consultationNumber
@@ -432,11 +758,14 @@ document.getElementById("btnGuardarDietaManual").addEventListener("click", async
 });
 
 pintarSidebar();
+showConsultaTipoSection(document.getElementById("consultaTipo")?.value || "GENERAL");
 PawApi.syncProfileToSession().then(() => {
     pintarSidebar();
     if (PawApi.getUser()?.name) {
         const vetInput = document.getElementById("consultaVet");
         if (vetInput && !vetInput.value.trim()) vetInput.value = PawApi.getUser().name;
+        const list = document.getElementById("listaVeterinarios");
+        if (list) list.innerHTML = `<option value="${PawApi.getUser().name}">`;
     }
 }).catch(() => {});
 refrescarPaciente().catch((err) => {

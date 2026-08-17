@@ -523,11 +523,19 @@
         const historial = (p.medicalRecords || []).map((r) => ({
             id: r.id,
             fecha: r.date,
-            motivo: r.reason,
-            veterinario: r.vetName,
+            time: r.time || null,
+            motivo: r.reason || r.motivo || null,
+            reason: r.reason || r.motivo || null,
+            veterinario: r.vetName || null,
+            vetName: r.vetName || null,
+            ownerName: r.ownerName || null,
             estado: r.status || "Finalizada",
-            diagnostico: r.diagnosis,
-            tratamiento: r.treatment,
+            status: r.status || "Finalizada",
+            diagnostico: r.diagnosis || null,
+            diagnosis: r.diagnosis || null,
+            tratamiento: r.treatment || null,
+            treatment: r.treatment || null,
+            medication: r.medication || null,
             type: r.type || null,
             consultationNumber: r.consultationNumber || null,
             weightAtVisit: r.weightAtVisit,
@@ -536,9 +544,22 @@
             respiratoryRate: r.respiratoryRate,
             physicalExam: r.physicalExam,
             prescriptions: r.prescriptions,
+            results: r.results || null,
+            observations: r.observations || null,
             notes: r.notes,
+            privateNotes: r.privateNotes || null,
+            typePayload: r.typePayload || null,
             followUpDate: r.followUpDate,
+            followUpTime: r.followUpTime || null,
+            relatedConsultationId: r.relatedConsultationId || null,
+            recomendaciones: r.recomendaciones || r.observations || r.treatment || null,
         }));
+        const role = (getUser() && getUser().role) || "";
+        if (String(role).toLowerCase() === "owner") {
+            historial.forEach((h) => {
+                delete h.privateNotes;
+            });
+        }
         return {
             id: p.id,
             codigo: p.code,
