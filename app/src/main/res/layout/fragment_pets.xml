@@ -32,6 +32,21 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/logoText" />
 
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnPendingLinks"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_button_white"
+            android:backgroundTint="@color/primary_teal"
+            android:paddingHorizontal="12dp"
+            android:text="@string/pending_link_requests"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/petsTitle" />
+
         <TextView
             android:id="@+id/emptyStateText"
             android:layout_width="match_parent"
@@ -42,7 +57,7 @@
             android:text="@string/empty_pets"
             android:textColor="#7A8D8C"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/petsTitle" />
+            app:layout_constraintTop_toBottomOf="@id/btnPendingLinks" />
 
         <LinearLayout
             android:id="@+id/petsListContainer"

@@ -36,45 +36,55 @@ class RemindersFragment : Fragment() {
             showAddPetDialog()
         }
 
-        loadPets()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        loadPets()
     }
 
     override fun onResume() {
         super.onResume()
-        loadPets()
+        loadPets(force = false)
     }
 
-    private fun loadPets() {
+    private fun loadPets(force: Boolean = false) {
         val addCard = petsListContainer.findViewById<View>(R.id.addPetReminderCard)
         petsListContainer.removeAllViews()
-        petsListContainer.addView(addCard)
+        if (addCard != null) petsListContainer.addView(addCard)
         emptyStateText.visibility = View.GONE
+
+        if (!force && PetsMemoryCache.shouldSkipNetwork()) {
+            PetsMemoryCache.snapshot()?.let { pets ->
+                renderPets(pets)
+            }
+            return
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val pets = RemotePetRepository.listMyPets()
+                val pets = RemotePetRepository.listMyPets(forceRefresh = force)
                 sessionManager.cachePetCodes(pets.map { it.id })
-
-                val addCardView = petsListContainer.findViewById<View>(R.id.addPetReminderCard)
-                petsListContainer.removeAllViews()
-                pets.forEach { addPetView(it) }
-                petsListContainer.addView(addCardView)
-
-                emptyStateText.visibility = if (pets.isEmpty()) View.VISIBLE else View.GONE
-                if (pets.isEmpty()) {
-                    emptyStateText.text = getString(R.string.empty_pets_reminders)
-                }
+                renderPets(pets)
             } catch (e: ApiException) {
                 Toast.makeText(requireContext(), e.message, Toast.LENGTH_SHORT).show()
                 emptyStateText.visibility = View.VISIBLE
-                emptyStateText.text = getString(R.string.empty_pets_reminders)
             } catch (_: Exception) {
                 Toast.makeText(requireContext(), "No se pudo cargar tus mascotas", Toast.LENGTH_SHORT).show()
                 emptyStateText.visibility = View.VISIBLE
-                emptyStateText.text = getString(R.string.empty_pets_reminders)
             }
+        }
+    }
+
+    private fun renderPets(pets: List<Pet>) {
+        val addCard = petsListContainer.findViewById<View>(R.id.addPetReminderCard)
+        petsListContainer.removeAllViews()
+        pets.forEach { addPetView(it) }
+        if (addCard != null) petsListContainer.addView(addCard)
+        emptyStateText.visibility = if (pets.isEmpty()) View.VISIBLE else View.GONE
+        if (pets.isEmpty()) {
+            emptyStateText.text = getString(R.string.empty_pets_reminders)
         }
     }
 
@@ -89,19 +99,29 @@ class RemindersFragment : Fragment() {
             try {
                 petImage.setImageURI(Uri.parse(savedUri))
             } catch (_: Exception) {
-                petImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    PetImageLoader.loadInto(petImage, pet.imageUrl)
+                }
+            }
+        } else {
+            viewLifecycleOwner.lifecycleScope.launch {
+                PetImageLoader.loadInto(petImage, pet.imageUrl)
             }
         }
 
         petView.findViewById<View>(R.id.btnGoToReminders).setOnClickListener {
-            val intent = Intent(requireContext(), PetRemindersActivity::class.java).apply {
-                putExtra("PET_ID", pet.id)
-                putExtra("PET_BACKEND_ID", pet.backendId)
-            }
-            startActivity(intent)
+            openPetReminders(pet)
         }
 
-        petsListContainer.addView(petView, 0)
+        petsListContainer.addView(petView)
+    }
+
+    private fun openPetReminders(pet: Pet) {
+        val intent = Intent(requireContext(), PetRemindersActivity::class.java).apply {
+            putExtra("PET_ID", pet.id)
+            putExtra("PET_BACKEND_ID", pet.backendId)
+        }
+        startActivity(intent)
     }
 
     private fun showAddPetDialog() {
@@ -112,6 +132,12 @@ class RemindersFragment : Fragment() {
 
         val etPetCode = dialogView.findViewById<EditText>(R.id.etPetCode)
         val btnAdd = dialogView.findViewById<Button>(R.id.btnDialogAdd)
+        val btnScan = dialogView.findViewById<Button>(R.id.btnDialogScan)
+
+        btnScan?.setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(requireContext(), BarcodeScanActivity::class.java))
+        }
 
         btnAdd.setOnClickListener {
             val code = etPetCode.text.toString().trim()
@@ -123,11 +149,10 @@ class RemindersFragment : Fragment() {
             btnAdd.isEnabled = false
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    val pet = RemotePetRepository.linkPet(code)
-                    sessionManager.savePetCode(pet.id)
+                    val message = RemotePetRepository.linkPet(code)
                     loadPets()
                     dialog.dismiss()
-                    Toast.makeText(requireContext(), "Mascota vinculada", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
                 } catch (e: ApiException) {
                     Toast.makeText(requireContext(), e.message ?: "Código no encontrado", Toast.LENGTH_SHORT).show()
                 } catch (_: Exception) {

@@ -4,15 +4,72 @@ import retrofit2.Response
 
 object RemotePetRepository {
 
-    suspend fun linkPet(code: String): Pet {
-        val response = RetrofitClient.instance.linkPatient(LinkPatientRequest(code.trim().uppercase()))
-        return unwrap(response, "Error al vincular mascota").toPet()
+    /** Creates a pending link request; returns a human status message. */
+    suspend fun linkPet(code: String): String {
+        val request = requestLink(code)
+        return "Solicitud enviada (${request.requestedRole ?: "pendiente"}). " +
+            if (request.requestedRole == "OWNER") "Espera aprobación del veterinario."
+            else "Espera aprobación del dueño."
     }
 
-    suspend fun listMyPets(page: Int = 1, limit: Int = 50): List<Pet> {
+    suspend fun requestLink(code: String, requestedRole: String? = null): LinkRequestDto {
+        return unwrap(
+            RetrofitClient.instance.createLinkRequest(
+                LinkRequestBody(code = code.trim().uppercase(), requestedRole = requestedRole)
+            ),
+            "Error al solicitar vinculación"
+        )
+    }
+
+    suspend fun pendingLinkRequests(): List<LinkRequestDto> {
+        return unwrap(
+            RetrofitClient.instance.pendingLinkRequests(),
+            "Error al cargar solicitudes pendientes"
+        )
+    }
+
+    /**
+     * Approves a link request. Caller should clear local pet cache and reload [listMyPets].
+     */
+    suspend fun approveLinkRequest(id: String): LinkRequestDto {
+        val result = unwrap(
+            RetrofitClient.instance.approveLinkRequest(id),
+            "Error al aprobar solicitud"
+        )
+        PetsMemoryCache.invalidate()
+        return result
+    }
+
+    suspend fun rejectLinkRequest(id: String): LinkRequestDto {
+        return unwrap(
+            RetrofitClient.instance.rejectLinkRequest(id),
+            "Error al rechazar solicitud"
+        )
+    }
+
+    suspend fun listMembers(patientId: String): List<PatientMemberDto> {
+        return unwrap(RetrofitClient.instance.patientMembers(patientId), "Error al cargar familia")
+    }
+
+    suspend fun revokeMember(patientId: String, userId: String) {
+        val response = RetrofitClient.instance.revokeMember(patientId, userId)
+        if (!response.isSuccessful) {
+            throw ApiException(
+                RetrofitClient.parseErrorMessage(response.errorBody()?.string())
+                    ?: "Error al revocar acceso"
+            )
+        }
+    }
+
+    suspend fun listMyPets(page: Int = 1, limit: Int = 50, forceRefresh: Boolean = false): List<Pet> {
+        if (!forceRefresh && PetsMemoryCache.isFresh()) {
+            PetsMemoryCache.snapshot()?.let { return it }
+        }
         val response = RetrofitClient.instance.myPatients(page, limit)
         val body = unwrap(response, "Error al cargar mascotas")
-        return body.data.map { it.toPet() }
+        val pets = body.data.map { it.toPet() }
+        PetsMemoryCache.put(pets)
+        return pets
     }
 
     suspend fun getPet(idOrCode: String): Pet {
@@ -58,6 +115,74 @@ object RemotePetRepository {
     suspend fun updateFeeding(patientId: String, body: FeedingUpdateDto): FeedingDto {
         val response = RetrofitClient.instance.updateFeeding(patientId, body)
         return unwrap(response, "Error al actualizar alimentación")
+    }
+
+    suspend fun listFeedingLogs(
+        patientId: String,
+        from: String? = null,
+        to: String? = null
+    ): List<FeedingLogDto> {
+        return unwrap(
+            RetrofitClient.instance.getFeedingLogs(patientId, from, to),
+            "Error al cargar registros de alimentación"
+        )
+    }
+
+    suspend fun markFeedingLog(patientId: String, body: FeedingLogCreateDto): FeedingLogDto {
+        return unwrap(
+            RetrofitClient.instance.createFeedingLog(patientId, body),
+            "Error al registrar comida"
+        )
+    }
+
+    suspend fun listFavorites(): List<FavoriteDto> {
+        return unwrap(RetrofitClient.instance.listFavorites(), "Error al cargar favoritos")
+    }
+
+    suspend fun addFavorite(targetType: String, targetId: String): FavoriteDto {
+        return unwrap(
+            RetrofitClient.instance.addFavorite(
+                FavoriteCreateDto(targetType = targetType, targetId = targetId)
+            ),
+            "Error al agregar favorito"
+        )
+    }
+
+    suspend fun removeFavorite(id: String) {
+        val response = RetrofitClient.instance.removeFavorite(id)
+        if (!response.isSuccessful && response.code() != 204) {
+            throw ApiException(
+                RetrofitClient.parseErrorMessage(response.errorBody()?.string())
+                    ?: "Error al quitar favorito"
+            )
+        }
+    }
+
+    suspend fun getProfile(): UserDto {
+        return unwrap(RetrofitClient.instance.getProfile(), "Error al cargar perfil")
+    }
+
+    /** Stub: request a signed upload URL (e.g. kind = user_avatar). */
+    suspend fun createMediaUploadUrl(body: MediaUploadUrlRequest): MediaUploadUrlResponse {
+        return unwrap(
+            RetrofitClient.instance.createMediaUploadUrl(body),
+            "Error al preparar subida de imagen"
+        )
+    }
+
+    /** Stub: confirm upload and optionally set as user/patient photo. */
+    suspend fun confirmMediaUpload(body: MediaConfirmRequest): MediaAssetDto {
+        return unwrap(
+            RetrofitClient.instance.confirmMediaUpload(body),
+            "Error al confirmar imagen"
+        )
+    }
+
+    suspend fun getMediaUrl(assetId: String): String? {
+        return unwrap(
+            RetrofitClient.instance.getMediaUrl(assetId),
+            "Error al obtener URL de imagen"
+        ).url
     }
 
     suspend fun listReminders(petId: String): List<ReminderDto> {
@@ -116,9 +241,15 @@ object RemotePetRepository {
             if (body != null) return body
             throw ApiException(fallback)
         }
-        throw ApiException(
-            RetrofitClient.parseErrorMessage(response.errorBody()?.string()) ?: fallback
-        )
+        val raw = response.errorBody()?.string()
+        val parsed = RetrofitClient.parseErrorMessage(raw)
+        val tokenish = (parsed ?: "").contains("Token", ignoreCase = true) ||
+            (parsed ?: "").contains("autorizado", ignoreCase = true) ||
+            response.code() == 401
+        if (tokenish) {
+            throw ApiException("Tu sesión expiró o no es válida. Vuelve a iniciar sesión.")
+        }
+        throw ApiException(parsed ?: fallback)
     }
 }
 
@@ -135,10 +266,10 @@ fun PatientDto.toPet(): Pet {
 
     val history = medicalRecords?.map { record ->
         MedicalRecordWithPriority(
-            date = record.date,
-            type = record.status?.takeIf { it.isNotBlank() } ?: record.reason,
-            doctor = record.vetName,
-            reason = record.reason,
+            date = record.date.orEmpty(),
+            type = record.status?.takeIf { it.isNotBlank() } ?: record.reason.orEmpty(),
+            doctor = record.vetName.orEmpty(),
+            reason = record.reason.orEmpty(),
             diagnosis = record.diagnosis.orEmpty(),
             treatment = record.treatment.orEmpty()
         )
@@ -151,6 +282,7 @@ fun PatientDto.toPet(): Pet {
             time = reminder.time.orEmpty(),
             date = reminder.date,
             iconType = reminder.type.orEmpty(),
+            isPriority = ReminderPriority.isAlta(reminder.priority),
             description = reminder.description,
             completed = reminder.completed == true,
             notificationMessage = reminder.notificationMessage,
@@ -159,38 +291,57 @@ fun PatientDto.toPet(): Pet {
         )
     }.orEmpty()
 
-    val family = buildList {
-        if (ownerName.isNotBlank()) {
-            add(FamilyMember(ownerName, ownerEmail.orEmpty()))
-        }
-    }
+    // Family filled asynchronously from /members; avoid fake demo members.
+    val family = emptyList<FamilyMember>()
 
     return Pet(
         id = code.uppercase(),
         backendId = id,
         name = name,
-        breed = breed,
-        age = age,
+        breed = breed.orEmpty(),
+        age = age.orEmpty(),
         weight = weight.orEmpty(),
-        species = species,
-        gender = sex,
+        species = species.orEmpty(),
+        gender = sex.orEmpty(),
         color = color.orEmpty(),
         microchip = microchip.orEmpty(),
-        owner = ownerName,
-        imageUrl = photo,
+        owner = ownerName.orEmpty(),
+        imageUrl = listOf(photo, photoUrl)
+            .firstOrNull { url ->
+                !url.isNullOrBlank() &&
+                    !url.startsWith("asset:") &&
+                    !url.startsWith("../") &&
+                    !url.startsWith("./") &&
+                    (url.startsWith("http://") ||
+                        url.startsWith("https://") ||
+                        url.startsWith("data:") ||
+                        url.startsWith("blob:"))
+            },
         feeding = feedingInfo,
         medicalHistory = history,
         family = family,
-        reminders = reminderList
+        reminders = reminderList,
+        accessRole = accessRole
     )
 }
 
 private fun FeedingDto.toFeedingInfo(): FeedingInfo {
-    val meals = mealsPerDay ?: 1
+    val mealDtos = meals.orEmpty()
+    val mealsCount = mealsPerDay ?: mealDtos.size.coerceAtLeast(1)
+    val plates = if (mealDtos.isNotEmpty()) {
+        mealDtos.mapIndexed { index, m ->
+            FeedingPlate(
+                name = m.label?.takeIf { it.isNotBlank() } ?: "${index + 1}° Plato",
+                time = m.time.orEmpty()
+            )
+        }
+    } else {
+        parseFeedingSchedule(this.schedule, mealsCount)
+    }
     return FeedingInfo(
         recommendedAmount = recommendedAmount.orEmpty(),
-        totalMeals = meals,
-        schedule = parseFeedingSchedule(schedule, meals),
+        totalMeals = mealsCount,
+        schedule = plates,
         specialInstructions = specialInstructions?.lines()
             ?.map { it.trim().removePrefix("-").trim() }
             ?.filter { it.isNotEmpty() }

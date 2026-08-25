@@ -26,6 +26,23 @@
             android:id="@+id/feedingForm"
             layout="@layout/include_feeding_form" />
 
+        <TextView
+            android:id="@+id/tvMealsTodayTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/meals_today_title"
+            android:textColor="@color/primary_teal"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/mealsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSaveFeeding"
             android:layout_width="match_parent"
@@ -35,6 +52,7 @@
             android:backgroundTint="@color/primary_teal"
             android:text="@string/btn_save_feeding"
             android:textColor="@color/white"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

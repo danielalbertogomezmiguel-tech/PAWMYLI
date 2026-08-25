@@ -1,8 +1,13 @@
 package com.example.pawmily
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -10,19 +15,29 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    // Production HTTPS API
-    private const val BASE_URL = "https://api-production-66b1.up.railway.app/api/"
-    // Local emulator fallback (enable cleartext only for 10.0.2.2 via network_security_config):
-    // private const val BASE_URL = "http://10.0.2.2:3000/api/"
+    const val BASE_URL = "https://api-production-66b1.up.railway.app/api/"
 
     @Volatile
-    private var tokenProvider: TokenProvider? = null
+    var tokenProvider: TokenProvider? = null
+        private set
 
     fun init(provider: TokenProvider) {
         tokenProvider = provider
     }
 
-    private val gson = Gson()
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(
+            String::class.java,
+            JsonDeserializer { json, _, _ ->
+                when {
+                    json == null || json.isJsonNull -> ""
+                    json.isJsonPrimitive -> json.asJsonPrimitive.asString
+                    else -> json.toString()
+                }
+            }
+        )
+        .create()
+    private val jsonMedia = "application/json; charset=utf-8".toMediaType()
 
     private val logging = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) {
@@ -46,14 +61,25 @@ object RetrofitClient {
         throw lastError ?: IOException("Network error")
     }
 
-    private val client: OkHttpClient by lazy {
+    /** Client without auth — used only for refresh to avoid interceptor loops. */
+    private val bareClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor { tokenProvider?.getAccessToken() })
-            .addInterceptor(retryInterceptor)
-            .addInterceptor(logging)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private val client: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor { tokenProvider?.getAccessToken() })
+            .addInterceptor(Auth401RefreshInterceptor())
+            .authenticator(TokenAuthenticator())
+            .addInterceptor(retryInterceptor)
+            .addInterceptor(logging)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 
@@ -64,6 +90,27 @@ object RetrofitClient {
             .client(client)
             .build()
             .create(ApiService::class.java)
+    }
+
+    /**
+     * Blocking refresh for OkHttp Authenticator / startup restore.
+     * Returns null when refresh token is invalid/expired or network fails.
+     */
+    fun refreshBlocking(refreshToken: String): AuthResponse? {
+        return try {
+            val body = gson.toJson(RefreshRequest(refreshToken)).toRequestBody(jsonMedia)
+            val request = Request.Builder()
+                .url(BASE_URL + "auth/refresh")
+                .post(body)
+                .build()
+            bareClient.newCall(request).execute().use { response ->
+                val raw = response.body?.string().orEmpty()
+                if (!response.isSuccessful) return null
+                gson.fromJson(raw, AuthResponse::class.java)
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun parseErrorMessage(errorBody: String?): String? {

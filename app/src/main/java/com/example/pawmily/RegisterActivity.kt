@@ -15,6 +15,7 @@ class RegisterActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
+        KeyboardDismissHelper.attach(this, findViewById(android.R.id.content))
 
         val etName = findViewById<EditText>(R.id.etName)
         val etEmail = findViewById<EditText>(R.id.etEmail)
@@ -59,7 +60,16 @@ class RegisterActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val body = response.body()
                         if (body != null) {
-                            sessionManager.saveAuthSession(body.accessToken, body.user)
+                            if (body.refreshToken.isNullOrBlank()) {
+                                Toast.makeText(
+                                    this@RegisterActivity,
+                                    "El servidor no devolvió refresh token. Actualiza el backend.",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                                return@launch
+                            }
+                            TokenRefresher.markSessionValid()
+                            sessionManager.saveAuthSession(body.accessToken, body.user, body.refreshToken)
                             Toast.makeText(this@RegisterActivity, "Registro exitoso", Toast.LENGTH_SHORT).show()
                             val intent = Intent(this@RegisterActivity, DashboardActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

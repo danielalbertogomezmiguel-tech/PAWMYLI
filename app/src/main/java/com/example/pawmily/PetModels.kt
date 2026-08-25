@@ -17,7 +17,8 @@ data class Pet(
     val feeding: FeedingInfo,
     val medicalHistory: List<MedicalRecord>,
     val family: List<FamilyMember>,
-    val reminders: List<Reminder>
+    val reminders: List<Reminder>,
+    val accessRole: String? = null
 )
 
 data class FeedingInfo(

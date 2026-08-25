@@ -36,4 +36,14 @@
         android:text="AGREGAR"
         android:textColor="@color/white" />
 
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnDialogScan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/rounded_button_white"
+        android:backgroundTint="@color/accent_coral"
+        android:text="@string/btn_scan_code"
+        android:textColor="@color/white" />
+
 </LinearLayout>

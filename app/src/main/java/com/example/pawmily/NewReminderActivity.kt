@@ -1,11 +1,16 @@
 package com.example.pawmily
 
+import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.pawmily.databinding.ActivityNewReminderBinding
 import kotlinx.coroutines.launch
@@ -25,10 +30,18 @@ class NewReminderActivity : AppCompatActivity() {
     private val colors = listOf("teal", "coral", "sage", "blue", "amber")
     private val icons = listOf("bell", "paw", "pill", "food", "walk", "bath", "other")
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* channel still created; user can enable later in settings */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityNewReminderBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        KeyboardDismissHelper.attach(this, binding.root)
+        ReminderNotifier.ensureChannels(this)
+        maybeRequestNotificationPermission()
 
         editingReminderId = intent.getStringExtra(EXTRA_REMINDER_ID)
         binding.tvScreenTitle.text = if (editingReminderId != null) {
@@ -169,8 +182,20 @@ class NewReminderActivity : AppCompatActivity() {
         binding.btnSaveReminder.isEnabled = false
         lifecycleScope.launch {
             try {
+                if (ReminderPriority.isAlta(bodyCreate.priority)) {
+                    val existing = RemotePetRepository.listReminders(backendId)
+                    if (!ReminderPriority.canPromoteToAlta(existing, editingReminderId)) {
+                        Toast.makeText(
+                            this@NewReminderActivity,
+                            R.string.toast_max_priority_reminders,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@launch
+                    }
+                }
+
                 val reminderId = editingReminderId
-                if (reminderId != null) {
+                val saved = if (reminderId != null) {
                     RemotePetRepository.updateReminder(
                         reminderId,
                         ReminderUpdateDto(
@@ -191,6 +216,19 @@ class NewReminderActivity : AppCompatActivity() {
                 } else {
                     RemotePetRepository.createReminder(backendId, bodyCreate)
                 }
+
+                ReminderNotifier.schedule(
+                    context = this@NewReminderActivity,
+                    reminderId = saved.id,
+                    title = saved.title,
+                    message = saved.notificationMessage ?: saved.description ?: saved.title,
+                    dateIso = saved.date,
+                    timeHm = saved.time ?: bodyCreate.time.orEmpty(),
+                    priority = saved.priority ?: bodyCreate.priority,
+                    notifyEnabled = (saved.notifyEnabled ?: true) && (bodyCreate.notifyEnabled != false)
+                )
+
+                PetsSyncBus.notifyRemindersChanged()
                 setResult(RESULT_OK, android.content.Intent().putExtra("REMINDER_TITLE", title))
                 Toast.makeText(this@NewReminderActivity, R.string.reminder_saved, Toast.LENGTH_SHORT).show()
                 finish()
@@ -218,6 +256,17 @@ class NewReminderActivity : AppCompatActivity() {
             selectedTime = String.format("%02d:%02d", hourOfDay, minute)
             binding.tvSelectedTime.text = selectedTime
         }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     companion object {

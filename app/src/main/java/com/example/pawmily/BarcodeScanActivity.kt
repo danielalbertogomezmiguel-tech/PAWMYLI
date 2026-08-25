@@ -47,6 +47,7 @@ class BarcodeScanActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityBarcodeScanBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        KeyboardDismissHelper.attach(this, binding.root)
         SessionManager(this)
 
         binding.btnBack.setOnClickListener { finish() }
@@ -54,7 +55,7 @@ class BarcodeScanActivity : AppCompatActivity() {
             linkAndOpen(binding.etBarcodeInput.text.toString())
         }
         binding.etBarcodeInput.setOnEditorActionListener { _, actionId, event ->
-            val isEnter = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
+            val isEnter = event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
             if (actionId == EditorInfo.IME_ACTION_DONE || isEnter) {
                 linkAndOpen(binding.etBarcodeInput.text.toString())
                 true
@@ -100,13 +101,8 @@ class BarcodeScanActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val pet = RemotePetRepository.linkPet(code)
-                SessionManager(this@BarcodeScanActivity).savePetCode(pet.id)
-                Toast.makeText(this@BarcodeScanActivity, R.string.pet_linked, Toast.LENGTH_SHORT).show()
-                startActivity(
-                    Intent(this@BarcodeScanActivity, PetDetailActivity::class.java)
-                        .putExtra("PET_ID", pet.id)
-                )
+                val message = RemotePetRepository.linkPet(code)
+                Toast.makeText(this@BarcodeScanActivity, message, Toast.LENGTH_LONG).show()
                 finish()
             } catch (e: ApiException) {
                 Toast.makeText(this@BarcodeScanActivity, e.message, Toast.LENGTH_LONG).show()

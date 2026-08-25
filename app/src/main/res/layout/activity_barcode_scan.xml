@@ -21,6 +21,7 @@
         android:id="@+id/btnBack"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:layout_marginTop="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/btn_back"
         android:src="@drawable/left"
@@ -43,20 +44,23 @@
     <com.journeyapps.barcodescanner.DecoratedBarcodeView
         android:id="@+id/barcodeScanner"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        app:layout_constraintBottom_toTopOf="@id/manualCard"
-        app:layout_constraintTop_toBottomOf="@id/btnBack" />
+        android:layout_height="300dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/manualCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        app:cardBackgroundColor="@color/card_surface"
+        android:layout_marginBottom="80dp"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:cardElevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -67,19 +71,18 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/scan_manual_hint"
-                android:textColor="@color/text_muted" />
+                android:text="También puedes escribir o escanear con lector HID y pulsar Enter."
+                android:textColor="@color/primary_teal" />
 
             <EditText
                 android:id="@+id/etBarcodeInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:hint="@string/hint_pet_code"
+                android:hint="PAW-000001"
                 android:imeOptions="actionDone"
                 android:inputType="textCapCharacters"
-                android:singleLine="true"
-                android:textColor="@color/ink" />
+                android:singleLine="true" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnLinkCode"
@@ -88,7 +91,7 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/rounded_button_white"
                 android:backgroundTint="@color/primary_teal"
-                android:text="@string/btn_link_pet"
+                android:text="VINCULAR MASCOTA"
                 android:textColor="@color/white"
                 android:textStyle="bold" />
         </LinearLayout>

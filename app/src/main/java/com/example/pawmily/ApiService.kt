@@ -17,6 +17,12 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): Response<AuthResponse>
 
+    @POST("auth/refresh")
+    suspend fun refresh(@Body body: RefreshRequest): Response<AuthResponse>
+
+    @POST("auth/logout")
+    suspend fun logout(@Body body: LogoutRequest): Response<Map<String, Boolean>>
+
     @GET("auth/profile")
     suspend fun getProfile(): Response<UserDto>
 
@@ -32,6 +38,24 @@ interface ApiService {
 
     @POST("patients/link")
     suspend fun linkPatient(@Body body: LinkPatientRequest): Response<PatientDto>
+
+    @POST("patients/link-requests")
+    suspend fun createLinkRequest(@Body body: LinkRequestBody): Response<LinkRequestDto>
+
+    @GET("patients/link-requests/pending")
+    suspend fun pendingLinkRequests(): Response<List<LinkRequestDto>>
+
+    @POST("patients/link-requests/{id}/approve")
+    suspend fun approveLinkRequest(@Path("id") id: String): Response<LinkRequestDto>
+
+    @POST("patients/link-requests/{id}/reject")
+    suspend fun rejectLinkRequest(@Path("id") id: String): Response<LinkRequestDto>
+
+    @GET("patients/{id}/members")
+    suspend fun patientMembers(@Path("id") id: String): Response<List<PatientMemberDto>>
+
+    @DELETE("patients/{id}/members/{userId}")
+    suspend fun revokeMember(@Path("id") id: String, @Path("userId") userId: String): Response<Unit>
 
     @DELETE("patients/{id}/link")
     suspend fun unlinkPatient(@Path("id") id: String): Response<PatientDto>
@@ -58,6 +82,39 @@ interface ApiService {
         @Path("id") patientId: String,
         @Body body: FeedingUpdateDto
     ): Response<FeedingDto>
+
+    @GET("patients/{id}/feeding/logs")
+    suspend fun getFeedingLogs(
+        @Path("id") patientId: String,
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null
+    ): Response<List<FeedingLogDto>>
+
+    @POST("patients/{id}/feeding/logs")
+    suspend fun createFeedingLog(
+        @Path("id") patientId: String,
+        @Body body: FeedingLogCreateDto
+    ): Response<FeedingLogDto>
+
+    // Favorites
+    @GET("favorites")
+    suspend fun listFavorites(): Response<List<FavoriteDto>>
+
+    @POST("favorites")
+    suspend fun addFavorite(@Body body: FavoriteCreateDto): Response<FavoriteDto>
+
+    @DELETE("favorites/{id}")
+    suspend fun removeFavorite(@Path("id") id: String): Response<Unit>
+
+    // Media (avatar / photo upload stubs)
+    @POST("media/upload-url")
+    suspend fun createMediaUploadUrl(@Body body: MediaUploadUrlRequest): Response<MediaUploadUrlResponse>
+
+    @POST("media/confirm")
+    suspend fun confirmMediaUpload(@Body body: MediaConfirmRequest): Response<MediaAssetDto>
+
+    @GET("media/{assetId}/url")
+    suspend fun getMediaUrl(@Path("assetId") assetId: String): Response<MediaUrlResponse>
 
     // Reminders
     @GET("patients/{id}/reminders")
@@ -118,8 +175,13 @@ data class UpdateProfileRequest(
 
 data class AuthResponse(
     val accessToken: String,
+    val refreshToken: String? = null,
     val user: UserDto
 )
+
+data class RefreshRequest(val refreshToken: String)
+
+data class LogoutRequest(val refreshToken: String? = null)
 
 data class UserDto(
     val id: String,
@@ -130,10 +192,39 @@ data class UserDto(
     val clinic: String? = null,
     val address: String? = null,
     val license: String? = null,
-    val photo: String? = null
+    val photo: String? = null,
+    val photoAssetId: String? = null
 )
 
 data class LinkPatientRequest(val code: String)
+
+data class LinkRequestBody(
+    val code: String,
+    val requestedRole: String? = null
+)
+
+data class LinkRequestDto(
+    val id: String,
+    val requesterId: String? = null,
+    val patientId: String? = null,
+    val requestedRole: String? = null,
+    val status: String? = null,
+    val patientName: String? = null,
+    val patientCode: String? = null,
+    val requesterName: String? = null,
+    val requesterEmail: String? = null
+)
+
+data class PatientMemberDto(
+    val id: String? = null,
+    val userId: String? = null,
+    val patientId: String? = null,
+    val role: String? = null,
+    val status: String? = null,
+    val userName: String? = null,
+    val userEmail: String? = null,
+    val legacy: Boolean? = null
+)
 
 data class PageMeta(
     val page: Int = 1,
@@ -150,20 +241,36 @@ data class PatientDto(
     val id: String,
     val code: String,
     val name: String,
-    val species: String,
-    val breed: String,
-    val age: String,
-    val sex: String,
+    val species: String? = null,
+    val breed: String? = null,
+    val age: String? = null,
+    val sex: String? = null,
     val weight: String? = null,
     val color: String? = null,
     val microchip: String? = null,
-    val ownerName: String,
+    val ownerName: String? = null,
     val ownerPhone: String? = null,
     val ownerEmail: String? = null,
     val photo: String? = null,
+    val photoUrl: String? = null,
+    val barcodePayload: String? = null,
+    val ownerUserId: String? = null,
+    val accessRole: String? = null,
+    val previousCode: String? = null,
     val feeding: FeedingDto? = null,
     val medicalRecords: List<MedicalRecordDto>? = null,
     val reminders: List<ReminderDto>? = null
+)
+
+data class FeedingMealDto(
+    val id: String? = null,
+    val feedingId: String? = null,
+    val label: String? = null,
+    val time: String? = null,
+    val amount: String? = null,
+    val food: String? = null,
+    val notes: String? = null,
+    val sortOrder: Int? = null
 )
 
 data class FeedingDto(
@@ -183,7 +290,70 @@ data class FeedingDto(
     val restrictions: String? = null,
     val allergies: String? = null,
     val observations: String? = null,
-    val vetRecommendations: String? = null
+    val vetRecommendations: String? = null,
+    val allowedFoods: String? = null,
+    val forbiddenFoods: String? = null,
+    val meals: List<FeedingMealDto>? = null
+)
+
+data class FeedingLogDto(
+    val id: String? = null,
+    val mealId: String? = null,
+    val patientId: String? = null,
+    val scheduledDate: String? = null,
+    val status: String? = null,
+    val loggedAt: String? = null,
+    val loggedByUserId: String? = null,
+    val meal: FeedingMealDto? = null
+)
+
+data class FeedingLogCreateDto(
+    val mealId: String,
+    val scheduledDate: String,
+    val status: String
+)
+
+data class FavoriteDto(
+    val id: String,
+    val userId: String? = null,
+    val targetType: String,
+    val targetId: String,
+    val createdAt: String? = null
+)
+
+data class FavoriteCreateDto(
+    val targetType: String,
+    val targetId: String
+)
+
+data class MediaUploadUrlRequest(
+    val mimeType: String,
+    val sizeBytes: Long,
+    val patientId: String? = null,
+    val kind: String? = null
+)
+
+data class MediaUploadUrlResponse(
+    val assetId: String? = null,
+    val bucket: String? = null,
+    val storageKey: String? = null
+)
+
+data class MediaConfirmRequest(
+    val assetId: String,
+    val setAsPatientPhoto: Boolean? = null,
+    val setAsUserPhoto: Boolean? = null
+)
+
+data class MediaAssetDto(
+    val id: String? = null,
+    val kind: String? = null,
+    val mimeType: String? = null,
+    val url: String? = null
+)
+
+data class MediaUrlResponse(
+    val url: String? = null
 )
 
 data class FeedingUpdateDto(
@@ -205,12 +375,12 @@ data class FeedingUpdateDto(
 )
 
 data class MedicalRecordDto(
-    val id: String,
-    val date: String,
-    val reason: String,
+    val id: String? = null,
+    val date: String? = null,
+    val reason: String? = null,
     val diagnosis: String? = null,
     val treatment: String? = null,
-    val vetName: String,
+    val vetName: String? = null,
     val status: String? = null,
     val petId: String? = null
 )

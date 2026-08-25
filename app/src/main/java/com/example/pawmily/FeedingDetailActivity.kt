@@ -10,16 +10,19 @@ import kotlinx.coroutines.launch
 
 class FeedingDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFeedingDetailBinding
-    private var petBackendId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityFeedingDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        KeyboardDismissHelper.attach(this, binding.root)
 
         val petCode = intent.getStringExtra("PET_CODE")
         binding.btnBack.setOnClickListener { finish() }
-        binding.btnSaveFeeding.setOnClickListener { saveFeeding() }
+        binding.btnSaveFeeding.visibility = View.GONE
+        binding.btnSaveFeeding.setOnClickListener {
+            Toast.makeText(this, R.string.diet_read_only_owner, Toast.LENGTH_SHORT).show()
+        }
 
         if (petCode == null) {
             Toast.makeText(this, R.string.error_pet_id, Toast.LENGTH_SHORT).show()
@@ -30,50 +33,27 @@ class FeedingDetailActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val pet = RemotePetRepository.getPet(petCode)
-                petBackendId = pet.backendId
                 binding.tvPetName.text = pet.name
                 binding.tvPetBreed.text = pet.breed
                 val savedUri = SessionManager(this@FeedingDetailActivity).getPetImageUri(pet.id)
                 if (savedUri != null) {
                     runCatching { binding.ivPet.setImageURI(android.net.Uri.parse(savedUri)) }
+                } else {
+                    PetImageLoader.loadInto(binding.ivPet, pet.imageUrl)
                 }
 
                 val feeding = pet.backendId?.let { id ->
                     runCatching { RemotePetRepository.getFeeding(id) }.getOrNull()
                 }
                 binding.tvEmptyFeeding.visibility = if (feeding == null) View.VISIBLE else View.GONE
-                FeedingFormHelper.bind(binding.feedingForm.root, feeding)
+                binding.tvEmptyFeeding.setText(R.string.empty_feeding_owner)
+                FeedingFormHelper.bind(binding.feedingForm.root, feeding, editable = false)
             } catch (e: Exception) {
                 Toast.makeText(
                     this@FeedingDetailActivity,
                     e.message ?: getString(R.string.error_load_feeding),
                     Toast.LENGTH_SHORT
                 ).show()
-            }
-        }
-    }
-
-    private fun saveFeeding() {
-        val backendId = petBackendId
-        if (backendId.isNullOrBlank()) {
-            Toast.makeText(this, R.string.error_pet_id, Toast.LENGTH_SHORT).show()
-            return
-        }
-        binding.btnSaveFeeding.isEnabled = false
-        lifecycleScope.launch {
-            try {
-                val body = FeedingFormHelper.collect(binding.feedingForm.root)
-                RemotePetRepository.updateFeeding(backendId, body)
-                binding.tvEmptyFeeding.visibility = View.GONE
-                Toast.makeText(this@FeedingDetailActivity, R.string.feeding_saved, Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this@FeedingDetailActivity,
-                    e.message ?: getString(R.string.error_save_feeding),
-                    Toast.LENGTH_LONG
-                ).show()
-            } finally {
-                binding.btnSaveFeeding.isEnabled = true
             }
         }
     }

@@ -43,6 +43,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
+            app:cardBackgroundColor="@color/card_surface"
             app:cardCornerRadius="8dp"
             app:cardElevation="2dp">
             <LinearLayout
@@ -60,7 +61,7 @@
                     android:textStyle="bold" />
                 <TextView
                     android:id="@+id/tvUserName"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/empty"
                     android:textColor="@color/ink"
@@ -76,7 +77,7 @@
                     android:textStyle="bold" />
                 <TextView
                     android:id="@+id/tvUserEmail"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/empty"
                     android:textColor="@color/ink"
@@ -92,7 +93,7 @@
                     android:textStyle="bold" />
                 <TextView
                     android:id="@+id/tvUserPhone"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/empty"
                     android:textColor="@color/ink"
@@ -105,6 +106,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_surface"
             app:cardCornerRadius="8dp"
             app:cardElevation="2dp">
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -112,23 +114,35 @@
                 android:layout_height="wrap_content"
                 android:padding="16dp">
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tvNotificationsLabel"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:text="Notificaciones"
                     android:textColor="@color/accent_pink"
                     android:textSize="24sp"
                     android:textStyle="bold"
+                    app:layout_constraintEnd_toStartOf="@id/switchNotifications"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent" />
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchNotifications"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
+                    android:enabled="true"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent" />
+                <TextView
+                    android:id="@+id/tvNotificationsNote"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/notifications_hint"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvNotificationsLabel" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 
@@ -137,6 +151,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_surface"
             app:cardCornerRadius="8dp"
             app:cardElevation="2dp">
             <TextView

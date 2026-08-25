@@ -2,26 +2,68 @@ package com.example.pawmily
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 
 class SessionManager(context: Context) : TokenProvider {
-    private val prefs: SharedPreferences = context.getSharedPreferences("PawMilySession", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = createSecurePrefs(context)
 
     companion object {
         private const val KEY_IS_LOGGED_IN = "isLoggedIn"
         private const val KEY_ACCESS_TOKEN = "accessToken"
+        private const val KEY_REFRESH_TOKEN = "refreshToken"
         private const val KEY_USER_ID = "userId"
         private const val KEY_USER_NAME = "userName"
         private const val KEY_USER_EMAIL = "userEmail"
         private const val KEY_USER_PHONE = "userPhone"
         private const val KEY_LINKED_PET_CODES = "linkedPetCodesList"
         private const val KEY_PET_IMAGE_URI = "petImageUri"
+        private const val KEY_NOTIFICATIONS_ENABLED = "notificationsEnabled"
+
+        private fun createSecurePrefs(context: Context): SharedPreferences {
+            return try {
+                val masterKey = MasterKey.Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+                EncryptedSharedPreferences.create(
+                    context,
+                    "PawMilySessionSecure",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (_: Exception) {
+                // Fallback if Keystore unavailable (emulator edge cases)
+                context.getSharedPreferences("PawMilySession", Context.MODE_PRIVATE)
+            }
+        }
     }
 
     init {
         RetrofitClient.init(this)
     }
 
-    override fun getAccessToken(): String? = prefs.getString(KEY_ACCESS_TOKEN, null)
+    override fun getAccessToken(): String? {
+        val raw = prefs.getString(KEY_ACCESS_TOKEN, null) ?: return null
+        return raw.removePrefix("Bearer ").trim().takeIf { it.isNotBlank() }
+    }
+
+    override fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH_TOKEN, null)
+
+    override fun updateTokens(accessToken: String, refreshToken: String?) {
+        prefs.edit().apply {
+            putBoolean(KEY_IS_LOGGED_IN, true)
+            putString(KEY_ACCESS_TOKEN, accessToken.removePrefix("Bearer ").trim())
+            if (!refreshToken.isNullOrBlank()) {
+                putString(KEY_REFRESH_TOKEN, refreshToken)
+            }
+            apply()
+        }
+    }
+
+    override fun clearSessionOnAuthFailure() {
+        logout()
+    }
 
     fun savePetImageUri(petId: String, uri: String) {
         prefs.edit().putString(KEY_PET_IMAGE_URI + "_" + petId, uri).apply()
@@ -31,10 +73,12 @@ class SessionManager(context: Context) : TokenProvider {
         return prefs.getString(KEY_PET_IMAGE_URI + "_" + petId, null)
     }
 
-    fun saveAuthSession(accessToken: String, user: UserDto) {
+    fun saveAuthSession(accessToken: String, user: UserDto, refreshToken: String? = null) {
+        val cleanAccess = accessToken.removePrefix("Bearer ").trim()
         prefs.edit().apply {
             putBoolean(KEY_IS_LOGGED_IN, true)
-            putString(KEY_ACCESS_TOKEN, accessToken)
+            putString(KEY_ACCESS_TOKEN, cleanAccess)
+            if (!refreshToken.isNullOrBlank()) putString(KEY_REFRESH_TOKEN, refreshToken)
             putString(KEY_USER_ID, user.id)
             putString(KEY_USER_NAME, user.name)
             putString(KEY_USER_EMAIL, user.email)
@@ -85,6 +129,12 @@ class SessionManager(context: Context) : TokenProvider {
         prefs.edit().putStringSet(key, codes.map { it.uppercase() }.toSet()).apply()
     }
 
+    /** Clears local linked-pet code cache (e.g. after approving a link request). */
+    fun clearLinkedPetsCache() {
+        val key = petCodesStorageKey() ?: return
+        prefs.edit().remove(key).apply()
+    }
+
     fun getPetCodes(): List<String> {
         val key = petCodesStorageKey() ?: return emptyList()
         return prefs.getStringSet(key, mutableSetOf())?.toList() ?: emptyList()
@@ -92,13 +142,23 @@ class SessionManager(context: Context) : TokenProvider {
 
     fun getPetCode(): String? = getPetCodes().firstOrNull()
 
+    fun areNotificationsEnabled(): Boolean =
+        prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true)
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled).apply()
+    }
+
     fun logout() {
+        clearLinkedPetsCache()
         prefs.edit().apply {
             putBoolean(KEY_IS_LOGGED_IN, false)
             remove(KEY_ACCESS_TOKEN)
+            remove(KEY_REFRESH_TOKEN)
             remove(KEY_USER_ID)
             remove(KEY_USER_NAME)
             remove(KEY_USER_EMAIL)
+            remove(KEY_USER_PHONE)
             apply()
         }
     }

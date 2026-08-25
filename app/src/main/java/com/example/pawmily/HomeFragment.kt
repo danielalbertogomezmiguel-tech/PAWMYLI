@@ -17,10 +17,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), PetsSyncBus.Listener {
     private lateinit var barcodeCard: View
     private lateinit var petSummaryCard: View
-    private lateinit var remindersList: LinearLayout
+    private lateinit var favoritesList: LinearLayout
+    private lateinit var emptyFavoritesText: TextView
     private lateinit var emptyStateText: TextView
     private lateinit var sessionManager: SessionManager
 
@@ -41,19 +42,19 @@ class HomeFragment : Fragment() {
         sessionManager = SessionManager(requireContext())
         barcodeCard = view.findViewById(R.id.barcodeCard)
         petSummaryCard = view.findViewById(R.id.petSummaryCard)
-        remindersList = view.findViewById(R.id.remindersList)
+        favoritesList = view.findViewById(R.id.favoritesList)
+        emptyFavoritesText = view.findViewById(R.id.emptyFavoritesText)
+            ?: TextView(requireContext()).also { it.visibility = View.GONE }
         emptyStateText = view.findViewById(R.id.emptyStateText)
+            ?: TextView(requireContext()).also { it.visibility = View.GONE }
 
         summaryPetName = view.findViewById(R.id.summaryPetName)
         summaryPetBreed = view.findViewById(R.id.summaryPetBreed)
         summaryPetDetails = view.findViewById(R.id.summaryPetDetails)
         summaryPetImage = view.findViewById(R.id.summaryPetImage)
 
-        barcodeCard.setOnClickListener {
-            startActivity(Intent(requireContext(), BarcodeScanActivity::class.java))
-        }
         view.findViewById<View>(R.id.petCodeLayout).setOnClickListener {
-            startActivity(Intent(requireContext(), BarcodeScanActivity::class.java))
+            showAddPetDialog()
         }
 
         view.findViewById<View>(R.id.btnLeft).setOnClickListener {
@@ -64,30 +65,60 @@ class HomeFragment : Fragment() {
             navigateCarousel(1)
         }
 
-        refreshPetInfo()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        refreshPetInfo(force = false)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        PetsSyncBus.addListener(this)
+    }
+
+    override fun onStop() {
+        PetsSyncBus.removeListener(this)
+        super.onStop()
+    }
+
+    override fun onPetsShouldRefresh() {
+        if (isAdded) refreshPetInfo(force = true)
     }
 
     override fun onResume() {
         super.onResume()
-        refreshPetInfo()
+        refreshPetInfo(force = false)
     }
 
-    private fun refreshPetInfo() {
-        linkedPets.clear()
-        updateCarouselDisplay()
+    private fun refreshPetInfo(force: Boolean = false) {
+        val cached = PetsMemoryCache.snapshot()
+        if (cached != null) {
+            linkedPets.clear()
+            linkedPets.addAll(cached)
+            updateCarouselDisplay()
+        } else {
+            linkedPets.clear()
+            updateCarouselDisplay()
+        }
+
+        if (!force && PetsMemoryCache.shouldSkipNetwork()) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                runCatching { loadFavorites(linkedPets) }
+            }
+            return
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val pets = RemotePetRepository.listMyPets()
+                val pets = RemotePetRepository.listMyPets(forceRefresh = force)
                 sessionManager.cachePetCodes(pets.map { it.id })
                 linkedPets.clear()
                 linkedPets.addAll(pets)
-                if (currentPetIndex >= linkedPets.size + 1) {
-                    currentPetIndex = 0
-                }
+                if (currentPetIndex >= linkedPets.size + 1) currentPetIndex = 0
                 updateCarouselDisplay()
+                loadFavorites(pets)
             } catch (e: ApiException) {
                 Toast.makeText(requireContext(), e.message, Toast.LENGTH_SHORT).show()
                 updateCarouselDisplay()
@@ -109,21 +140,18 @@ class HomeFragment : Fragment() {
         if (linkedPets.isEmpty()) {
             barcodeCard.visibility = View.VISIBLE
             petSummaryCard.visibility = View.GONE
-            remindersList.removeAllViews()
             emptyStateText.visibility = View.VISIBLE
             emptyStateText.text = getString(R.string.empty_pets)
+            favoritesList.removeAllViews()
             return
         }
 
         emptyStateText.visibility = View.GONE
-
         if (currentPetIndex < linkedPets.size) {
-            val pet = linkedPets[currentPetIndex]
-            displayPetInfo(pet)
+            displayPetInfo(linkedPets[currentPetIndex])
         } else {
             barcodeCard.visibility = View.VISIBLE
             petSummaryCard.visibility = View.GONE
-            remindersList.removeAllViews()
         }
     }
 
@@ -135,6 +163,12 @@ class HomeFragment : Fragment() {
 
         val etPetCode = dialogView.findViewById<EditText>(R.id.etPetCode)
         val btnAdd = dialogView.findViewById<Button>(R.id.btnDialogAdd)
+        val btnScan = dialogView.findViewById<Button>(R.id.btnDialogScan)
+
+        btnScan?.setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(requireContext(), BarcodeScanActivity::class.java))
+        }
 
         btnAdd.setOnClickListener {
             val code = etPetCode.text.toString().trim()
@@ -146,16 +180,24 @@ class HomeFragment : Fragment() {
             btnAdd.isEnabled = false
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    val pet = RemotePetRepository.linkPet(code)
-                    sessionManager.savePetCode(pet.id)
-                    refreshPetInfo()
+                    val message = RemotePetRepository.linkPet(code)
+                    PetsSyncBus.notifyPetsChanged()
+                    refreshPetInfo(force = true)
                     currentPetIndex = 0
                     dialog.dismiss()
-                    Toast.makeText(requireContext(), "Mascota vinculada", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
                 } catch (e: ApiException) {
-                    Toast.makeText(requireContext(), e.message ?: "Código no encontrado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        e.message ?: "Código no encontrado",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } catch (_: Exception) {
-                    Toast.makeText(requireContext(), "No se pudo vincular la mascota", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "No se pudo vincular la mascota",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } finally {
                     btnAdd.isEnabled = true
                 }
@@ -178,100 +220,79 @@ class HomeFragment : Fragment() {
             try {
                 summaryPetImage.setImageURI(Uri.parse(savedUri))
             } catch (_: Exception) {
-                summaryPetImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    PetImageLoader.loadInto(summaryPetImage, pet.imageUrl)
+                }
             }
         } else {
-            summaryPetImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            viewLifecycleOwner.lifecycleScope.launch {
+                PetImageLoader.loadInto(summaryPetImage, pet.imageUrl)
+            }
         }
 
-        petSummaryCard.setOnClickListener {
-            val intent = Intent(requireContext(), PetDetailActivity::class.java)
-            intent.putExtra("PET_ID", pet.id)
-            startActivity(intent)
-        }
-
-        remindersList.removeAllViews()
-        val priorityItems = mutableListOf<View>()
-
-        val today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        val todayRecord = pet.feeding.dailyRecords.find { it.date == today }
-        if (todayRecord?.isPriority == true) {
-            priorityItems.add(
-                homeReminderCard(
-                    title = "Alimentación",
-                    whenText = todayRecord.date,
-                    onClick = {
-                        startActivity(
-                            Intent(requireContext(), FeedingDetailActivity::class.java)
-                                .putExtra("PET_CODE", pet.id)
-                                .putExtra("RECORD_DATE", todayRecord.date)
-                        )
-                    }
-                )
-            )
-        }
-
-        pet.reminders.filter { it.isPriority && !it.completed }.forEach { reminder ->
-            priorityItems.add(
-                homeReminderCard(
-                    title = reminder.title,
-                    whenText = reminder.time,
-                    message = reminder.notificationMessage,
-                    onClick = {
-                        startActivity(
-                            Intent(requireContext(), PetRemindersActivity::class.java)
-                                .putExtra("PET_ID", pet.id)
-                                .putExtra("PET_BACKEND_ID", pet.backendId)
-                        )
-                    }
-                )
-            )
-        }
-
-        pet.medicalHistory.filter { (it as? MedicalRecordWithPriority)?.isPriority == true }.forEach { medical ->
-            priorityItems.add(
-                homeReminderCard(
-                    title = medical.type,
-                    whenText = medical.date,
-                    onClick = {
-                        startActivity(
-                            Intent(requireContext(), MedicalReportActivity::class.java).apply {
-                                putExtra("PET_NAME", pet.name)
-                                putExtra("RECORD_DATE", medical.date)
-                                putExtra("RECORD_DOCTOR", medical.doctor)
-                                putExtra("RECORD_REASON", medical.reason)
-                                putExtra("RECORD_DIAGNOSIS", medical.diagnosis)
-                                putExtra("RECORD_TREATMENT", medical.treatment)
-                            }
-                        )
-                    }
-                )
-            )
-        }
-
-        if (priorityItems.isEmpty()) {
-            emptyStateText.visibility = View.VISIBLE
-            emptyStateText.text = getString(R.string.empty_reminders)
-        }
-
-        priorityItems.take(3).forEach { remindersList.addView(it) }
+        petSummaryCard.setOnClickListener(null)
+        petSummaryCard.isClickable = false
     }
 
-    private fun homeReminderCard(
-        title: String,
-        whenText: String,
-        message: String? = null,
-        onClick: () -> Unit
-    ): View {
-        val v = LayoutInflater.from(requireContext()).inflate(R.layout.item_reminder, remindersList, false)
+    private suspend fun loadFavorites(pets: List<Pet>) {
+        favoritesList.removeAllViews()
+        try {
+            val favorites = RemotePetRepository.listFavorites().take(3)
+            if (favorites.isEmpty()) {
+                showFavoritesEmpty()
+                return
+            }
+
+            val remindersById = pets.flatMap { pet ->
+                pet.reminders.mapNotNull { rem -> rem.id?.let { it to Pair(pet, rem) } }
+            }.toMap()
+
+            emptyFavoritesText.visibility = View.GONE
+            favorites.forEach { fav ->
+                when (fav.targetType.uppercase()) {
+                    "REMINDER" -> {
+                        val pair = remindersById[fav.targetId]
+                        if (pair != null) {
+                            val (pet, rem) = pair
+                            favoritesList.addView(
+                                favoriteCard(
+                                    title = rem.title,
+                                    whenText = listOfNotNull(
+                                        rem.date,
+                                        rem.time.takeIf { it.isNotBlank() }
+                                    ).joinToString(" · "),
+                                    onClick = {
+                                        startActivity(
+                                            Intent(requireContext(), PetRemindersActivity::class.java)
+                                                .putExtra("PET_ID", pet.id)
+                                                .putExtra("PET_BACKEND_ID", pet.backendId)
+                                        )
+                                    }
+                                )
+                            )
+                        }
+                    }
+                    else -> Unit
+                }
+            }
+            if (favoritesList.childCount == 0) showFavoritesEmpty()
+        } catch (_: Exception) {
+            showFavoritesEmpty()
+        }
+    }
+
+    private fun showFavoritesEmpty() {
+        favoritesList.removeAllViews()
+        emptyFavoritesText.visibility = View.VISIBLE
+        emptyFavoritesText.text = getString(R.string.empty_favorites)
+    }
+
+    private fun favoriteCard(title: String, whenText: String, onClick: () -> Unit): View {
+        val v = LayoutInflater.from(requireContext()).inflate(R.layout.item_reminder, favoritesList, false)
         v.findViewById<TextView>(R.id.reminderTitle).text = title
         v.findViewById<TextView>(R.id.reminderDate).text = whenText
-        v.findViewById<View>(R.id.reminderActions).visibility = View.GONE
-        val messageView = v.findViewById<TextView>(R.id.reminderMessage)
-        if (!message.isNullOrBlank()) {
-            messageView.visibility = View.VISIBLE
-            messageView.text = message
-        }
+        v.findViewById<ImageView>(R.id.ivPriorityStar)?.visibility = View.GONE
+        v.findViewById<Button>(R.id.btnDetails)?.setOnClickListener { onClick() }
         v.setOnClickListener { onClick() }
         return v
     }

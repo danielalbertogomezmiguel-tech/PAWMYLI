@@ -62,7 +62,7 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/barcodeCard"
                 android:layout_width="0dp"
-                android:layout_height="180dp"
+                android:layout_height="160dp"
                 android:layout_marginHorizontal="8dp"
                 app:cardBackgroundColor="@color/primary_teal"
                 app:cardCornerRadius="8dp"
@@ -114,7 +114,7 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/petSummaryCard"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="160dp"
                 android:layout_marginHorizontal="8dp"
                 android:visibility="gone"
                 app:cardBackgroundColor="@color/primary_teal"
@@ -125,13 +125,13 @@
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:padding="12dp">
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/summaryPetImageContainer"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -148,33 +148,44 @@
 
                 <TextView
                     android:id="@+id/summaryPetName"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="@string/empty"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/summaryPetImageContainer"
                     app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
                         android:id="@+id/summaryPetBreed"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
                         android:text="@string/empty"
                         android:textColor="@color/white"
+                        android:textSize="14sp"
+                        app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="@id/summaryPetName"
                         app:layout_constraintTop_toBottomOf="@id/summaryPetName" />
 
                     <TextView
                         android:id="@+id/summaryPetDetails"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
                         android:text="@string/empty"
                         android:textColor="@color/white"
+                        android:textSize="16sp"
                         android:textStyle="bold"
+                        app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="@id/summaryPetName"
                         app:layout_constraintTop_toBottomOf="@id/summaryPetBreed" />
 
@@ -183,11 +194,11 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <TextView
-            android:id="@+id/remindersTitle"
+            android:id="@+id/favoritesTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="RECORDATORIOS"
+            android:text="@string/favorites_title"
             android:textColor="#7A8D8C"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -195,14 +206,24 @@
             app:layout_constraintTop_toBottomOf="@id/petCardContainer" />
 
         <LinearLayout
-            android:id="@+id/remindersList"
+            android:id="@+id/favoritesList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@id/remindersTitle">
+            app:layout_constraintTop_toBottomOf="@id/favoritesTitle" />
 
-        </LinearLayout>
+        <TextView
+            android:id="@+id/emptyFavoritesText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:padding="16dp"
+            android:text="@string/empty_favorites"
+            android:textColor="#7A8D8C"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/favoritesList" />
 
         <TextView
             android:id="@+id/emptyStateText"
@@ -214,7 +235,7 @@
             android:text="@string/empty_pets"
             android:textColor="#7A8D8C"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/remindersList" />
+            app:layout_constraintTop_toBottomOf="@id/emptyFavoritesText" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

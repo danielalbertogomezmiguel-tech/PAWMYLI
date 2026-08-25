@@ -4,9 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.view.LayoutInflater
-import android.widget.Button
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -16,27 +15,30 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.google.android.material.tabs.TabLayoutMediator
 import com.example.pawmily.databinding.ActivityPetDetailBinding
+import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.launch
 
 class PetDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPetDetailBinding
     private lateinit var sessionManager: SessionManager
-    private var petId: String? = null
     private var petCode: String? = null
+    private var petBackendId: String? = null
+    private var loadedPet: Pet? = null
 
-    private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val selectImageLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val imageUri: Uri? = result.data?.data
             if (imageUri != null) {
                 try {
-                    val contentResolver = applicationContext.contentResolver
-                    val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    contentResolver.takePersistableUriPermission(imageUri, takeFlags)
-
+                    contentResolver.takePersistableUriPermission(
+                        imageUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
                     binding.detailPetImage.setImageURI(imageUri)
-                    petId?.let { sessionManager.savePetImageUri(it, imageUri.toString()) }
+                    petCode?.let { sessionManager.savePetImageUri(it, imageUri.toString()) }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -48,12 +50,13 @@ class PetDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPetDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        ImmersiveMode.applyAfterContent(this)
+        KeyboardDismissHelper.attach(this, binding.root)
 
         sessionManager = SessionManager(this)
+        petCode = intent.getStringExtra("PET_ID") ?: sessionManager.getPetCode()
+        petBackendId = intent.getStringExtra("PET_BACKEND_ID")
 
-        val intentPetId = intent.getStringExtra("PET_ID")
-        val sessionPetId = sessionManager.getPetCode()
-        petCode = intentPetId ?: sessionPetId
 
         binding.btnBack.setOnClickListener { finish() }
 
@@ -65,40 +68,71 @@ class PetDetailActivity : AppCompatActivity() {
             selectImageLauncher.launch(intent)
         }
 
-        petCode?.let { code ->
-            lifecycleScope.launch {
-                val pet = runCatching { RemotePetRepository.getPet(code) }.getOrNull() ?: return@launch
-                petId = pet.id
-                binding.detailPetName.text = pet.name
-                binding.detailPetBreed.text = pet.breed
-                val savedUri = sessionManager.getPetImageUri(pet.id)
-                if (savedUri != null) {
-                    try {
-                        binding.detailPetImage.setImageURI(Uri.parse(savedUri))
-                    } catch (_: Exception) {
-                        binding.detailPetImage.setImageResource(android.R.drawable.ic_menu_gallery)
-                    }
-                }
+        val code = petCode
+        if (code.isNullOrBlank()) {
+            Toast.makeText(this, R.string.error_load_pet_detail, Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        val adapter = PetDetailPagerAdapter(this, code)
+        binding.viewPager.adapter = adapter
+        val tabTitles = listOf("Resumen", "Historial", "Alimentación")
+        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+            tab.text = tabTitles[position]
+        }.attach()
+
+        loadPetHeader(code)
+    }
+
+    private fun loadPetHeader(code: String) {
+        lifecycleScope.launch {
+            try {
+                val pet = RemotePetRepository.getPet(code)
+                loadedPet = pet
+                petCode = pet.id
+                petBackendId = pet.backendId
+                bindHeader(pet)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@PetDetailActivity,
+                    e.message ?: getString(R.string.error_load_pet_detail),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-
-            val adapter = PetDetailPagerAdapter(this, code)
-            binding.viewPager.adapter = adapter
-
-            val tabTitles = listOf("Resumen", "Historial", "Alimentación", "Familia")
-            TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-                tab.text = tabTitles[position]
-            }.attach()
         }
     }
 
-    class PetDetailPagerAdapter(activity: AppCompatActivity, private val petCode: String) : FragmentStateAdapter(activity) {
-        override fun getItemCount(): Int = 4
+    private fun bindHeader(pet: Pet) {
+        binding.detailPetName.text = pet.name
+        binding.detailPetBreed.text = pet.breed
+
+        val savedUri = sessionManager.getPetImageUri(pet.id)
+        if (savedUri != null) {
+            try {
+                binding.detailPetImage.setImageURI(Uri.parse(savedUri))
+            } catch (_: Exception) {
+                lifecycleScope.launch {
+                    PetImageLoader.loadInto(binding.detailPetImage, pet.imageUrl)
+                }
+            }
+        } else {
+            lifecycleScope.launch {
+                PetImageLoader.loadInto(binding.detailPetImage, pet.imageUrl)
+            }
+        }
+    }
+
+    class PetDetailPagerAdapter(
+        activity: AppCompatActivity,
+        private val petCode: String
+    ) : FragmentStateAdapter(activity) {
+        override fun getItemCount(): Int = 3
         override fun createFragment(position: Int): Fragment {
             return when (position) {
                 0 -> SummaryFragment.newInstance(petCode)
                 1 -> HistoryFragment.newInstance(petCode)
-                2 -> FeedingFragment.newInstance(petCode)
-                else -> FamilyFragment.newInstance(petCode)
+                else -> FeedingFragment.newInstance(petCode)
             }
         }
     }
@@ -114,24 +148,79 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val petCode = arguments?.getString(ARG_PET_CODE) ?: return
-
+        val petCode = arguments?.getString(ARG_PET_CODE).orEmpty()
         viewLifecycleOwner.lifecycleScope.launch {
-            val pet = runCatching { RemotePetRepository.getPet(petCode) }.getOrNull() ?: return@launch
-            view.findViewById<TextView>(R.id.tvSpecies).text = "Especie: ${pet.species}"
-            view.findViewById<TextView>(R.id.tvBreed).text = "Raza: ${pet.breed}"
-            view.findViewById<TextView>(R.id.tvGender).text = "Genero: ${pet.gender}"
-            view.findViewById<TextView>(R.id.tvAge).text = "Edad: ${pet.age}"
-            view.findViewById<TextView>(R.id.tvColor).text = "Color: ${pet.color}"
-            view.findViewById<TextView>(R.id.tvMicrochip).text = "Micro Chip: ${pet.microchip}"
-            view.findViewById<TextView>(R.id.tvOwner).text = "Propietario: ${pet.owner}"
-            view.findViewById<TextView>(R.id.tvCurrentWeight).text = "Peso Actual: ${pet.weight}"
-            view.findViewById<TextView>(R.id.tvPreviousWeight).text = "Peso Anterior: ${pet.previousWeight ?: "Sin registro"}"
+            try {
+                val pet = RemotePetRepository.getPet(petCode)
+                bindSummary(view, pet)
+                loadBarcode(view, pet)
+                loadPriorityReminders(view, pet)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    e.message ?: getString(R.string.error_load_pet_detail),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
-            val nextDate = java.time.LocalDate.now().plusDays(14)
-            val formatter = java.time.format.DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", java.util.Locale("es"))
-            view.findViewById<TextView>(R.id.tvNextAppointment).text =
-                nextDate.format(formatter).replaceFirstChar { it.uppercase() }
+    private fun bindSummary(view: View, pet: Pet) {
+        view.findViewById<TextView>(R.id.tvSpecies).text = "Especie: ${pet.species.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvBreed).text = "Raza: ${pet.breed.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvGender).text = "Género: ${pet.gender.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvAge).text = "Edad: ${pet.age.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvColor).text = "Color: ${pet.color.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvMicrochip).text = "Microchip: ${pet.microchip.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvOwner).text = "Propietario: ${pet.owner.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvCurrentWeight).text =
+            "Peso actual: ${pet.weight.ifBlank { "—" }}"
+        view.findViewById<TextView>(R.id.tvPreviousWeight).text =
+            pet.previousWeight?.takeIf { it.isNotBlank() }?.let { "Peso anterior: $it" }.orEmpty()
+        view.findViewById<TextView>(R.id.tvPetCode).text = pet.id
+        view.findViewById<TextView>(R.id.tvNextAppointment).text =
+            getString(R.string.no_next_appointment)
+    }
+
+    private suspend fun loadBarcode(view: View, pet: Pet) {
+        val iv = view.findViewById<ImageView>(R.id.ivPetBarcode) ?: return
+        val patientId = pet.backendId ?: return
+        try {
+            val barcode = RemotePetRepository.getBarcode(patientId)
+            val payload = barcode.code?.takeIf { it.isNotBlank() } ?: pet.id
+            val bmp = BarcodeBitmap.code128(payload)
+            if (bmp != null) iv.setImageBitmap(bmp)
+        } catch (_: Exception) {
+            runCatching {
+                BarcodeBitmap.code128(pet.id)?.let { iv.setImageBitmap(it) }
+            }
+        }
+    }
+
+    private suspend fun loadPriorityReminders(view: View, pet: Pet) {
+        val container = view.findViewById<LinearLayout>(R.id.priorityRemindersContainer) ?: return
+        val empty = view.findViewById<TextView>(R.id.tvEmptyPriorityReminders)
+        container.removeAllViews()
+        val patientKey = pet.backendId ?: pet.id
+        val reminders = try {
+            RemotePetRepository.listReminders(patientKey)
+                .filter { ReminderPriority.isAlta(it.priority) }
+                .take(5)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        if (reminders.isEmpty()) {
+            empty?.visibility = View.VISIBLE
+            return
+        }
+        empty?.visibility = View.GONE
+        reminders.forEach { rem ->
+            val row = TextView(requireContext()).apply {
+                text = listOfNotNull(rem.title, rem.date, rem.time).joinToString(" · ")
+                setTextColor(resources.getColor(R.color.ink, null))
+                setPadding(0, 8, 0, 8)
+            }
+            container.addView(row)
         }
     }
 }
@@ -146,45 +235,98 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val petCode = arguments?.getString(ARG_PET_CODE) ?: return
+        val petCode = arguments?.getString(ARG_PET_CODE).orEmpty()
         val container = view.findViewById<LinearLayout>(R.id.historyContainer) ?: return
-        container.removeAllViews()
-
         viewLifecycleOwner.lifecycleScope.launch {
-            val pet = runCatching { RemotePetRepository.getPet(petCode) }.getOrNull() ?: return@launch
-            container.removeAllViews()
-
-            pet.medicalHistory.forEach { record ->
-                val recordView = LayoutInflater.from(requireContext()).inflate(R.layout.item_medical_record, container, false)
-
-                recordView.findViewById<TextView>(R.id.tvRecordDate).text = record.date
-                recordView.findViewById<TextView>(R.id.tvRecordType).text = "Tipo de Consulta: ${record.type}"
-                recordView.findViewById<TextView>(R.id.tvRecordDoctor).text = "Dr: ${record.doctor}"
-
-                val savedUri = SessionManager(requireContext()).getPetImageUri(pet.id)
-
-                recordView.findViewById<View>(R.id.ivReportIcon).setOnClickListener {
-                    val intent = Intent(requireContext(), MedicalReportActivity::class.java).apply {
-                        putExtra("PET_NAME", pet.name)
-                        putExtra("PET_BREED", pet.breed)
-                        putExtra("RECORD_DATE", record.date)
-                        putExtra("RECORD_DOCTOR", record.doctor)
-                        putExtra("RECORD_REASON", record.reason)
-                        putExtra("RECORD_DIAGNOSIS", record.diagnosis)
-                        putExtra("RECORD_TREATMENT", record.treatment)
-                        putExtra("PET_IMAGE_URI", savedUri)
-                    }
-                    startActivity(intent)
+            try {
+                val pet = RemotePetRepository.getPet(petCode)
+                val patientId = pet.backendId ?: pet.id
+                val records = try {
+                    RemotePetRepository.getMedicalRecords(patientId)
+                } catch (_: Exception) {
+                    emptyList()
                 }
-                container.addView(recordView)
+                val fromPet = pet.medicalHistory
+                container.removeAllViews()
+                if (records.isEmpty() && fromPet.isEmpty()) {
+                    val empty = TextView(requireContext()).apply {
+                        text = getString(R.string.empty_medical_history)
+                        setTextColor(resources.getColor(R.color.text_muted, null))
+                        setPadding(0, 32, 0, 0)
+                    }
+                    container.addView(empty)
+                    return@launch
+                }
+
+                if (records.isNotEmpty()) {
+                    records.forEach { record ->
+                        addRecordRow(
+                            container,
+                            pet,
+                            date = record.date.orEmpty(),
+                            type = record.status?.takeIf { it.isNotBlank() } ?: record.reason.orEmpty(),
+                            doctor = record.vetName.orEmpty(),
+                            reason = record.reason.orEmpty(),
+                            diagnosis = record.diagnosis.orEmpty(),
+                            treatment = record.treatment.orEmpty()
+                        )
+                    }
+                } else {
+                    fromPet.forEach { record ->
+                        addRecordRow(
+                            container,
+                            pet,
+                            date = record.date,
+                            type = record.type,
+                            doctor = record.doctor,
+                            reason = record.reason,
+                            diagnosis = record.diagnosis,
+                            treatment = record.treatment
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    e.message ?: getString(R.string.error_load_pet_detail),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+    }
+
+    private fun addRecordRow(
+        container: LinearLayout,
+        pet: Pet,
+        date: String,
+        type: String,
+        doctor: String,
+        reason: String,
+        diagnosis: String,
+        treatment: String
+    ) {
+        val row = LayoutInflater.from(requireContext())
+            .inflate(R.layout.item_medical_record, container, false)
+        row.findViewById<TextView>(R.id.tvRecordDate).text = date
+        row.findViewById<TextView>(R.id.tvRecordType).text = type
+        row.findViewById<TextView>(R.id.tvRecordDoctor).text = doctor
+        row.findViewById<View>(R.id.ivReportIcon).setOnClickListener {
+            val intent = Intent(requireContext(), MedicalReportActivity::class.java).apply {
+                putExtra("PET_NAME", pet.name)
+                putExtra("RECORD_DATE", date)
+                putExtra("RECORD_DOCTOR", doctor)
+                putExtra("RECORD_REASON", reason)
+                putExtra("RECORD_DIAGNOSIS", diagnosis)
+                putExtra("RECORD_TREATMENT", treatment)
+                putExtra("PET_IMAGE_URI", SessionManager(requireContext()).getPetImageUri(pet.id))
+            }
+            startActivity(intent)
+        }
+        container.addView(row)
     }
 }
 
 class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
-    private var petBackendId: String? = null
-
     companion object {
         private const val ARG_PET_CODE = "pet_code"
         fun newInstance(petCode: String) = FeedingFragment().apply {
@@ -192,106 +334,52 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         }
     }
 
+    private var patientId: String? = null
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<View>(R.id.btnSaveFeeding).setOnClickListener { saveFeeding(view) }
-        loadFeeding(view)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        view?.let { loadFeeding(it) }
-    }
-
-    private fun loadFeeding(view: View) {
-        val petCode = arguments?.getString(ARG_PET_CODE) ?: return
-        val formRoot = view.findViewById<View>(R.id.feedingForm)
+        val petCode = arguments?.getString(ARG_PET_CODE).orEmpty()
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val pet = RemotePetRepository.getPet(petCode)
-                petBackendId = pet.backendId
-                val feeding = pet.backendId?.let { id ->
-                    runCatching { RemotePetRepository.getFeeding(id) }.getOrNull()
+                patientId = pet.backendId ?: pet.id
+                val feeding = RemotePetRepository.getFeeding(patientId!!)
+                val form = view.findViewById<View>(R.id.feedingForm)
+                if (form != null) {
+                    FeedingFormHelper.bind(form, feeding, editable = false)
+                    form.visibility = View.VISIBLE
                 }
-                view.findViewById<TextView>(R.id.tvEmptyFeeding).visibility =
+                view.findViewById<TextView>(R.id.tvEmptyFeeding)?.visibility =
                     if (feeding == null) View.VISIBLE else View.GONE
-                FeedingFormHelper.bind(formRoot, feeding)
-            } catch (_: Exception) {
-                view.findViewById<TextView>(R.id.tvEmptyFeeding).visibility = View.VISIBLE
-            }
-        }
-    }
 
-    private fun saveFeeding(view: View) {
-        val backendId = petBackendId
-        if (backendId.isNullOrBlank()) {
-            Toast.makeText(requireContext(), R.string.error_pet_id, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val btn = view.findViewById<View>(R.id.btnSaveFeeding)
-        btn.isEnabled = false
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val body = FeedingFormHelper.collect(view.findViewById(R.id.feedingForm))
-                RemotePetRepository.updateFeeding(backendId, body)
-                view.findViewById<TextView>(R.id.tvEmptyFeeding).visibility = View.GONE
-                Toast.makeText(requireContext(), R.string.feeding_saved, Toast.LENGTH_SHORT).show()
+                renderMealsToday(view, feeding)
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
-                    e.message ?: getString(R.string.error_save_feeding),
-                    Toast.LENGTH_LONG
+                    e.message ?: getString(R.string.error_load_pet_detail),
+                    Toast.LENGTH_SHORT
                 ).show()
-            } finally {
-                btn.isEnabled = true
             }
         }
     }
-}
 
-class FamilyFragment : Fragment(R.layout.fragment_pet_family) {
-    companion object {
-        private const val ARG_PET_CODE = "pet_code"
-        fun newInstance(petCode: String) = FamilyFragment().apply {
-            arguments = Bundle().apply { putString(ARG_PET_CODE, petCode) }
+    private fun renderMealsToday(view: View, feeding: FeedingDto?) {
+        val title = view.findViewById<TextView>(R.id.tvMealsTodayTitle)
+        val mealsContainer = view.findViewById<LinearLayout>(R.id.mealsContainer) ?: return
+        mealsContainer.removeAllViews()
+        val meals = feeding?.meals.orEmpty()
+        if (meals.isEmpty()) {
+            title?.visibility = View.GONE
+            return
         }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val petCode = arguments?.getString(ARG_PET_CODE) ?: return
-        val container = view.findViewById<LinearLayout>(R.id.familyMembersContainer) ?: return
-        container.removeAllViews()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            val pet = runCatching { RemotePetRepository.getPet(petCode) }.getOrNull() ?: return@launch
-            container.removeAllViews()
-
-            pet.family.forEach { member ->
-                val memberView = LayoutInflater.from(requireContext()).inflate(R.layout.item_family_member, container, false)
-                memberView.findViewById<TextView>(R.id.memberName).text = member.name
-                memberView.findViewById<TextView>(R.id.memberEmail).text = member.email
-                memberView.findViewById<TextView>(R.id.btnUnlink).setOnClickListener {
-                    androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Desvincular familiar")
-                        .setMessage("¿Eliminar a ${member.name} de esta mascota?")
-                        .setPositiveButton("Eliminar") { _, _ ->
-                            Toast.makeText(requireContext(), "${member.name} eliminado", Toast.LENGTH_SHORT).show()
-                        }
-                        .setNegativeButton("Cancelar", null)
-                        .show()
-                }
-                container.addView(memberView)
-            }
-
-            view.findViewById<TextView>(R.id.tvPetCode)?.text = pet.id
-
-            view.findViewById<Button>(R.id.btnCopyCode)?.setOnClickListener {
-                val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                val clip = android.content.ClipData.newPlainText("Pet Code", pet.id)
-                clipboard.setPrimaryClip(clip)
-                Toast.makeText(requireContext(), "Código copiado", Toast.LENGTH_SHORT).show()
-            }
+        title?.visibility = View.VISIBLE
+        meals.sortedBy { it.sortOrder ?: 0 }.forEach { meal ->
+            val row = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_meal_status, mealsContainer, false)
+            row.findViewById<TextView>(R.id.tvMealName)?.text =
+                meal.label?.takeIf { it.isNotBlank() } ?: "Comida"
+            row.findViewById<TextView>(R.id.tvMealTime)?.text = meal.time.orEmpty()
+            mealsContainer.addView(row)
         }
     }
 }

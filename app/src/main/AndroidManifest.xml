@@ -4,13 +4,18 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -23,6 +28,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,18 +36,34 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".RegisterActivity" />
-        <activity android:name=".DashboardActivity" />
+        <activity
+            android:name=".LoginActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".RegisterActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false" />
         <activity android:name=".PetDetailActivity" />
         <activity android:name=".MedicalReportActivity" />
-        <activity android:name=".FeedingDetailActivity" />
-        <activity android:name=".NewReminderActivity" />
-        <activity android:name=".PetRemindersActivity" />
+        <activity
+            android:name=".FeedingDetailActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".NewReminderActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".PetRemindersActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".BarcodeScanActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
+
+        <receiver
+            android:name=".ReminderAlarmReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

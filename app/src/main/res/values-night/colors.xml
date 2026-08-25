@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Keep cards readable: dark theme background, light card surfaces -->
+    <color name="card_surface">#FFFFFFFF</color>
+    <color name="ink">#1E4440</color>
+    <color name="text_muted">#5F7270</color>
+</resources>
