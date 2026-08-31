@@ -57,7 +57,7 @@ class NewReminderActivity : AppCompatActivity() {
 
         setupStaticSpinners()
         prefillFromIntent()
-        loadPets()
+        loadPetsAndMaybeReminder()
     }
 
     private fun setupStaticSpinners() {
@@ -106,7 +106,7 @@ class NewReminderActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadPets() {
+    private fun loadPetsAndMaybeReminder() {
         lifecycleScope.launch {
             try {
                 pets = RemotePetRepository.listMyPets()
@@ -122,11 +122,19 @@ class NewReminderActivity : AppCompatActivity() {
                     names
                 )
                 val preferredCode = intent.getStringExtra(EXTRA_PET_CODE)
+                    ?: intent.getStringExtra("PET_ID")
                 val preferredBackendId = intent.getStringExtra(EXTRA_PET_BACKEND_ID)
                 val index = pets.indexOfFirst {
                     it.id.equals(preferredCode, true) || it.backendId == preferredBackendId
                 }
                 if (index >= 0) binding.spinnerPet.setSelection(index)
+
+                val reminderId = editingReminderId
+                if (reminderId != null) {
+                    val petKey = preferredBackendId
+                        ?: pets.getOrNull(index.takeIf { it >= 0 } ?: 0)?.backendId
+                    loadReminderDetails(reminderId, petKey)
+                }
             } catch (e: Exception) {
                 Toast.makeText(
                     this@NewReminderActivity,
@@ -136,6 +144,47 @@ class NewReminderActivity : AppCompatActivity() {
                 finish()
             }
         }
+    }
+
+    private suspend fun loadReminderDetails(reminderId: String, petBackendId: String?) {
+        val key = petBackendId ?: pets.firstOrNull()?.backendId ?: return
+        val reminder = try {
+            RemotePetRepository.listReminders(key).firstOrNull { it.id == reminderId }
+        } catch (_: Exception) {
+            null
+        } ?: return
+        applyReminder(reminder)
+    }
+
+    private fun applyReminder(reminder: ReminderDto) {
+        binding.etReminderTitle.setText(reminder.title)
+        binding.etReminderDescription.setText(reminder.description.orEmpty())
+        binding.etReminderNotes.setText(reminder.notes.orEmpty())
+        selectedDateIso = reminder.date
+        binding.tvSelectedDate.text = reminder.date
+        selectedTime = reminder.time
+        binding.tvSelectedTime.text = reminder.time ?: getString(R.string.select_time)
+        reminder.category?.let { cat ->
+            val idx = categories.indexOf(cat)
+            if (idx >= 0) binding.spinnerCategory.setSelection(idx)
+        }
+        reminder.recurrence?.let { rec ->
+            val idx = recurrences.indexOf(rec)
+            if (idx >= 0) binding.spinnerRecurrence.setSelection(idx)
+        }
+        reminder.priority?.let { pri ->
+            val idx = priorities.indexOf(pri)
+            if (idx >= 0) binding.spinnerPriority.setSelection(idx)
+        }
+        reminder.color?.let { color ->
+            val idx = colors.indexOf(color)
+            if (idx >= 0) binding.spinnerColor.setSelection(idx)
+        }
+        reminder.icon?.let { icon ->
+            val idx = icons.indexOf(icon)
+            if (idx >= 0) binding.spinnerIcon.setSelection(idx)
+        }
+        binding.switchNotify.isChecked = reminder.notifyEnabled != false
     }
 
     private fun saveReminder() {
@@ -284,5 +333,26 @@ class NewReminderActivity : AppCompatActivity() {
         const val EXTRA_COLOR = "COLOR"
         const val EXTRA_ICON = "ICON"
         const val EXTRA_NOTIFY = "NOTIFY"
+
+        fun intentFor(
+            context: android.content.Context,
+            pet: Pet,
+            reminder: ReminderDto
+        ): android.content.Intent =
+            android.content.Intent(context, NewReminderActivity::class.java)
+                .putExtra(EXTRA_PET_CODE, pet.id)
+                .putExtra(EXTRA_PET_BACKEND_ID, pet.backendId)
+                .putExtra(EXTRA_REMINDER_ID, reminder.id)
+                .putExtra(EXTRA_TITLE, reminder.title)
+                .putExtra(EXTRA_DESCRIPTION, reminder.description)
+                .putExtra(EXTRA_NOTES, reminder.notes)
+                .putExtra(EXTRA_DATE, reminder.date)
+                .putExtra(EXTRA_TIME, reminder.time)
+                .putExtra(EXTRA_CATEGORY, reminder.category)
+                .putExtra(EXTRA_RECURRENCE, reminder.recurrence)
+                .putExtra(EXTRA_PRIORITY, reminder.priority)
+                .putExtra(EXTRA_COLOR, reminder.color)
+                .putExtra(EXTRA_ICON, reminder.icon)
+                .putExtra(EXTRA_NOTIFY, reminder.notifyEnabled != false)
     }
 }

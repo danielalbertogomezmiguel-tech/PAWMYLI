@@ -21,8 +21,9 @@
     <string name="empty_reminders">No hay recordatorios prioritarios por ahora.</string>
     <string name="priority_reminders_title">Prioritarios</string>
     <string name="toast_max_priority_reminders">Ya hay 3 prioridades para esta mascota</string>
-    <string name="empty_favorites">Aún no tienes favoritos. Marca hasta 3 recordatorios o citas.</string>
-    <string name="favorites_title">FAVORITOS</string>
+    <string name="empty_favorites">Marca hasta 3 recordatorios con estrella para verlos aquí.</string>
+    <string name="favorites_title">RECORDATORIOS</string>
+    <string name="empty_home_reminders">No hay recordatorios con estrella para esta mascota.</string>
     <string name="empty_personal_reminders">No hay recordatorios personales.</string>
     <string name="empty_appointment_reminders">No hay citas médicas pendientes.</string>
     <string name="empty_feeding">Aún no hay dieta definida por el veterinario.</string>

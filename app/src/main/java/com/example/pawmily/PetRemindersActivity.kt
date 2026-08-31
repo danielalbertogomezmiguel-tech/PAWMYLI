@@ -36,8 +36,8 @@ class PetRemindersActivity : AppCompatActivity() {
 
         binding.addPetReminderDetailCard.setOnClickListener {
             val intent = Intent(this, NewReminderActivity::class.java).apply {
-                putExtra("PET_ID", petCode)
-                putExtra("PET_BACKEND_ID", petBackendId ?: loadedPet?.backendId)
+                putExtra(NewReminderActivity.EXTRA_PET_CODE, petCode)
+                putExtra(NewReminderActivity.EXTRA_PET_BACKEND_ID, petBackendId ?: loadedPet?.backendId)
             }
             startActivity(intent)
         }
@@ -118,12 +118,7 @@ class PetRemindersActivity : AppCompatActivity() {
                     togglePriority(reminder)
                 }
                 v.findViewById<Button>(R.id.btnDetails).setOnClickListener {
-                    startActivity(
-                        Intent(this, NewReminderActivity::class.java)
-                            .putExtra("PET_ID", pet.id)
-                            .putExtra("PET_BACKEND_ID", pet.backendId)
-                            .putExtra("REMINDER_ID", reminder.id)
-                    )
+                    startActivity(NewReminderActivity.intentFor(this, pet, reminder))
                 }
                 binding.llRemindersList.addView(v)
             }

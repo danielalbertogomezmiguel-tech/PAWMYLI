@@ -154,7 +154,6 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
                 val pet = RemotePetRepository.getPet(petCode)
                 bindSummary(view, pet)
                 loadBarcode(view, pet)
-                loadPriorityReminders(view, pet)
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
@@ -197,32 +196,6 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
         }
     }
 
-    private suspend fun loadPriorityReminders(view: View, pet: Pet) {
-        val container = view.findViewById<LinearLayout>(R.id.priorityRemindersContainer) ?: return
-        val empty = view.findViewById<TextView>(R.id.tvEmptyPriorityReminders)
-        container.removeAllViews()
-        val patientKey = pet.backendId ?: pet.id
-        val reminders = try {
-            RemotePetRepository.listReminders(patientKey)
-                .filter { ReminderPriority.isAlta(it.priority) }
-                .take(5)
-        } catch (_: Exception) {
-            emptyList()
-        }
-        if (reminders.isEmpty()) {
-            empty?.visibility = View.VISIBLE
-            return
-        }
-        empty?.visibility = View.GONE
-        reminders.forEach { rem ->
-            val row = TextView(requireContext()).apply {
-                text = listOfNotNull(rem.title, rem.date, rem.time).joinToString(" · ")
-                setTextColor(resources.getColor(R.color.ink, null))
-                setPadding(0, 8, 0, 8)
-            }
-            container.addView(row)
-        }
-    }
 }
 
 class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
