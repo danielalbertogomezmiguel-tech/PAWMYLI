@@ -47,20 +47,6 @@ object RemotePetRepository {
         )
     }
 
-    suspend fun listMembers(patientId: String): List<PatientMemberDto> {
-        return unwrap(RetrofitClient.instance.patientMembers(patientId), "Error al cargar familia")
-    }
-
-    suspend fun revokeMember(patientId: String, userId: String) {
-        val response = RetrofitClient.instance.revokeMember(patientId, userId)
-        if (!response.isSuccessful) {
-            throw ApiException(
-                RetrofitClient.parseErrorMessage(response.errorBody()?.string())
-                    ?: "Error al revocar acceso"
-            )
-        }
-    }
-
     suspend fun listMyPets(page: Int = 1, limit: Int = 50, forceRefresh: Boolean = false): List<Pet> {
         if (!forceRefresh && PetsMemoryCache.isFresh()) {
             PetsMemoryCache.snapshot()?.let { return it }
@@ -225,6 +211,36 @@ object RemotePetRepository {
         return unwrap(response, "Error al confirmar cita")
     }
 
+    suspend fun requestAppointment(
+        patientId: String,
+        date: String,
+        time: String,
+        notes: String?
+    ): AppointmentDto {
+        val response = RetrofitClient.instance.requestAppointment(
+            AppointmentRequestDto(
+                patientId = patientId,
+                date = date,
+                time = time,
+                notes = notes
+            )
+        )
+        return unwrap(response, "Error al solicitar cita")
+    }
+
+    suspend fun postponeAppointment(
+        appointmentId: String,
+        date: String,
+        time: String,
+        notes: String? = null
+    ): AppointmentDto {
+        val response = RetrofitClient.instance.postponeAppointment(
+            appointmentId,
+            AppointmentPostponeDto(date = date, time = time, notes = notes)
+        )
+        return unwrap(response, "Error al aplazar cita")
+    }
+
     suspend fun getMedicalRecords(patientId: String): List<MedicalRecordDto> {
         val response = RetrofitClient.instance.getMedicalRecords(patientId)
         return unwrap(response, "Error al cargar historial médico")
@@ -291,9 +307,6 @@ fun PatientDto.toPet(): Pet {
         )
     }.orEmpty()
 
-    // Family filled asynchronously from /members; avoid fake demo members.
-    val family = emptyList<FamilyMember>()
-
     return Pet(
         id = code.uppercase(),
         backendId = id,
@@ -319,7 +332,6 @@ fun PatientDto.toPet(): Pet {
             },
         feeding = feedingInfo,
         medicalHistory = history,
-        family = family,
         reminders = reminderList,
         accessRole = accessRole
     )

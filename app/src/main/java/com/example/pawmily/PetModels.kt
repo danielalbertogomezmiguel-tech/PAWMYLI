@@ -16,7 +16,6 @@ data class Pet(
     val imageUrl: String? = null,
     val feeding: FeedingInfo,
     val medicalHistory: List<MedicalRecord>,
-    val family: List<FamilyMember>,
     val reminders: List<Reminder>,
     val accessRole: String? = null
 )
@@ -56,8 +55,6 @@ open class MedicalRecordWithPriority(
     date: String, type: String, doctor: String, reason: String, diagnosis: String, treatment: String,
     var isPriority: Boolean = false
 ) : MedicalRecord(date, type, doctor, reason, diagnosis, treatment)
-
-data class FamilyMember(val name: String, val email: String)
 
 data class Reminder(
     val id: String? = null,

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/primary_teal"
+    app:strokeWidth="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvAppointmentPet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/accent_pink"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvAppointmentWhen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/primary_teal"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvAppointmentStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_muted"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvAppointmentNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/ink"
+            android:textSize="14sp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnConfirmAppointment"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/rounded_button_white"
+            android:backgroundTint="@color/accent_pink"
+            android:paddingHorizontal="16dp"
+            android:text="@string/btn_confirm_attendance"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnPostponeAppointment"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_button_white"
+            android:backgroundTint="@color/primary_teal"
+            android:paddingHorizontal="16dp"
+            android:text="@string/btn_postpone_appointment"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

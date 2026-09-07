@@ -154,6 +154,7 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
                 val pet = RemotePetRepository.getPet(petCode)
                 bindSummary(view, pet)
                 loadBarcode(view, pet)
+                loadNextAppointment(view, pet)
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
@@ -179,6 +180,38 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
         view.findViewById<TextView>(R.id.tvPetCode).text = pet.id
         view.findViewById<TextView>(R.id.tvNextAppointment).text =
             getString(R.string.no_next_appointment)
+    }
+
+    private suspend fun loadNextAppointment(view: View, pet: Pet) {
+        val tv = view.findViewById<TextView>(R.id.tvNextAppointment) ?: return
+        try {
+            val next = RemotePetRepository.listMyAppointments()
+                .filter { appt ->
+                    appt.patientId == pet.backendId ||
+                        appt.petName.equals(pet.name, ignoreCase = true)
+                }
+                .filterNot {
+                    val s = it.status.orEmpty()
+                    s.equals("Eliminada", true) ||
+                        s.equals("Cancelada", true) ||
+                        s.equals("Completada", true) ||
+                        s.equals("No asistió", true)
+                }
+                .sortedBy { "${it.date} ${it.time}" }
+                .firstOrNull()
+            tv.text = if (next == null) {
+                getString(R.string.no_next_appointment)
+            } else {
+                getString(
+                    R.string.next_appointment_line,
+                    next.date,
+                    next.time,
+                    next.status ?: "—"
+                )
+            }
+        } catch (_: Exception) {
+            tv.text = getString(R.string.no_next_appointment)
+        }
     }
 
     private suspend fun loadBarcode(view: View, pet: Pet) {
@@ -233,15 +266,34 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
 
                 if (records.isNotEmpty()) {
                     records.forEach { record ->
+                        val typeLabel = record.type?.takeIf { it.isNotBlank() }
+                            ?: record.status?.takeIf { it.isNotBlank() }
+                            ?: record.reason.orEmpty()
+                        val whenLabel = listOfNotNull(
+                            record.date,
+                            record.time?.takeIf { it.isNotBlank() }
+                        ).joinToString(" · ")
                         addRecordRow(
                             container,
                             pet,
-                            date = record.date.orEmpty(),
-                            type = record.status?.takeIf { it.isNotBlank() } ?: record.reason.orEmpty(),
+                            date = whenLabel.ifBlank { record.date.orEmpty() },
+                            type = listOfNotNull(
+                                record.consultationNumber,
+                                typeLabel
+                            ).joinToString(" · "),
                             doctor = record.vetName.orEmpty(),
-                            reason = record.reason.orEmpty(),
+                            reason = record.motivo ?: record.reason.orEmpty(),
                             diagnosis = record.diagnosis.orEmpty(),
-                            treatment = record.treatment.orEmpty()
+                            treatment = record.recomendaciones
+                                ?: record.treatment.orEmpty(),
+                            medication = record.medication.orEmpty(),
+                            observations = record.observations.orEmpty(),
+                            followUp = listOfNotNull(
+                                record.followUpDate,
+                                record.followUpTime?.takeIf { it.isNotBlank() }
+                            ).joinToString(" · "),
+                            consultationNumber = record.consultationNumber.orEmpty(),
+                            consultType = record.type.orEmpty()
                         )
                     }
                 } else {
@@ -276,7 +328,12 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
         doctor: String,
         reason: String,
         diagnosis: String,
-        treatment: String
+        treatment: String,
+        medication: String = "",
+        observations: String = "",
+        followUp: String = "",
+        consultationNumber: String = "",
+        consultType: String = ""
     ) {
         val row = LayoutInflater.from(requireContext())
             .inflate(R.layout.item_medical_record, container, false)
@@ -291,6 +348,11 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
                 putExtra("RECORD_REASON", reason)
                 putExtra("RECORD_DIAGNOSIS", diagnosis)
                 putExtra("RECORD_TREATMENT", treatment)
+                putExtra("RECORD_MEDICATION", medication)
+                putExtra("RECORD_OBSERVATIONS", observations)
+                putExtra("RECORD_FOLLOW_UP", followUp)
+                putExtra("RECORD_NUMBER", consultationNumber)
+                putExtra("RECORD_TYPE", consultType)
                 putExtra("PET_IMAGE_URI", SessionManager(requireContext()).getPetImageUri(pet.id))
             }
             startActivity(intent)
@@ -325,7 +387,14 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
                 view.findViewById<TextView>(R.id.tvEmptyFeeding)?.visibility =
                     if (feeding == null) View.VISIBLE else View.GONE
 
-                renderMealsToday(view, feeding)
+                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                    .format(java.util.Date())
+                val logs = try {
+                    RemotePetRepository.listFeedingLogs(patientId!!, today, today)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                renderMealsToday(view, feeding, logs, today)
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
@@ -336,7 +405,12 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         }
     }
 
-    private fun renderMealsToday(view: View, feeding: FeedingDto?) {
+    private fun renderMealsToday(
+        view: View,
+        feeding: FeedingDto?,
+        logs: List<FeedingLogDto>,
+        today: String
+    ) {
         val title = view.findViewById<TextView>(R.id.tvMealsTodayTitle)
         val mealsContainer = view.findViewById<LinearLayout>(R.id.mealsContainer) ?: return
         mealsContainer.removeAllViews()
@@ -346,13 +420,96 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
             return
         }
         title?.visibility = View.VISIBLE
+        val byMeal = logs.associateBy { it.mealId }
         meals.sortedBy { it.sortOrder ?: 0 }.forEach { meal ->
+            val mealId = meal.id ?: return@forEach
             val row = LayoutInflater.from(requireContext())
                 .inflate(R.layout.item_meal_status, mealsContainer, false)
-            row.findViewById<TextView>(R.id.tvMealName)?.text =
-                meal.label?.takeIf { it.isNotBlank() } ?: "Comida"
-            row.findViewById<TextView>(R.id.tvMealTime)?.text = meal.time.orEmpty()
+            val nameView = row.findViewById<TextView>(R.id.tvMealName)
+            val timeView = row.findViewById<TextView>(R.id.tvMealTime)
+            val ivYes = row.findViewById<ImageView>(R.id.ivYes)
+            val ivNo = row.findViewById<ImageView>(R.id.ivNo)
+            nameView?.text = meal.label?.takeIf { it.isNotBlank() } ?: "Comida"
+            val status = byMeal[mealId]?.status
+            val late = isMealLate(meal.time, today) && status.isNullOrBlank()
+            timeView?.text = buildString {
+                append(meal.time.orEmpty())
+                when {
+                    status.equals("EATEN", true) -> append(" · hecha")
+                    status.equals("UNLOGGED", true) -> append(" · incompleta")
+                    late -> append(" · atrasada")
+                    else -> append(" · pendiente")
+                }
+            }
+            applyMealIcons(ivYes, ivNo, status)
+            ivYes?.setOnClickListener {
+                markMeal(mealId, today, "EATEN", nameView, timeView, meal.time, ivYes, ivNo)
+            }
+            ivNo?.setOnClickListener {
+                markMeal(mealId, today, "UNLOGGED", nameView, timeView, meal.time, ivYes, ivNo)
+            }
             mealsContainer.addView(row)
+        }
+    }
+
+    private fun applyMealIcons(ivYes: ImageView?, ivNo: ImageView?, status: String?) {
+        val eaten = status.equals("EATEN", true)
+        val missed = status.equals("UNLOGGED", true)
+        ivYes?.alpha = if (eaten) 1f else 0.35f
+        ivNo?.alpha = if (missed) 1f else 0.35f
+    }
+
+    private fun isMealLate(time: String?, today: String): Boolean {
+        if (time.isNullOrBlank()) return false
+        val todayCheck = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            .format(java.util.Date())
+        if (today != todayCheck) return false
+        val parts = time.split(":")
+        if (parts.size < 2) return false
+        val hour = parts[0].toIntOrNull() ?: return false
+        val minute = parts[1].take(2).toIntOrNull() ?: return false
+        val now = java.util.Calendar.getInstance()
+        val mealCal = java.util.Calendar.getInstance()
+        mealCal.set(java.util.Calendar.HOUR_OF_DAY, hour)
+        mealCal.set(java.util.Calendar.MINUTE, minute)
+        mealCal.set(java.util.Calendar.SECOND, 0)
+        return now.after(mealCal)
+    }
+
+    private fun markMeal(
+        mealId: String,
+        today: String,
+        status: String,
+        nameView: TextView?,
+        timeView: TextView?,
+        mealTime: String?,
+        ivYes: ImageView?,
+        ivNo: ImageView?
+    ) {
+        val pid = patientId ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                RemotePetRepository.markFeedingLog(
+                    pid,
+                    FeedingLogCreateDto(mealId = mealId, scheduledDate = today, status = status)
+                )
+                applyMealIcons(ivYes, ivNo, status)
+                timeView?.text = buildString {
+                    append(mealTime.orEmpty())
+                    append(if (status == "EATEN") " · hecha" else " · incompleta")
+                }
+                Toast.makeText(
+                    requireContext(),
+                    if (status == "EATEN") R.string.meal_marked_eaten else R.string.meal_marked_missed,
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    e.message ?: getString(R.string.error_mark_meal),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 }

@@ -51,12 +51,6 @@ interface ApiService {
     @POST("patients/link-requests/{id}/reject")
     suspend fun rejectLinkRequest(@Path("id") id: String): Response<LinkRequestDto>
 
-    @GET("patients/{id}/members")
-    suspend fun patientMembers(@Path("id") id: String): Response<List<PatientMemberDto>>
-
-    @DELETE("patients/{id}/members/{userId}")
-    suspend fun revokeMember(@Path("id") id: String, @Path("userId") userId: String): Response<Unit>
-
     @DELETE("patients/{id}/link")
     suspend fun unlinkPatient(@Path("id") id: String): Response<PatientDto>
 
@@ -147,6 +141,15 @@ interface ApiService {
 
     @POST("appointments/{id}/confirm")
     suspend fun confirmAppointment(@Path("id") id: String): Response<AppointmentDto>
+
+    @POST("appointments/request")
+    suspend fun requestAppointment(@Body body: AppointmentRequestDto): Response<AppointmentDto>
+
+    @POST("appointments/{id}/postpone")
+    suspend fun postponeAppointment(
+        @Path("id") id: String,
+        @Body body: AppointmentPostponeDto
+    ): Response<AppointmentDto>
 }
 
 data class LoginRequest(
@@ -213,17 +216,6 @@ data class LinkRequestDto(
     val patientCode: String? = null,
     val requesterName: String? = null,
     val requesterEmail: String? = null
-)
-
-data class PatientMemberDto(
-    val id: String? = null,
-    val userId: String? = null,
-    val patientId: String? = null,
-    val role: String? = null,
-    val status: String? = null,
-    val userName: String? = null,
-    val userEmail: String? = null,
-    val legacy: Boolean? = null
 )
 
 data class PageMeta(
@@ -376,12 +368,21 @@ data class FeedingUpdateDto(
 
 data class MedicalRecordDto(
     val id: String? = null,
+    val consultationNumber: String? = null,
+    val type: String? = null,
     val date: String? = null,
+    val time: String? = null,
     val reason: String? = null,
     val diagnosis: String? = null,
     val treatment: String? = null,
+    val medication: String? = null,
+    val observations: String? = null,
     val vetName: String? = null,
     val status: String? = null,
+    val followUpDate: String? = null,
+    val followUpTime: String? = null,
+    val motivo: String? = null,
+    val recomendaciones: String? = null,
     val petId: String? = null
 )
 
@@ -450,6 +451,19 @@ data class AppointmentDto(
     val patientId: String? = null,
     val attendanceStatus: String? = null,
     val ownerConfirmedAt: String? = null
+)
+
+data class AppointmentRequestDto(
+    val patientId: String,
+    val date: String,
+    val time: String,
+    val notes: String? = null
+)
+
+data class AppointmentPostponeDto(
+    val date: String,
+    val time: String,
+    val notes: String? = null
 )
 
 data class BarcodeDto(

@@ -57,6 +57,9 @@
             android:name=".PetRemindersActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".RequestAppointmentActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".BarcodeScanActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />

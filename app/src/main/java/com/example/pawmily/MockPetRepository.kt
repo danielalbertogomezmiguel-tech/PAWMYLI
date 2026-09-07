@@ -27,7 +27,6 @@ object MockPetRepository {
                 dailyRecords = emptyList()
             ),
             medicalHistory = emptyList(),
-            family = listOf(FamilyMember("Ana Lopez", "ana.lopez@gmail.com")),
             reminders = emptyList()
         )
         pets["KAISER"] = kaiser
@@ -65,7 +64,6 @@ object MockPetRepository {
                 MedicalRecordWithPriority("10/02/2026", "Vacuna Triple", "Dr. Daniel Ozuna", "Refuerzo", "Sano", "Ninguno"),
                 MedicalRecordWithPriority("01/12/2025", "Consulta General", "Dr. Daniel Ozuna", "Chequeo", "Sano", "Ninguno")
             ),
-            family = listOf(FamilyMember("Brittany Joyce", "brittany@gmail.com")),
             reminders = listOf(
                 Reminder(title = "Alimentacion", time = "7:00 AM", date = "Hoy", iconType = "food", isPriority = true),
                 Reminder(title = "Juego", time = "6:00 PM", date = "Hoy", iconType = "play")
@@ -96,7 +94,6 @@ object MockPetRepository {
                 dailyRecords = emptyList()
             ),
             medicalHistory = emptyList(),
-            family = emptyList(),
             reminders = listOf(
                 Reminder(title = "Baño", time = "17:23", date = "2026-08-17", iconType = "bath", isPriority = true)
             )
