@@ -174,6 +174,7 @@ object RemotePetRepository {
     suspend fun listReminders(petId: String): List<ReminderDto> {
         val response = RetrofitClient.instance.getReminders(petId)
         return unwrap(response, "Error al cargar recordatorios")
+            .filterNot { ReminderVisibility.isAppointment(it) }
     }
 
     suspend fun createReminder(petId: String, body: ReminderCreateDto): ReminderDto {
@@ -291,7 +292,7 @@ fun PatientDto.toPet(): Pet {
         )
     }.orEmpty()
 
-    val reminderList = reminders?.map { reminder ->
+    val reminderList = reminders?.filterNot { ReminderVisibility.isAppointment(it) }?.map { reminder ->
         Reminder(
             id = reminder.id,
             title = reminder.title,

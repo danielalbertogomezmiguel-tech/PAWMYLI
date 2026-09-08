@@ -49,6 +49,7 @@
     <string name="postpone_option">%1$s · %2$s</string>
     <string name="appointment_postpone_sent">Propuesta enviada. La clínica debe aceptarla.</string>
     <string name="error_postpone_appointment">No se pudo aplazar la cita</string>
+    <string name="meal_marked_eaten">Comida marcada como hecha</string>
     <string name="meal_marked_missed">Comida marcada como incompleta</string>
     <string name="report_medication">Medicamento: %1$s</string>
     <string name="report_observations">Observaciones: %1$s</string>
