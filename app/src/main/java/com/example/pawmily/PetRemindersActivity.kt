@@ -58,12 +58,13 @@ class PetRemindersActivity : AppCompatActivity() {
             override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
         })
 
-        reloadFromApi()
+        reloadFromApi(forceNetwork = false)
     }
 
     override fun onResume() {
         super.onResume()
-        if (loadedPet != null) reloadFromApi()
+        // Soft reload from Room/API TTL — not a hard wipe every time.
+        if (loadedPet != null) reloadFromApi(forceNetwork = false)
     }
 
     private fun openRequestAppointment() {
@@ -80,7 +81,7 @@ class PetRemindersActivity : AppCompatActivity() {
         )
     }
 
-    private fun reloadFromApi() {
+    private fun reloadFromApi(forceNetwork: Boolean = false) {
         val code = petCode
         if (code.isNullOrBlank()) {
             Toast.makeText(this, R.string.error_load_pet_detail, Toast.LENGTH_SHORT).show()
@@ -93,8 +94,8 @@ class PetRemindersActivity : AppCompatActivity() {
                 loadedPet = pet
                 petBackendId = pet.backendId ?: petBackendId
                 val key = pet.backendId ?: pet.id
-                remoteReminders = RemotePetRepository.listReminders(key)
-                val all = RemotePetRepository.listMyAppointments()
+                remoteReminders = RemotePetRepository.listReminders(key, forceRefresh = forceNetwork)
+                val all = RemotePetRepository.listMyAppointments(forceRefresh = forceNetwork)
                 petAppointments = all.filter { appt ->
                     appt.patientId == pet.backendId ||
                         appt.petName.equals(pet.name, ignoreCase = true)

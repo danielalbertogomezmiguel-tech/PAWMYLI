@@ -70,6 +70,9 @@ class RegisterActivity : AppCompatActivity() {
                             }
                             TokenRefresher.markSessionValid()
                             sessionManager.saveAuthSession(body.accessToken, body.user, body.refreshToken)
+                            runCatching {
+                                com.example.pawmily.data.LocalCacheStore.saveProfile(body.user)
+                            }
                             Toast.makeText(this@RegisterActivity, "Registro exitoso", Toast.LENGTH_SHORT).show()
                             val intent = Intent(this@RegisterActivity, DashboardActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

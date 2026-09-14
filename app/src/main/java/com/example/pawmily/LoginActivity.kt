@@ -50,6 +50,9 @@ class LoginActivity : AppCompatActivity() {
                             }
                             TokenRefresher.markSessionValid()
                             sessionManager.saveAuthSession(body.accessToken, body.user, body.refreshToken)
+                            runCatching {
+                                com.example.pawmily.data.LocalCacheStore.saveProfile(body.user)
+                            }
                             Toast.makeText(this@LoginActivity, "Inicio de sesión correcto", Toast.LENGTH_SHORT).show()
                             val intent = Intent(this@LoginActivity, DashboardActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

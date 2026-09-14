@@ -2,7 +2,7 @@ package com.example.pawmily
 
 /**
  * Lightweight in-process signal so Home/Pets reload after link changes
- * or when the dashboard returns to the foreground — no aggressive polling.
+ * or when a soft sync is needed — no aggressive wipe on every resume.
  */
 object PetsSyncBus {
     interface Listener {
@@ -21,9 +21,17 @@ object PetsSyncBus {
         listeners.remove(listener)
     }
 
+    /** Hard refresh after create/link/unlink — clears memory cache and notifies. */
     @Synchronized
     fun notifyPetsChanged() {
         PetsMemoryCache.invalidate()
+        listeners.toList().forEach { runCatching { it.onPetsShouldRefresh() } }
+    }
+
+    /** Resume / soft sync: only notify if memory cache is stale. */
+    @Synchronized
+    fun notifySoftSyncIfStale() {
+        if (!PetsMemoryCache.isStale()) return
         listeners.toList().forEach { runCatching { it.onPetsShouldRefresh() } }
     }
 

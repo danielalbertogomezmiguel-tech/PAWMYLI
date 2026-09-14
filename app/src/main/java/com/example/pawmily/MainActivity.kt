@@ -15,8 +15,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val sessionManager = SessionManager(this)
-        val loggedIn = sessionManager.isLoggedIn()
-        if (loggedIn) {
+        if (sessionManager.isLoggedIn()) {
             val refresh = sessionManager.getRefreshToken()
             if (refresh.isNullOrBlank()) {
                 sessionManager.logout()
@@ -36,19 +35,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun restoreOrLogin(sessionManager: SessionManager) {
-        Toast.makeText(this, "Renovando sesión…", Toast.LENGTH_SHORT).show()
+        TokenRefresher.markSessionValid()
+        val access = sessionManager.getAccessToken()
+
+        if (JwtAccessToken.isUsable(access)) {
+            TokenRefresher.refreshIfNeededInBackground()
+            goDashboard()
+            return
+        }
+
         thread {
-            val newAccess = TokenRefresher.refreshAccessToken(sessionManager.getAccessToken())
+            val renewed = TokenRefresher.refreshAccessToken(failedAccessToken = access)
             runOnUiThread {
-                if (!newAccess.isNullOrBlank()) {
-                    goDashboard()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Tu sesión expiró. Inicia sesión de nuevo.",
-                        Toast.LENGTH_LONG,
-                    ).show()
-                    showWelcome()
+                when {
+                    !renewed.isNullOrBlank() -> goDashboard()
+                    TokenRefresher.sessionInvalidatedPublic() -> {
+                        Toast.makeText(
+                            this,
+                            "Tu sesión expiró. Inicia sesión de nuevo.",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        showWelcome()
+                    }
+                    // Offline / network glitch: keep session and open with local Room data.
+                    !sessionManager.getRefreshToken().isNullOrBlank() -> goDashboard()
+                    else -> {
+                        Toast.makeText(
+                            this,
+                            "Tu sesión expiró. Inicia sesión de nuevo.",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        showWelcome()
+                    }
                 }
             }
         }

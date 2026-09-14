@@ -151,6 +151,14 @@ class SessionManager(context: Context) : TokenProvider {
 
     fun logout() {
         clearLinkedPetsCache()
+        PetsMemoryCache.invalidate()
+        Thread({
+            runCatching {
+                kotlinx.coroutines.runBlocking {
+                    com.example.pawmily.data.LocalCacheStore.clearAll()
+                }
+            }
+        }, "pawmily-clear-cache").start()
         prefs.edit().apply {
             putBoolean(KEY_IS_LOGGED_IN, false)
             remove(KEY_ACCESS_TOKEN)

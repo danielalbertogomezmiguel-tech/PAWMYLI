@@ -16,7 +16,6 @@ class DashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val sessionManager = SessionManager(this)
-        // Process death / recents can restore Dashboard without MainActivity.
         if (!SessionGuard.requireRefreshableSession(this, sessionManager)) {
             return
         }
@@ -24,12 +23,25 @@ class DashboardActivity : AppCompatActivity() {
         setContentView(R.layout.activity_dashboard)
         ImmersiveMode.apply(this)
 
-        // Renew access before fragments fire /patients/mine (avoids 401 storms).
+        // Show UI immediately from local cache; refresh token only when needed.
+        sessionReady = true
+        if (savedInstanceState == null) {
+            loadFragment(HomeFragment())
+        }
+        wireBottomNav()
+
         thread {
-            val access = TokenRefresher.refreshAccessToken(sessionManager.getAccessToken())
-            runOnUiThread {
-                if (isFinishing) return@runOnUiThread
-                if (access.isNullOrBlank()) {
+            val access = sessionManager.getAccessToken()
+            if (JwtAccessToken.isUsable(access)) {
+                TokenRefresher.refreshIfNeededInBackground()
+                return@thread
+            }
+            val renewed = TokenRefresher.refreshAccessToken(failedAccessToken = access)
+            if (renewed.isNullOrBlank() &&
+                TokenRefresher.sessionInvalidatedPublic()
+            ) {
+                runOnUiThread {
+                    if (isFinishing) return@runOnUiThread
                     Toast.makeText(
                         this,
                         "Tu sesión expiró. Inicia sesión de nuevo.",
@@ -39,13 +51,7 @@ class DashboardActivity : AppCompatActivity() {
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
                     finish()
-                    return@runOnUiThread
                 }
-                sessionReady = true
-                if (savedInstanceState == null) {
-                    loadFragment(HomeFragment())
-                }
-                wireBottomNav()
             }
         }
     }
@@ -65,9 +71,10 @@ class DashboardActivity : AppCompatActivity() {
                 finish()
             }
         }
-        // When returning from background (e.g. vet approved a link), refresh lists.
+        // Soft sync only when cache is stale — do not wipe local data on every resume.
         if (sessionReady) {
-            PetsSyncBus.notifyPetsChanged()
+            PetsSyncBus.notifySoftSyncIfStale()
+            TokenRefresher.refreshIfNeededInBackground()
         }
     }
 
@@ -79,15 +86,13 @@ class DashboardActivity : AppCompatActivity() {
     private fun wireBottomNav() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigation.setOnItemSelectedListener { item ->
-            if (!sessionReady) return@setOnItemSelectedListener false
-            val fragment: Fragment = when (item.itemId) {
-                R.id.navigation_home -> HomeFragment()
-                R.id.navigation_pets -> PetsFragment()
-                R.id.navigation_reminders -> RemindersFragment()
-                R.id.navigation_profile -> ProfileFragment()
+            when (item.itemId) {
+                R.id.navigation_home -> loadFragment(HomeFragment())
+                R.id.navigation_pets -> loadFragment(PetsFragment())
+                R.id.navigation_reminders -> loadFragment(RemindersFragment())
+                R.id.navigation_profile -> loadFragment(ProfileFragment())
                 else -> return@setOnItemSelectedListener false
             }
-            loadFragment(fragment)
             true
         }
     }

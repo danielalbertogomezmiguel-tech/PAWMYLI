@@ -94,9 +94,9 @@ object RetrofitClient {
 
     /**
      * Blocking refresh for OkHttp Authenticator / startup restore.
-     * Returns null when refresh token is invalid/expired or network fails.
+     * Distinguishes unauthorized (hard logout) from network failures (keep session).
      */
-    fun refreshBlocking(refreshToken: String): AuthResponse? {
+    fun refreshOutcome(refreshToken: String): RefreshOutcome {
         return try {
             val body = gson.toJson(RefreshRequest(refreshToken)).toRequestBody(jsonMedia)
             val request = Request.Builder()
@@ -105,11 +105,30 @@ object RetrofitClient {
                 .build()
             bareClient.newCall(request).execute().use { response ->
                 val raw = response.body?.string().orEmpty()
-                if (!response.isSuccessful) return null
-                gson.fromJson(raw, AuthResponse::class.java)
+                if (response.code == 401 || response.code == 403) {
+                    return RefreshOutcome.Unauthorized
+                }
+                if (!response.isSuccessful) {
+                    return RefreshOutcome.NetworkFailure(
+                        IOException("Refresh HTTP ${response.code}")
+                    )
+                }
+                val parsed = gson.fromJson(raw, AuthResponse::class.java)
+                if (parsed == null || parsed.accessToken.isBlank()) {
+                    return RefreshOutcome.Unauthorized
+                }
+                RefreshOutcome.Ok(parsed)
             }
-        } catch (_: Exception) {
-            null
+        } catch (e: Exception) {
+            RefreshOutcome.NetworkFailure(e)
+        }
+    }
+
+    /** @deprecated Prefer [refreshOutcome]. */
+    fun refreshBlocking(refreshToken: String): AuthResponse? {
+        return when (val outcome = refreshOutcome(refreshToken)) {
+            is RefreshOutcome.Ok -> outcome.response
+            else -> null
         }
     }
 

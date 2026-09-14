@@ -76,7 +76,16 @@ class ProfileFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        view?.let { loadProfile(it) }
+        // Prefer session data on resume; network profile only when opening the tab fresh.
+        view?.let { view ->
+            bindUser(
+                view,
+                sessionManager.getUserName().orEmpty(),
+                sessionManager.getUserEmail().orEmpty(),
+                sessionManager.getUserPhone()?.takeIf { it.isNotBlank() }
+                    ?: getString(R.string.empty_phone)
+            )
+        }
         setSwitchChecked(sessionManager.areNotificationsEnabled())
     }
 

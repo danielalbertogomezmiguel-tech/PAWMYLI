@@ -1,8 +1,13 @@
 package com.example.pawmily
 
+import com.example.pawmily.data.LocalCacheStore
 import retrofit2.Response
 
 object RemotePetRepository {
+
+    private const val PETS_TTL_MS = 10 * 60_000L
+    private const val REMINDERS_TTL_MS = 5 * 60_000L
+    private const val APPOINTMENTS_TTL_MS = 5 * 60_000L
 
     /** Creates a pending link request; returns a human status message. */
     suspend fun linkPet(code: String): String {
@@ -37,6 +42,7 @@ object RemotePetRepository {
             "Error al aprobar solicitud"
         )
         PetsMemoryCache.invalidate()
+        runCatching { listMyPets(forceRefresh = true) }
         return result
     }
 
@@ -47,22 +53,61 @@ object RemotePetRepository {
         )
     }
 
+    /**
+     * Local-first pets list: memory → Room → API.
+     * Network failures return the last local snapshot when available.
+     */
     suspend fun listMyPets(page: Int = 1, limit: Int = 50, forceRefresh: Boolean = false): List<Pet> {
-        if (!forceRefresh && PetsMemoryCache.isFresh()) {
+        if (!forceRefresh && PetsMemoryCache.isFresh(PETS_TTL_MS)) {
             PetsMemoryCache.snapshot()?.let { return it }
         }
-        val response = RetrofitClient.instance.myPatients(page, limit)
-        val body = unwrap(response, "Error al cargar mascotas")
-        val pets = body.data.map { it.toPet() }
-        PetsMemoryCache.put(pets)
-        return pets
+
+        if (!forceRefresh) {
+            runCatching { LocalCacheStore.loadPetsIntoMemory() }
+            if (PetsMemoryCache.isFresh(PETS_TTL_MS)) {
+                PetsMemoryCache.snapshot()?.let { return it }
+            }
+            val disk = runCatching { LocalCacheStore.getPets() }.getOrDefault(emptyList())
+            val syncAt = runCatching { LocalCacheStore.petsSyncAt() }.getOrDefault(0L)
+            if (disk.isNotEmpty() && !LocalCacheStore.isStale(syncAt, PETS_TTL_MS)) {
+                PetsMemoryCache.putFromDisk(disk, syncAt)
+                return disk
+            }
+        }
+
+        return try {
+            val response = RetrofitClient.instance.myPatients(page, limit)
+            val body = unwrap(response, "Error al cargar mascotas")
+            val pets = body.data.map { it.toPet() }
+            runCatching { LocalCacheStore.savePets(pets) }
+            PetsMemoryCache.put(pets)
+            pets
+        } catch (e: Exception) {
+            val fallback = PetsMemoryCache.snapshot()
+                ?: runCatching { LocalCacheStore.getPets() }.getOrDefault(emptyList())
+            if (fallback.isNotEmpty()) {
+                val syncAt = runCatching { LocalCacheStore.petsSyncAt() }
+                    .getOrDefault(System.currentTimeMillis())
+                PetsMemoryCache.putFromDisk(fallback, syncAt)
+                return fallback
+            }
+            throw e
+        }
     }
 
     suspend fun getPet(idOrCode: String): Pet {
         val key = idOrCode.trim()
         if (key.isEmpty()) throw ApiException("Código o ID inválido")
 
-        // UI still navigates with patient codes (PAW-xxxxxx)
+        val cached = runCatching { LocalCacheStore.getPet(key) }.getOrNull()
+        return try {
+            fetchPetRemote(key).also { mergePetIntoCache(it) }
+        } catch (e: Exception) {
+            cached ?: throw e
+        }
+    }
+
+    private suspend fun fetchPetRemote(key: String): Pet {
         if (key.uppercase().startsWith("PAW-")) {
             return unwrap(
                 RetrofitClient.instance.getPatientByCode(key.uppercase()),
@@ -81,9 +126,21 @@ object RemotePetRepository {
         ).toPet()
     }
 
+    private suspend fun mergePetIntoCache(pet: Pet) {
+        val current = runCatching { LocalCacheStore.getPets() }.getOrDefault(emptyList()).toMutableList()
+        val idx = current.indexOfFirst {
+            it.backendId == pet.backendId || it.id.equals(pet.id, ignoreCase = true)
+        }
+        if (idx >= 0) current[idx] = pet else current.add(pet)
+        runCatching { LocalCacheStore.savePets(current) }
+    }
+
     suspend fun unlink(id: String): Pet {
         val response = RetrofitClient.instance.unlinkPatient(id)
-        return unwrap(response, "Error al desvincular mascota").toPet()
+        val pet = unwrap(response, "Error al desvincular mascota").toPet()
+        PetsMemoryCache.invalidate()
+        runCatching { listMyPets(forceRefresh = true) }
+        return pet
     }
 
     suspend fun getFeeding(patientId: String): FeedingDto? {
@@ -144,8 +201,18 @@ object RemotePetRepository {
         }
     }
 
-    suspend fun getProfile(): UserDto {
-        return unwrap(RetrofitClient.instance.getProfile(), "Error al cargar perfil")
+    suspend fun getProfile(forceRefresh: Boolean = false): UserDto {
+        if (!forceRefresh) {
+            val cached = runCatching { LocalCacheStore.getProfile() }.getOrNull()
+            if (cached != null) return cached
+        }
+        return try {
+            val remote = unwrap(RetrofitClient.instance.getProfile(), "Error al cargar perfil")
+            runCatching { LocalCacheStore.saveProfile(remote) }
+            remote
+        } catch (e: Exception) {
+            runCatching { LocalCacheStore.getProfile() }.getOrNull() ?: throw e
+        }
     }
 
     /** Stub: request a signed upload URL (e.g. kind = user_avatar). */
@@ -171,25 +238,53 @@ object RemotePetRepository {
         ).url
     }
 
-    suspend fun listReminders(petId: String): List<ReminderDto> {
-        val response = RetrofitClient.instance.getReminders(petId)
-        return unwrap(response, "Error al cargar recordatorios")
-            .filterNot { ReminderVisibility.isAppointment(it) }
+    suspend fun listReminders(
+        petId: String,
+        forceRefresh: Boolean = false,
+    ): List<ReminderDto> {
+        if (!forceRefresh) {
+            val syncAt = runCatching { LocalCacheStore.remindersSyncAt(petId) }.getOrDefault(0L)
+            val cached = runCatching { LocalCacheStore.getReminders(petId) }.getOrDefault(emptyList())
+            if (cached.isNotEmpty() && !LocalCacheStore.isStale(syncAt, REMINDERS_TTL_MS)) {
+                return cached
+            }
+        }
+        return try {
+            val response = RetrofitClient.instance.getReminders(petId)
+            val list = unwrap(response, "Error al cargar recordatorios")
+                .filterNot { ReminderVisibility.isAppointment(it) }
+            runCatching { LocalCacheStore.saveReminders(petId, list) }
+            list
+        } catch (e: Exception) {
+            val fallback = runCatching { LocalCacheStore.getReminders(petId) }.getOrDefault(emptyList())
+            if (fallback.isNotEmpty()) return fallback
+            throw e
+        }
     }
 
     suspend fun createReminder(petId: String, body: ReminderCreateDto): ReminderDto {
         val response = RetrofitClient.instance.createReminder(petId, body)
-        return unwrap(response, "Error al crear recordatorio")
+        val created = unwrap(response, "Error al crear recordatorio")
+        runCatching { listReminders(petId, forceRefresh = true) }
+        return created
     }
 
     suspend fun updateReminder(id: String, body: ReminderUpdateDto): ReminderDto {
         val response = RetrofitClient.instance.updateReminder(id, body)
-        return unwrap(response, "Error al actualizar recordatorio")
+        val updated = unwrap(response, "Error al actualizar recordatorio")
+        updated.petId?.let { petId ->
+            runCatching { listReminders(petId, forceRefresh = true) }
+        }
+        return updated
     }
 
     suspend fun completeReminder(id: String): ReminderDto {
         val response = RetrofitClient.instance.completeReminder(id)
-        return unwrap(response, "Error al completar recordatorio")
+        val updated = unwrap(response, "Error al completar recordatorio")
+        updated.petId?.let { petId ->
+            runCatching { listReminders(petId, forceRefresh = true) }
+        }
+        return updated
     }
 
     suspend fun deleteReminder(id: String) {
@@ -202,14 +297,35 @@ object RemotePetRepository {
         }
     }
 
-    suspend fun listMyAppointments(page: Int = 1, limit: Int = 50): List<AppointmentDto> {
-        val response = RetrofitClient.instance.myAppointments(page, limit)
-        return unwrap(response, "Error al cargar citas").data
+    suspend fun listMyAppointments(
+        page: Int = 1,
+        limit: Int = 50,
+        forceRefresh: Boolean = false,
+    ): List<AppointmentDto> {
+        if (!forceRefresh) {
+            val syncAt = runCatching { LocalCacheStore.appointmentsSyncAt() }.getOrDefault(0L)
+            val cached = runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
+            if (cached.isNotEmpty() && !LocalCacheStore.isStale(syncAt, APPOINTMENTS_TTL_MS)) {
+                return cached
+            }
+        }
+        return try {
+            val response = RetrofitClient.instance.myAppointments(page, limit)
+            val list = unwrap(response, "Error al cargar citas").data
+            runCatching { LocalCacheStore.saveAppointments(list) }
+            list
+        } catch (e: Exception) {
+            val fallback = runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
+            if (fallback.isNotEmpty()) return fallback
+            throw e
+        }
     }
 
     suspend fun confirmAppointment(id: String): AppointmentDto {
         val response = RetrofitClient.instance.confirmAppointment(id)
-        return unwrap(response, "Error al confirmar cita")
+        val result = unwrap(response, "Error al confirmar cita")
+        runCatching { listMyAppointments(forceRefresh = true) }
+        return result
     }
 
     suspend fun requestAppointment(
@@ -226,7 +342,9 @@ object RemotePetRepository {
                 notes = notes
             )
         )
-        return unwrap(response, "Error al solicitar cita")
+        val result = unwrap(response, "Error al solicitar cita")
+        runCatching { listMyAppointments(forceRefresh = true) }
+        return result
     }
 
     suspend fun postponeAppointment(
@@ -239,7 +357,9 @@ object RemotePetRepository {
             appointmentId,
             AppointmentPostponeDto(date = date, time = time, notes = notes)
         )
-        return unwrap(response, "Error al aplazar cita")
+        val result = unwrap(response, "Error al aplazar cita")
+        runCatching { listMyAppointments(forceRefresh = true) }
+        return result
     }
 
     suspend fun getMedicalRecords(patientId: String): List<MedicalRecordDto> {

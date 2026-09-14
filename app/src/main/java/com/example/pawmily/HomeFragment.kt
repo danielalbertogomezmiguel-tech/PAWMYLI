@@ -86,7 +86,7 @@ class HomeFragment : Fragment(), PetsSyncBus.Listener {
     }
 
     override fun onPetsShouldRefresh() {
-        if (isAdded) refreshPetInfo(force = true)
+        if (isAdded) refreshPetInfo(force = PetsMemoryCache.isStale())
     }
 
     override fun onResume() {
