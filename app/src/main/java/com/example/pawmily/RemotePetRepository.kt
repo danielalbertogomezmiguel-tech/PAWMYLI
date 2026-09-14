@@ -7,7 +7,7 @@ object RemotePetRepository {
 
     private const val PETS_TTL_MS = 10 * 60_000L
     private const val REMINDERS_TTL_MS = 5 * 60_000L
-    private const val APPOINTMENTS_TTL_MS = 5 * 60_000L
+    private const val APPOINTMENTS_TTL_MS = 60_000L
 
     /** Creates a pending link request; returns a human status message. */
     suspend fun linkPet(code: String): String {
@@ -302,20 +302,28 @@ object RemotePetRepository {
         limit: Int = 50,
         forceRefresh: Boolean = false,
     ): List<AppointmentDto> {
+        fun activeOnly(list: List<AppointmentDto>) = list.filterNot {
+            it.status.equals("Eliminada", ignoreCase = true) ||
+                it.status.equals("Cancelada", ignoreCase = true)
+        }
         if (!forceRefresh) {
             val syncAt = runCatching { LocalCacheStore.appointmentsSyncAt() }.getOrDefault(0L)
-            val cached = runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
+            val cached = activeOnly(
+                runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
+            )
             if (cached.isNotEmpty() && !LocalCacheStore.isStale(syncAt, APPOINTMENTS_TTL_MS)) {
                 return cached
             }
         }
         return try {
             val response = RetrofitClient.instance.myAppointments(page, limit)
-            val list = unwrap(response, "Error al cargar citas").data
+            val list = activeOnly(unwrap(response, "Error al cargar citas").data)
             runCatching { LocalCacheStore.saveAppointments(list) }
             list
         } catch (e: Exception) {
-            val fallback = runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
+            val fallback = activeOnly(
+                runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
+            )
             if (fallback.isNotEmpty()) return fallback
             throw e
         }

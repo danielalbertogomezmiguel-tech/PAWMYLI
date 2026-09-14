@@ -27,6 +27,12 @@
     <string name="empty_personal_reminders">No hay recordatorios personales.</string>
     <string name="empty_appointment_reminders">No hay citas para esta mascota.</string>
     <string name="tab_appointments">Citas</string>
+    <string name="inbox_title">Correo clínico</string>
+    <string name="inbox_hint">Avisos de citas y cambios de la clínica</string>
+    <string name="inbox_unread">%1$d sin leer · toca para abrir</string>
+    <string name="inbox_empty">No hay mensajes todavía.</string>
+    <string name="inbox_mark_read">Marcar leídos</string>
+    <string name="error_pet_not_ready">Espera a que cargue la mascota e inténtalo de nuevo.</string>
     <string name="request_appointment_title">Solicitar cita</string>
     <string name="request_appointment_for_pet">Mascota: %1$s</string>
     <string name="label_preferred_date">Fecha preferida</string>

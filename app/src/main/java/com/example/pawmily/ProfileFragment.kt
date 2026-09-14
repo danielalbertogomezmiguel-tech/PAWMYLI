@@ -59,6 +59,10 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        view.findViewById<View>(R.id.inboxCard).setOnClickListener {
+            startActivity(Intent(requireContext(), InboxActivity::class.java))
+        }
+
         view.findViewById<View>(R.id.logoutCard).setOnClickListener {
             sessionManager.logout()
             val intent = Intent(requireContext(), MainActivity::class.java)
@@ -85,8 +89,25 @@ class ProfileFragment : Fragment() {
                 sessionManager.getUserPhone()?.takeIf { it.isNotBlank() }
                     ?: getString(R.string.empty_phone)
             )
+            val unread = InboxStore.unreadCount(requireContext())
+            view.findViewById<TextView>(R.id.tvInboxBadge).text =
+                if (unread > 0) getString(R.string.inbox_unread, unread)
+                else getString(R.string.inbox_hint)
         }
         setSwitchChecked(sessionManager.areNotificationsEnabled())
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val appts = RemotePetRepository.listMyAppointments(forceRefresh = true)
+                InboxStore.syncFromAppointments(requireContext(), appts)
+                view?.findViewById<TextView>(R.id.tvInboxBadge)?.text =
+                    InboxStore.unreadCount(requireContext()).let { n ->
+                        if (n > 0) getString(R.string.inbox_unread, n)
+                        else getString(R.string.inbox_hint)
+                    }
+            } catch (_: Exception) {
+                // Offline: keep local inbox as-is.
+            }
+        }
     }
 
     private fun setSwitchChecked(checked: Boolean) {

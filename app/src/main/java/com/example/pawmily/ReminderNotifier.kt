@@ -12,6 +12,7 @@ import java.util.Calendar
 object ReminderNotifier {
     const val CHANNEL_DEFAULT = "pawmily_reminders"
     const val CHANNEL_HIGH = "pawmily_reminders_high"
+    const val CHANNEL_INBOX = "pawmily_inbox"
 
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -35,8 +36,48 @@ object ReminderNotifier {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
+        val inboxChannel = NotificationChannel(
+            CHANNEL_INBOX,
+            "Correo de la clínica",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Avisos de citas, cancelaciones y solicitudes"
+            enableVibration(true)
+        }
+
         nm.createNotificationChannel(defaultChannel)
         nm.createNotificationChannel(highChannel)
+        nm.createNotificationChannel(inboxChannel)
+    }
+
+    /** Immediate notification for clinic/inbox messages (not an alarm). */
+    fun notifyInbox(context: Context, title: String, body: String) {
+        ensureChannels(context)
+        if (!SessionManager(context).areNotificationsEnabled()) return
+
+        val openIntent = Intent(context, InboxActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pending = PendingIntent.getActivity(
+            context,
+            (title + body).hashCode(),
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, CHANNEL_INBOX)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setCategory(androidx.core.app.NotificationCompat.CATEGORY_MESSAGE)
+            .build()
+
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(("inbox_" + System.currentTimeMillis()).hashCode(), notification)
     }
 
     fun schedule(

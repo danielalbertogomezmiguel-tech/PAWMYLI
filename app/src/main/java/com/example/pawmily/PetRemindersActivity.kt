@@ -68,17 +68,40 @@ class PetRemindersActivity : AppCompatActivity() {
     }
 
     private fun openRequestAppointment() {
-        val pet = loadedPet
-        val backendId = pet?.backendId ?: petBackendId
-        if (backendId.isNullOrBlank()) {
-            Toast.makeText(this, R.string.error_pet_id, Toast.LENGTH_SHORT).show()
-            return
+        lifecycleScope.launch {
+            try {
+                var pet = loadedPet
+                var backendId = pet?.backendId ?: petBackendId
+                if (backendId.isNullOrBlank() && !petCode.isNullOrBlank()) {
+                    pet = RemotePetRepository.getPet(petCode!!)
+                    loadedPet = pet
+                    backendId = pet.backendId
+                    petBackendId = backendId
+                }
+                if (backendId.isNullOrBlank()) {
+                    Toast.makeText(
+                        this@PetRemindersActivity,
+                        R.string.error_pet_not_ready,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+                startActivity(
+                    Intent(this@PetRemindersActivity, RequestAppointmentActivity::class.java)
+                        .putExtra(RequestAppointmentActivity.EXTRA_PET_BACKEND_ID, backendId)
+                        .putExtra(
+                            RequestAppointmentActivity.EXTRA_PET_NAME,
+                            pet?.name.orEmpty()
+                        )
+                )
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@PetRemindersActivity,
+                    e.message ?: getString(R.string.error_request_appointment),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
-        startActivity(
-            Intent(this, RequestAppointmentActivity::class.java)
-                .putExtra(RequestAppointmentActivity.EXTRA_PET_BACKEND_ID, backendId)
-                .putExtra(RequestAppointmentActivity.EXTRA_PET_NAME, pet?.name.orEmpty())
-        )
     }
 
     private fun reloadFromApi(forceNetwork: Boolean = false) {
@@ -95,7 +118,7 @@ class PetRemindersActivity : AppCompatActivity() {
                 petBackendId = pet.backendId ?: petBackendId
                 val key = pet.backendId ?: pet.id
                 remoteReminders = RemotePetRepository.listReminders(key, forceRefresh = forceNetwork)
-                val all = RemotePetRepository.listMyAppointments(forceRefresh = forceNetwork)
+                val all = RemotePetRepository.listMyAppointments(forceRefresh = true)
                 petAppointments = all.filter { appt ->
                     appt.patientId == pet.backendId ||
                         appt.petName.equals(pet.name, ignoreCase = true)
@@ -103,6 +126,7 @@ class PetRemindersActivity : AppCompatActivity() {
                     it.status.equals("Eliminada", ignoreCase = true) ||
                         it.status.equals("Cancelada", ignoreCase = true)
                 }.sortedBy { "${it.date} ${it.time}" }
+                InboxStore.syncFromAppointments(this@PetRemindersActivity, all)
                 renderList(showReminders = binding.reminderTabs.selectedTabPosition != 1)
             } catch (e: Exception) {
                 Toast.makeText(
@@ -185,7 +209,18 @@ class PetRemindersActivity : AppCompatActivity() {
 
     private fun showPostponeSuggestions(appt: AppointmentDto) {
         fun labelFor(daysAhead: Int): Pair<String, String> {
+            // Options are relative to the assigned appointment date, not "today".
             val c = java.util.Calendar.getInstance()
+            val parts = appt.date.trim().split("-")
+            if (parts.size == 3) {
+                val y = parts[0].toIntOrNull()
+                val m = parts[1].toIntOrNull()
+                val d = parts[2].toIntOrNull()
+                if (y != null && m != null && d != null) {
+                    c.set(y, m - 1, d, 0, 0, 0)
+                    c.set(java.util.Calendar.MILLISECOND, 0)
+                }
+            }
             c.add(java.util.Calendar.DAY_OF_YEAR, daysAhead)
             val date = String.format(
                 "%04d-%02d-%02d",
@@ -218,12 +253,17 @@ class PetRemindersActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 RemotePetRepository.postponeAppointment(id, date, time)
+                InboxStore.add(
+                    this@PetRemindersActivity,
+                    getString(R.string.postpone_pick_title),
+                    getString(R.string.appointment_postpone_sent) + " ($date $time)"
+                )
                 Toast.makeText(
                     this@PetRemindersActivity,
                     R.string.appointment_postpone_sent,
                     Toast.LENGTH_LONG
                 ).show()
-                reloadFromApi()
+                reloadFromApi(forceNetwork = true)
             } catch (e: Exception) {
                 Toast.makeText(
                     this@PetRemindersActivity,
