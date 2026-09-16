@@ -16,7 +16,14 @@ object FeedingFormHelper {
             feeding?.quantity?.takeIf { it.isNotBlank() } ?: feeding?.recommendedAmount,
             editable,
         )
-        bindField(root, R.id.etFrequency, feeding?.frequency, editable)
+        bindField(
+            root,
+            R.id.etFrequency,
+            feeding?.frequency
+                ?: feeding?.mealsPerDay?.let { "$it veces/día" }
+                ?: feeding?.status?.let { "Estado: $it" },
+            editable,
+        )
         val scheduleText = when {
             !feeding?.schedule.isNullOrBlank() -> feeding?.schedule
             !feeding?.meals.isNullOrEmpty() ->

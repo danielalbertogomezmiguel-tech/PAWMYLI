@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -370,15 +371,31 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
     }
 
     private var patientId: String? = null
+    private var planStatus: String = "ACTIVE"
+    private var rootView: View? = null
+    private var currentFeeding: FeedingDto? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        rootView = view
+        reload()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (patientId != null) reload()
+    }
+
+    private fun reload() {
+        val view = rootView ?: return
         val petCode = arguments?.getString(ARG_PET_CODE).orEmpty()
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val pet = RemotePetRepository.getPet(petCode)
                 patientId = pet.backendId ?: pet.id
                 val feeding = RemotePetRepository.getFeeding(patientId!!)
+                currentFeeding = feeding
+                planStatus = feeding?.status ?: "ACTIVE"
                 val form = view.findViewById<View>(R.id.feedingForm)
                 if (form != null) {
                     FeedingFormHelper.bind(form, feeding, editable = false)
@@ -394,6 +411,12 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
                 } catch (_: Exception) {
                     emptyList()
                 }
+                val summary = try {
+                    RemotePetRepository.getFeedingSummary(patientId!!)
+                } catch (_: Exception) {
+                    null
+                }
+                bindPlanHeader(view, feeding, logs, summary)
                 renderMealsToday(view, feeding, logs, today)
             } catch (e: Exception) {
                 Toast.makeText(
@@ -403,6 +426,59 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
                 ).show()
             }
         }
+    }
+
+    private fun bindPlanHeader(
+        view: View,
+        feeding: FeedingDto?,
+        logs: List<FeedingLogDto>,
+        summary: FeedingSummaryDto?
+    ) {
+        val card = view.findViewById<View>(R.id.cardPlanHeader) ?: return
+        if (feeding == null) {
+            card.visibility = View.GONE
+            return
+        }
+        card.visibility = View.VISIBLE
+        val statusTv = view.findViewById<TextView>(R.id.tvPlanStatus)
+        statusTv?.text = when (feeding.status?.uppercase()) {
+            "PAUSED" -> getString(R.string.feeding_plan_paused)
+            "FINISHED" -> getString(R.string.feeding_plan_finished)
+            else -> getString(R.string.feeding_plan_active)
+        }
+        val objectiveMap = mapOf(
+            "control_peso" to "Control de peso",
+            "mantenimiento" to "Mantenimiento",
+            "crecimiento" to "Crecimiento",
+            "otro" to "Otro",
+        )
+        val objectiveTv = view.findViewById<TextView>(R.id.tvPlanObjective)
+        val obj = feeding.objective?.let { objectiveMap[it] ?: it }
+        if (obj.isNullOrBlank()) {
+            objectiveTv?.visibility = View.GONE
+        } else {
+            objectiveTv?.visibility = View.VISIBLE
+            objectiveTv?.text = getString(R.string.feeding_objective, obj)
+        }
+        val weightsTv = view.findViewById<TextView>(R.id.tvPlanWeights)
+        val current = feeding.weightKg?.let { "$it kg" } ?: "—"
+        val target = feeding.targetWeightKg?.let { "$it kg" } ?: "—"
+        weightsTv?.text = getString(R.string.feeding_weights, current, target)
+
+        val meals = feeding.meals.orEmpty()
+        val doneToday = logs.count {
+            it.status.equals("EATEN", true) || it.status.equals("PARTIAL", true)
+        }
+        val totalToday = meals.size.coerceAtLeast(1)
+        view.findViewById<TextView>(R.id.tvTodayProgress)?.text =
+            getString(R.string.feeding_progress_today, doneToday, meals.size)
+        view.findViewById<ProgressBar>(R.id.progressToday)?.apply {
+            max = 100
+            progress = ((doneToday.toFloat() / totalToday) * 100).toInt().coerceIn(0, 100)
+        }
+        val percent = summary?.compliance?.percent ?: 0
+        view.findViewById<TextView>(R.id.tvWeekCompliance)?.text =
+            getString(R.string.feeding_week_compliance, percent)
     }
 
     private fun renderMealsToday(
@@ -420,6 +496,7 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
             return
         }
         title?.visibility = View.VISIBLE
+        val planActive = (feeding?.status ?: "ACTIVE").equals("ACTIVE", true)
         val byMeal = logs.associateBy { it.mealId }
         meals.sortedBy { it.sortOrder ?: 0 }.forEach { meal ->
             val mealId = meal.id ?: return@forEach
@@ -429,31 +506,82 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
             val timeView = row.findViewById<TextView>(R.id.tvMealTime)
             val ivYes = row.findViewById<ImageView>(R.id.ivYes)
             val ivNo = row.findViewById<ImageView>(R.id.ivNo)
-            nameView?.text = meal.label?.takeIf { it.isNotBlank() } ?: "Comida"
+            nameView?.text = buildString {
+                append(meal.label?.takeIf { it.isNotBlank() } ?: "Comida")
+                meal.amount?.takeIf { it.isNotBlank() }?.let { append(" · $it") }
+            }
             val status = byMeal[mealId]?.status
             val late = isMealLate(meal.time, today) && status.isNullOrBlank()
             timeView?.text = buildString {
                 append(meal.time.orEmpty())
                 when {
                     status.equals("EATEN", true) -> append(" · hecha")
+                    status.equals("PARTIAL", true) -> append(" · parcial")
                     status.equals("UNLOGGED", true) -> append(" · incompleta")
                     late -> append(" · atrasada")
                     else -> append(" · pendiente")
                 }
             }
             applyMealIcons(ivYes, ivNo, status)
-            ivYes?.setOnClickListener {
-                markMeal(mealId, today, "EATEN", nameView, timeView, meal.time, ivYes, ivNo)
+            val openDialog = View.OnClickListener {
+                if (!planActive) {
+                    Toast.makeText(requireContext(), R.string.meal_plan_not_active, Toast.LENGTH_SHORT).show()
+                    return@OnClickListener
+                }
+                showMealDialog(mealId, today, meal.time)
             }
-            ivNo?.setOnClickListener {
-                markMeal(mealId, today, "UNLOGGED", nameView, timeView, meal.time, ivYes, ivNo)
-            }
+            ivYes?.setOnClickListener(openDialog)
+            ivNo?.setOnClickListener(openDialog)
+            row.setOnClickListener(openDialog)
             mealsContainer.addView(row)
         }
     }
 
+    private fun showMealDialog(mealId: String, today: String, mealTime: String?) {
+        val options = arrayOf(
+            getString(R.string.meal_option_normal),
+            getString(R.string.meal_option_less),
+            getString(R.string.meal_option_refused),
+            getString(R.string.meal_option_skipped),
+        )
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(R.string.meal_what_happened)
+            .setItems(options) { _, which ->
+                val (status, reason) = when (which) {
+                    0 -> "EATEN" to "NORMAL"
+                    1 -> "PARTIAL" to "LESS"
+                    2 -> "UNLOGGED" to "REFUSED"
+                    else -> "UNLOGGED" to "SKIPPED"
+                }
+                if (which == 0) {
+                    markMeal(mealId, today, status, reason, null)
+                } else {
+                    val noteInput = android.widget.EditText(requireContext()).apply {
+                        hint = getString(R.string.meal_option_note_hint)
+                        setPadding(48, 32, 48, 32)
+                    }
+                    androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setTitle(options[which])
+                        .setView(noteInput)
+                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                            markMeal(
+                                mealId,
+                                today,
+                                status,
+                                reason,
+                                noteInput.text?.toString()?.trim()
+                            )
+                        }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun applyMealIcons(ivYes: ImageView?, ivNo: ImageView?, status: String?) {
-        val eaten = status.equals("EATEN", true)
+        val eaten = status.equals("EATEN", true) || status.equals("PARTIAL", true)
         val missed = status.equals("UNLOGGED", true)
         ivYes?.alpha = if (eaten) 1f else 0.35f
         ivNo?.alpha = if (missed) 1f else 0.35f
@@ -480,29 +608,29 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         mealId: String,
         today: String,
         status: String,
-        nameView: TextView?,
-        timeView: TextView?,
-        mealTime: String?,
-        ivYes: ImageView?,
-        ivNo: ImageView?
+        reason: String?,
+        notes: String?
     ) {
         val pid = patientId ?: return
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 RemotePetRepository.markFeedingLog(
                     pid,
-                    FeedingLogCreateDto(mealId = mealId, scheduledDate = today, status = status)
+                    FeedingLogCreateDto(
+                        mealId = mealId,
+                        scheduledDate = today,
+                        status = status,
+                        reason = reason,
+                        notes = notes?.ifBlank { null },
+                    )
                 )
-                applyMealIcons(ivYes, ivNo, status)
-                timeView?.text = buildString {
-                    append(mealTime.orEmpty())
-                    append(if (status == "EATEN") " · hecha" else " · incompleta")
+                val msg = when (status) {
+                    "EATEN" -> R.string.meal_marked_eaten
+                    "PARTIAL" -> R.string.meal_marked_partial
+                    else -> R.string.meal_marked_missed
                 }
-                Toast.makeText(
-                    requireContext(),
-                    if (status == "EATEN") R.string.meal_marked_eaten else R.string.meal_marked_missed,
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                reload()
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
@@ -513,3 +641,4 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         }
     }
 }
+

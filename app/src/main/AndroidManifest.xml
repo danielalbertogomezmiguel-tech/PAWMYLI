@@ -49,9 +49,6 @@
         <activity android:name=".PetDetailActivity" />
         <activity android:name=".MedicalReportActivity" />
         <activity
-            android:name=".FeedingDetailActivity"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
             android:name=".NewReminderActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity

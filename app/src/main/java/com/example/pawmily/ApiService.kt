@@ -71,6 +71,13 @@ interface ApiService {
     @GET("patients/{id}/feeding")
     suspend fun getFeeding(@Path("id") patientId: String): Response<FeedingDto>
 
+    @GET("patients/{id}/feeding/summary")
+    suspend fun getFeedingSummary(
+        @Path("id") patientId: String,
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null
+    ): Response<FeedingSummaryDto>
+
     @PUT("patients/{id}/feeding")
     suspend fun updateFeeding(
         @Path("id") patientId: String,
@@ -285,6 +292,11 @@ data class FeedingDto(
     val vetRecommendations: String? = null,
     val allowedFoods: String? = null,
     val forbiddenFoods: String? = null,
+    val objective: String? = null,
+    val targetWeightKg: Double? = null,
+    val startDate: String? = null,
+    val reviewDate: String? = null,
+    val status: String? = null,
     val meals: List<FeedingMealDto>? = null
 )
 
@@ -294,6 +306,8 @@ data class FeedingLogDto(
     val patientId: String? = null,
     val scheduledDate: String? = null,
     val status: String? = null,
+    val reason: String? = null,
+    val notes: String? = null,
     val loggedAt: String? = null,
     val loggedByUserId: String? = null,
     val meal: FeedingMealDto? = null
@@ -302,7 +316,23 @@ data class FeedingLogDto(
 data class FeedingLogCreateDto(
     val mealId: String,
     val scheduledDate: String,
-    val status: String
+    val status: String,
+    val reason: String? = null,
+    val notes: String? = null
+)
+
+data class FeedingComplianceDto(
+    val scheduled: Int? = null,
+    val eaten: Int? = null,
+    val partial: Int? = null,
+    val unlogged: Int? = null,
+    val pending: Int? = null,
+    val percent: Int? = null
+)
+
+data class FeedingSummaryDto(
+    val plan: FeedingDto? = null,
+    val compliance: FeedingComplianceDto? = null
 )
 
 data class FavoriteDto(
@@ -363,7 +393,14 @@ data class FeedingUpdateDto(
     val restrictions: String? = null,
     val allergies: String? = null,
     val observations: String? = null,
-    val vetRecommendations: String? = null
+    val vetRecommendations: String? = null,
+    val allowedFoods: String? = null,
+    val forbiddenFoods: String? = null,
+    val objective: String? = null,
+    val targetWeightKg: Double? = null,
+    val startDate: String? = null,
+    val reviewDate: String? = null,
+    val status: String? = null
 )
 
 data class MedicalRecordDto(

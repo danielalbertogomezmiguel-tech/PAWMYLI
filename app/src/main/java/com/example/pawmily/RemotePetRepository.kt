@@ -171,6 +171,17 @@ object RemotePetRepository {
         )
     }
 
+    suspend fun getFeedingSummary(
+        patientId: String,
+        from: String? = null,
+        to: String? = null
+    ): FeedingSummaryDto {
+        return unwrap(
+            RetrofitClient.instance.getFeedingSummary(patientId, from, to),
+            "Error al cargar seguimiento de alimentación"
+        )
+    }
+
     suspend fun markFeedingLog(patientId: String, body: FeedingLogCreateDto): FeedingLogDto {
         return unwrap(
             RetrofitClient.instance.createFeedingLog(patientId, body),
