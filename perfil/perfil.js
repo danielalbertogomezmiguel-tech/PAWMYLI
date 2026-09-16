@@ -308,9 +308,7 @@ function pintarComidas(feeding) {
     box.innerHTML = "";
     const meals = feeding && Array.isArray(feeding.meals) ? feeding.meals : [];
     if (!meals.length) {
-        if (isOwner) {
-            box.innerHTML = "<p style='color:#8a9aa8;font-size:14px;'>Sin comidas programadas</p>";
-        }
+        box.innerHTML = "<p style='color:#8a9aa8;font-size:14px;'>Sin comidas programadas</p>";
         return;
     }
     meals.forEach((m) => {
@@ -323,14 +321,134 @@ function pintarComidas(feeding) {
 
 function feedingLogStatusClass(status) {
     if (status === "EATEN") return "eaten";
+    if (status === "PARTIAL") return "partial";
     if (status === "PENDING") return "pending";
     return "unlogged";
 }
 
 function feedingLogStatusLabel(status) {
     if (status === "EATEN") return "Comido";
+    if (status === "PARTIAL") return "Parcial";
     if (status === "PENDING") return "Pendiente";
     return "Sin registro";
+}
+
+function feedingReasonLabel(reason) {
+    const map = {
+        NORMAL: "Normal",
+        LESS: "Comió menos",
+        REFUSED: "No quiso comer",
+        SKIPPED: "No se realizó",
+        OTHER: "Otro",
+    };
+    return map[reason] || "";
+}
+
+function planStatusUi(status) {
+    if (status === "PAUSED") return { label: "Pausado", cls: "paused" };
+    if (status === "FINISHED") return { label: "Finalizado", cls: "finished" };
+    return { label: "Activo", cls: "" };
+}
+
+function collectMealsFromEditor() {
+    const rows = document.querySelectorAll("#editorComidas .comida-row");
+    const meals = [];
+    rows.forEach((row, i) => {
+        const label = row.querySelector(".meal-label")?.value.trim();
+        const time = row.querySelector(".meal-time")?.value.trim();
+        const amount = row.querySelector(".meal-amount")?.value.trim() || null;
+        if (!label || !time) return;
+        meals.push({ label, time, amount, sortOrder: i });
+    });
+    return meals;
+}
+
+function addMealEditorRow(meal) {
+    const box = document.getElementById("editorComidas");
+    if (!box) return;
+    const row = document.createElement("div");
+    row.className = "comida-row";
+    row.innerHTML = `
+        <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${meal?.label || ""}">
+        <input class="meal-time" type="time" value="${meal?.time || "08:00"}">
+        <input class="meal-amount" type="text" placeholder="60 g" value="${meal?.amount || ""}">
+        <button type="button" class="btn-desvincular meal-remove" title="Quitar">✕</button>
+    `;
+    row.querySelector(".meal-remove").onclick = () => row.remove();
+    box.appendChild(row);
+}
+
+function renderMealEditor(feeding) {
+    const box = document.getElementById("editorComidas");
+    if (!box) return;
+    box.innerHTML = "";
+    const meals = feeding && Array.isArray(feeding.meals) ? feeding.meals : [];
+    if (meals.length) {
+        meals.forEach((m) => addMealEditorRow(m));
+    } else {
+        const n = Number(document.getElementById("dietaComidas")?.value) || 2;
+        for (let i = 0; i < n; i += 1) {
+            addMealEditorRow({
+                label: (i + 1) + "° comida",
+                time: String(8 + i * 4).padStart(2, "0") + ":00",
+                amount: "",
+            });
+        }
+    }
+}
+
+function fillDietForm(feeding) {
+    if (!feeding) return;
+    const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val ?? "";
+    };
+    set("dietaPeso", feeding.weightKg ?? "");
+    set("dietaPesoObjetivo", feeding.targetWeightKg ?? "");
+    set("dietaObjetivo", feeding.objective || "");
+    set("dietaEstado", feeding.status || "ACTIVE");
+    set("dietaComidas", feeding.mealsPerDay ?? 2);
+    set("dietaInicio", feeding.startDate || "");
+    set("dietaRevision", feeding.reviewDate || "");
+    set("dietaFoodType", feeding.foodType || "");
+    set("dietaBrand", feeding.brand || "");
+    set("dietaPermitidos", feeding.allowedFoods || "");
+    set("dietaProhibidos", feeding.forbiddenFoods || "");
+    set("dietaNotas", feeding.vetNotes || feeding.specialInstructions || "");
+    set("dietaResultado", feeding.recommendedAmount || "");
+    set("dietaKcal", feeding.caloriesPerDay != null ? String(feeding.caloriesPerDay) : "");
+    renderMealEditor(feeding);
+}
+
+function buildFeedingPayload() {
+    const recommendedAmount = document.getElementById("dietaResultado").value.trim();
+    const mealsPerDay = Number(document.getElementById("dietaComidas").value) || 2;
+    const vetNotes = document.getElementById("dietaNotas").value.trim() || undefined;
+    const weightKg = Number(document.getElementById("dietaPeso").value) || undefined;
+    const targetWeightKg = Number(document.getElementById("dietaPesoObjetivo").value) || undefined;
+    const caloriesPerDay = Number(document.getElementById("dietaKcal").value) || undefined;
+    const meals = collectMealsFromEditor();
+    return {
+        recommendedAmount: recommendedAmount || "Por definir",
+        mealsPerDay: meals.length || mealsPerDay,
+        vetNotes,
+        specialInstructions: vetNotes,
+        weightKg,
+        targetWeightKg: targetWeightKg || null,
+        caloriesPerDay,
+        objective: document.getElementById("dietaObjetivo").value || null,
+        status: document.getElementById("dietaEstado").value || "ACTIVE",
+        startDate: document.getElementById("dietaInicio").value || null,
+        reviewDate: document.getElementById("dietaRevision").value || null,
+        foodType: document.getElementById("dietaFoodType").value.trim() || undefined,
+        brand: document.getElementById("dietaBrand").value.trim() || undefined,
+        allowedFoods: document.getElementById("dietaPermitidos").value.trim() || undefined,
+        forbiddenFoods: document.getElementById("dietaProhibidos").value.trim() || undefined,
+        meals,
+        schedule: meals.map((m) => m.time).join(", "),
+        quantity: recommendedAmount || undefined,
+        frequency: (meals.length || mealsPerDay) + " veces/día",
+    };
 }
 
 async function cargarFeedingLogs() {
@@ -338,25 +456,82 @@ async function cargarFeedingLogs() {
     if (!lista || !pacienteId) return;
     lista.innerHTML = "<li>Cargando registros...</li>";
     try {
-        const logs = await PawApi.api.listFeedingLogs(pacienteId);
+        const [logs, summary] = await Promise.all([
+            PawApi.api.listFeedingLogs(pacienteId),
+            PawApi.api.getFeedingSummary(pacienteId).catch(() => null),
+        ]);
+        renderFeedingSummary(summary);
         const items = Array.isArray(logs) ? logs : logs?.data || [];
         if (!items.length) {
             lista.innerHTML = "<li>Sin registros de alimentación</li>";
             return;
         }
         lista.innerHTML = "";
-        items.forEach((log) => {
+        items.slice(0, 30).forEach((log) => {
             const mealLabel = (log.meal && (log.meal.label || log.meal.time)) || log.mealId || "Comida";
             const date = log.scheduledDate || "—";
             const status = log.status || "UNLOGGED";
+            const reason = feedingReasonLabel(log.reason);
+            const notes = log.notes ? " · " + log.notes : "";
             lista.innerHTML += `<li>
-                <span><strong>${date}</strong> · ${mealLabel}</span>
+                <span><strong>${date}</strong> · ${mealLabel}${reason ? " · " + reason : ""}${notes}</span>
                 <span class="log-status ${feedingLogStatusClass(status)}">${feedingLogStatusLabel(status)}</span>
             </li>`;
         });
     } catch (_) {
         lista.innerHTML = "<li>No se pudieron cargar los registros</li>";
     }
+}
+
+function renderFeedingSummary(summary) {
+    const cards = document.getElementById("feedingSummaryCards");
+    const week = document.getElementById("feedingWeekGrid");
+    if (!cards || !week) return;
+    if (!summary || !summary.plan) {
+        cards.innerHTML = "<p style='color:#8a9aa8;'>Sin plan activo para calcular cumplimiento.</p>";
+        week.innerHTML = "";
+        return;
+    }
+    const c = summary.compliance || {};
+    cards.innerHTML = `
+        <div class="card-mini"><strong>${c.percent ?? 0}%</strong><span>Cumplimiento</span></div>
+        <div class="card-mini"><strong>${c.scheduled ?? 0}</strong><span>Programadas</span></div>
+        <div class="card-mini"><strong>${(c.eaten || 0) + (c.partial || 0)}</strong><span>Registradas</span></div>
+        <div class="card-mini"><strong>${c.unlogged ?? 0}</strong><span>No realizadas</span></div>
+    `;
+    const days = (summary.week && summary.week.days) || [];
+    const meals = (summary.week && summary.week.meals) || [];
+    if (!days.length || !meals.length) {
+        week.innerHTML = "";
+        return;
+    }
+    const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    let html = "<table><thead><tr><th>Comida</th>";
+    days.forEach((d, i) => {
+        html += `<th>${dayNames[i] || d.slice(5)}</th>`;
+    });
+    html += "</tr></thead><tbody>";
+    meals.forEach((m) => {
+        html += `<tr><td><strong>${m.label || "Comida"}</strong></td>`;
+        (m.cells || []).forEach((cell) => {
+            let mark = "⏳";
+            let cls = "cell-pending";
+            if (cell === "EATEN") {
+                mark = "✅";
+                cls = "cell-ok";
+            } else if (cell === "PARTIAL") {
+                mark = "🟡";
+                cls = "cell-partial";
+            } else if (cell === "UNLOGGED") {
+                mark = "❌";
+                cls = "cell-miss";
+            }
+            html += `<td class="${cls}">${mark}</td>`;
+        });
+        html += "</tr>";
+    });
+    html += "</tbody></table>";
+    week.innerHTML = html;
 }
 
 function cargarPerfil() {
@@ -422,10 +597,25 @@ function cargarPerfil() {
     const listaAlim = document.getElementById("listaAlimentacion");
     listaAlim.innerHTML = "";
     const feeding = paciente.feeding;
+    const badgePlan = document.getElementById("badgePlanStatus");
+    if (badgePlan) {
+        if (feeding) {
+            const ui = planStatusUi(feeding.status || "ACTIVE");
+            badgePlan.hidden = false;
+            badgePlan.textContent = ui.label;
+            badgePlan.className = "badge-plan " + ui.cls;
+        } else {
+            badgePlan.hidden = true;
+        }
+    }
     if (isOwner && feeding) {
         const ownerLines = [
+            feeding.status ? "Estado: " + planStatusUi(feeding.status).label : null,
+            feeding.objective ? "Objetivo: " + feeding.objective : null,
             feeding.recommendedAmount ? "Cantidad: " + feeding.recommendedAmount : null,
             feeding.mealsPerDay != null ? "Comidas/día: " + feeding.mealsPerDay : null,
+            feeding.weightKg != null ? "Peso: " + feeding.weightKg + " kg" : null,
+            feeding.targetWeightKg != null ? "Objetivo peso: " + feeding.targetWeightKg + " kg" : null,
             feeding.allowedFoods ? "Permitidos: " + feeding.allowedFoods : null,
             feeding.forbiddenFoods ? "Prohibidos: " + feeding.forbiddenFoods : null,
             feeding.vetNotes || feeding.specialInstructions
@@ -447,14 +637,13 @@ function cargarPerfil() {
         listaAlim.innerHTML = "<li>Sin información</li>";
     }
     pintarComidas(feeding);
+    fillDietForm(feeding);
 
-    if (feeding) {
-        document.getElementById("dietaPeso").value = feeding.weightKg ?? "";
-        document.getElementById("dietaComidas").value = feeding.mealsPerDay ?? 2;
-        document.getElementById("dietaNotas").value = feeding.vetNotes || feeding.specialInstructions || "";
-        document.getElementById("dietaResultado").value = feeding.recommendedAmount || "";
-        document.getElementById("dietaKcal").value =
-            feeding.caloriesPerDay != null ? String(feeding.caloriesPerDay) : "";
+    const formDieta = document.getElementById("formDieta");
+    if (formDieta && isOwner) {
+        formDieta.querySelectorAll("input, textarea, select, button").forEach((el) => {
+            el.disabled = true;
+        });
     }
 
     const tabla = document.getElementById("historial");
@@ -618,6 +807,10 @@ function prepareConsultaForm() {
         if (list) list.innerHTML = `<option value="${sessionUser.name}">`;
     }
     document.getElementById("consultaPropietario").value = (paciente && paciente.propietario) || "";
+    const telEl = document.getElementById("consultaPropietarioTel");
+    const mailEl = document.getElementById("consultaPropietarioEmail");
+    if (telEl) telEl.value = (paciente && (paciente.telefono || paciente.ownerPhone)) || "";
+    if (mailEl) mailEl.value = (paciente && (paciente.correo || paciente.ownerEmail)) || "";
     document.getElementById("consultaPacienteNombre").textContent =
         (paciente && paciente.nombre) || "—";
     if (paciente && paciente.peso) {
@@ -736,12 +929,21 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
     }
 });
 
+document.getElementById("btnAddComida")?.addEventListener("click", () => {
+    if (isOwner) return;
+    addMealEditorRow({ label: "Comida", time: "12:00", amount: "" });
+});
+
 document.getElementById("formDieta").addEventListener("submit", async function (e) {
     e.preventDefault();
     if (isOwner) return;
     const weightKg = Number(document.getElementById("dietaPeso").value);
     const mealsPerDay = Number(document.getElementById("dietaComidas").value) || 2;
     const vetNotes = document.getElementById("dietaNotas").value.trim() || undefined;
+    const objective = document.getElementById("dietaObjetivo").value || undefined;
+    const targetWeightKg = Number(document.getElementById("dietaPesoObjetivo").value) || undefined;
+    const startDate = document.getElementById("dietaInicio").value || undefined;
+    const reviewDate = document.getElementById("dietaRevision").value || undefined;
 
     try {
         const feeding = await PawApi.api.generateDiet(pacienteId, {
@@ -749,12 +951,17 @@ document.getElementById("formDieta").addEventListener("submit", async function (
             mealsPerDay,
             vetNotes,
             species: paciente.especie,
+            objective,
+            targetWeightKg,
+            startDate,
+            reviewDate,
         });
         document.getElementById("dietaResultado").value = feeding.recommendedAmount || "";
         document.getElementById("dietaKcal").value =
             feeding.caloriesPerDay != null ? String(feeding.caloriesPerDay) : "";
+        fillDietForm(feeding);
         await refrescarPaciente();
-        alert("Dieta generada y guardada.");
+        alert("Cantidad sugerida calculada. Revisa horarios y guarda el plan.");
     } catch (err) {
         alert(err.message || "No se pudo generar la dieta.");
     }
@@ -762,30 +969,22 @@ document.getElementById("formDieta").addEventListener("submit", async function (
 
 document.getElementById("btnGuardarDietaManual").addEventListener("click", async () => {
     if (isOwner) return;
-    const recommendedAmount = document.getElementById("dietaResultado").value.trim();
-    const mealsPerDay = Number(document.getElementById("dietaComidas").value) || 2;
-    const vetNotes = document.getElementById("dietaNotas").value.trim() || undefined;
-    const weightKg = Number(document.getElementById("dietaPeso").value) || undefined;
-    const caloriesPerDay = Number(document.getElementById("dietaKcal").value) || undefined;
-
-    if (!recommendedAmount) {
-        alert("Genera la dieta o escribe una cantidad recomendada.");
+    const payload = buildFeedingPayload();
+    if (!payload.recommendedAmount || payload.recommendedAmount === "Por definir") {
+        alert("Calcula o escribe una cantidad diaria recomendada.");
+        return;
+    }
+    if (!payload.meals.length) {
+        alert("Agrega al menos una comida con etiqueta y hora.");
         return;
     }
 
     try {
-        await PawApi.api.updateFeeding(pacienteId, {
-            recommendedAmount,
-            mealsPerDay,
-            vetNotes,
-            specialInstructions: vetNotes,
-            weightKg,
-            caloriesPerDay,
-        });
+        await PawApi.api.updateFeeding(pacienteId, payload);
         await refrescarPaciente();
-        alert("Dieta actualizada.");
+        alert("Plan de alimentación guardado.");
     } catch (err) {
-        alert(err.message || "No se pudo guardar la dieta.");
+        alert(err.message || "No se pudo guardar el plan.");
     }
 });
 

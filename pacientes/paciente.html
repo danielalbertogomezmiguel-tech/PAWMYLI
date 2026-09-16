@@ -127,34 +127,56 @@
                     <input type="text" id="raza">
                 </div>
                 <div>
-                    <label>Edad</label>
-                    <input type="number" id="edad">
-                </div>
-            </div>
-            <div class="fila">
-                <div>
                     <label>Sexo</label>
                     <select id="sexo">
                         <option>Macho</option>
                         <option>Hembra</option>
                     </select>
                 </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Año de nacimiento</label>
+                    <input type="number" id="anioNacimiento" min="1990" max="2100" placeholder="Ej: 2022" required>
+                </div>
+                <div>
+                    <label>Mes de nacimiento</label>
+                    <select id="mesNacimiento" required>
+                        <option value="">Selecciona mes</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+            </div>
+            <p class="form-hint" id="edadAproxHint">La edad se calculará a partir del nacimiento.</p>
+            <div class="fila">
                 <div>
                     <label>Propietario</label>
                     <input type="text" id="propietario">
                 </div>
-            </div>
-            <div class="fila">
                 <div>
                     <label>Peso (kg)</label>
-                    <input type="text" id="peso" placeholder="Ej: 12.5">
+                    <div class="input-con-sufijo">
+                        <input type="number" id="peso" min="0" step="0.1" placeholder="Ej: 12.5" inputmode="decimal">
+                        <span class="sufijo">kg</span>
+                    </div>
                 </div>
+            </div>
+            <div class="fila">
                 <div>
                     <label>Color</label>
                     <input type="text" id="color" placeholder="Ej: Blanco">
                 </div>
-            </div>
-            <div class="fila">
                 <div>
                     <label>Microchip</label>
                     <select id="microchip">
@@ -162,115 +184,14 @@
                         <option>Sí</option>
                     </select>
                 </div>
+            </div>
+            <div class="fila">
                 <div>
                     <label>Foto</label>
                     <input type="file" id="foto">
                 </div>
+                <div></div>
             </div>
-
-            <h3 class="form-seccion">Dieta (opcional)</h3>
-            <div class="fila">
-                <div>
-                    <label>Cantidad recomendada</label>
-                    <input type="text" id="dietaCantidad" placeholder="Ej: 250 g/día">
-                </div>
-                <div>
-                    <label>Comidas/día</label>
-                    <input type="number" id="dietaComidasDia" min="1" max="6" value="2">
-                </div>
-            </div>
-            <div class="fila">
-                <div>
-                    <label>Alimentos permitidos</label>
-                    <input type="text" id="dietaPermitidos" placeholder="Ej: croquetas, pollo">
-                </div>
-                <div>
-                    <label>Alimentos prohibidos</label>
-                    <input type="text" id="dietaProhibidos" placeholder="Ej: chocolate, uvas">
-                </div>
-            </div>
-            <p class="form-hint">Hasta 3 comidas (etiqueta, hora, cantidad, alimento)</p>
-            <div id="mealRows">
-                <div class="fila meal-row" data-meal="0">
-                    <div>
-                        <label>Comida 1</label>
-                        <input type="text" class="meal-label" placeholder="Desayuno">
-                    </div>
-                    <div>
-                        <label>Hora</label>
-                        <input type="time" class="meal-time" value="08:00">
-                    </div>
-                    <div>
-                        <label>Cantidad</label>
-                        <input type="text" class="meal-amount" placeholder="120 g">
-                    </div>
-                    <div>
-                        <label>Alimento</label>
-                        <input type="text" class="meal-food" placeholder="Croqueta">
-                    </div>
-                </div>
-                <div class="fila meal-row" data-meal="1">
-                    <div>
-                        <label>Comida 2</label>
-                        <input type="text" class="meal-label" placeholder="Cena">
-                    </div>
-                    <div>
-                        <label>Hora</label>
-                        <input type="time" class="meal-time" value="18:00">
-                    </div>
-                    <div>
-                        <label>Cantidad</label>
-                        <input type="text" class="meal-amount" placeholder="130 g">
-                    </div>
-                    <div>
-                        <label>Alimento</label>
-                        <input type="text" class="meal-food" placeholder="Croqueta">
-                    </div>
-                </div>
-                <div class="fila meal-row" data-meal="2">
-                    <div>
-                        <label>Comida 3 (opcional)</label>
-                        <input type="text" class="meal-label" placeholder="">
-                    </div>
-                    <div>
-                        <label>Hora</label>
-                        <input type="time" class="meal-time">
-                    </div>
-                    <div>
-                        <label>Cantidad</label>
-                        <input type="text" class="meal-amount" placeholder="">
-                    </div>
-                    <div>
-                        <label>Alimento</label>
-                        <input type="text" class="meal-food" placeholder="">
-                    </div>
-                </div>
-            </div>
-
-            <h3 class="form-seccion">Primera consulta (opcional)</h3>
-            <div class="fila">
-                <div>
-                    <label>Tipo</label>
-                    <select id="consultaTipo">
-                        <option value="GENERAL">General</option>
-                        <option value="PREVENTIVA">Preventiva</option>
-                        <option value="VACUNACION">Vacunación</option>
-                        <option value="DESPARASITACION">Desparasitación</option>
-                        <option value="ENFERMEDAD">Enfermedad</option>
-                        <option value="TRAUMATOLOGIA">Traumatología</option>
-                        <option value="REPRODUCTIVA">Reproductiva</option>
-                        <option value="SEGUIMIENTO">Seguimiento</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Motivo</label>
-                    <input type="text" id="consultaMotivo" placeholder="Ej: Chequeo inicial">
-                </div>
-            </div>
-            <label>Diagnóstico</label>
-            <textarea id="consultaDiagnostico" rows="2" placeholder="Opcional"></textarea>
-            <label>Tratamiento</label>
-            <textarea id="consultaTratamiento" rows="2" placeholder="Opcional"></textarea>
 
             <button class="guardar">Guardar Paciente</button>
         </form>

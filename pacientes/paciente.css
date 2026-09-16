@@ -394,6 +394,22 @@ header h1 {
     margin: 0 0 10px;
 }
 
+.input-con-sufijo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-con-sufijo input {
+    flex: 1;
+}
+
+.input-con-sufijo .sufijo {
+    font-weight: 700;
+    color: #2c5f5a;
+    min-width: 28px;
+}
+
 .meal-row {
     margin-bottom: 8px;
 }

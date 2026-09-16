@@ -314,6 +314,18 @@
                 body: JSON.stringify(body),
             }),
         getFeeding: (id) => request("/patients/" + encodeURIComponent(id) + "/feeding"),
+        getFeedingSummary: (id, params = {}) => {
+            const q = new URLSearchParams();
+            if (params.from) q.set("from", params.from);
+            if (params.to) q.set("to", params.to);
+            const qs = q.toString();
+            return request(
+                "/patients/" +
+                    encodeURIComponent(id) +
+                    "/feeding/summary" +
+                    (qs ? "?" + qs : "")
+            );
+        },
         listReminders: (id) => request("/patients/" + encodeURIComponent(id) + "/reminders"),
         /** @deprecated use createLinkRequest */
         linkPatient: (code) =>
@@ -401,6 +413,11 @@
             request("/appointments/month?year=" + year + "&month=" + month),
         createAppointment: (body) =>
             request("/appointments", { method: "POST", body: JSON.stringify(body) }),
+        acceptAppointment: (id, body = {}) =>
+            request("/appointments/" + encodeURIComponent(id) + "/accept", {
+                method: "POST",
+                body: JSON.stringify(body || {}),
+            }),
         deleteAppointment: async (id) => {
             const result = await request("/appointments/" + encodeURIComponent(id), {
                 method: "DELETE",
@@ -515,8 +532,24 @@
 
     function mapPatient(p) {
         if (!p) return null;
+        function planStatusLabel(s) {
+            if (s === "PAUSED") return "Pausado";
+            if (s === "FINISHED") return "Finalizado";
+            return "Activo";
+        }
+        function objectiveLabel(o) {
+            const map = {
+                control_peso: "Control de peso",
+                mantenimiento: "Mantenimiento",
+                crecimiento: "Crecimiento",
+                otro: "Otro",
+            };
+            return map[o] || o;
+        }
         const feeding = p.feeding
             ? [
+                  p.feeding.status ? "Estado: " + planStatusLabel(p.feeding.status) : null,
+                  p.feeding.objective ? "Objetivo: " + objectiveLabel(p.feeding.objective) : null,
                   p.feeding.recommendedAmount,
                   p.feeding.caloriesPerDay != null
                       ? p.feeding.caloriesPerDay + " kcal/día"
@@ -524,7 +557,10 @@
                   p.feeding.mealsPerDay != null
                       ? p.feeding.mealsPerDay + " veces al día"
                       : null,
-                  p.feeding.weightKg != null ? "Peso dieta: " + p.feeding.weightKg + " kg" : null,
+                  p.feeding.weightKg != null ? "Peso: " + p.feeding.weightKg + " kg" : null,
+                  p.feeding.targetWeightKg != null
+                      ? "Peso objetivo: " + p.feeding.targetWeightKg + " kg"
+                      : null,
                   p.feeding.allowedFoods ? "Permitidos: " + p.feeding.allowedFoods : null,
                   p.feeding.forbiddenFoods ? "Prohibidos: " + p.feeding.forbiddenFoods : null,
                   p.feeding.vetNotes || p.feeding.specialInstructions,
@@ -598,17 +634,42 @@
         };
     }
 
-    /** Defense: if API still returned asset:, fetch signed URL. */
+    /** Defense: resolve asset URLs or refetch full patient when list omitted photo. */
     async function enrichPatientPhoto(mapped) {
         if (!mapped) return mapped;
-        if (isDisplayablePhoto(mapped.foto) && mapped.foto !== defaultAvatar()) return mapped;
+        if (
+            isDisplayablePhoto(mapped.foto) &&
+            mapped.foto !== defaultAvatar() &&
+            !String(mapped.foto).includes("placeholder")
+        ) {
+            return mapped;
+        }
         const assetId = mapped.photoAssetId || extractAssetId(mapped.raw || {});
-        if (!assetId) return mapped;
-        try {
-            const result = await api.getMediaUrl(assetId);
-            if (result && result.url) mapped.foto = result.url;
-        } catch (_) {
-            /* keep placeholder */
+        if (assetId) {
+            try {
+                const result = await api.getMediaUrl(assetId);
+                if (result && result.url) {
+                    mapped.foto = result.url;
+                    return mapped;
+                }
+            } catch (_) {
+                /* fall through */
+            }
+        }
+        if (mapped.id) {
+            try {
+                const full = await api.getPatient(mapped.id);
+                const photo = pickPhoto(full);
+                if (
+                    isDisplayablePhoto(photo) &&
+                    photo !== defaultAvatar() &&
+                    !String(photo).includes("placeholder")
+                ) {
+                    mapped.foto = photo;
+                }
+            } catch (_) {
+                /* keep placeholder */
+            }
         }
         return mapped;
     }

@@ -47,6 +47,7 @@
 
         <header>
             <h1>Inicio</h1>
+            <p class="header-sub">Resumen operativo de tu clínica</p>
         </header>
 
         <section class="dashboard">
@@ -67,7 +68,22 @@
 
                 <div class="card">
                     <div class="circulo">—</div>
-                    <p>Recordatorios Pendientes</p>
+                    <p>Citas próximas</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">—</div>
+                    <p>Solicitudes dueño</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">—</div>
+                    <p>Pacientes</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">—</div>
+                    <p>Vinculaciones</p>
                 </div>
 
             </div>
@@ -76,15 +92,32 @@
 
                 <div class="panel">
                     <div class="contenido">
-                        <h2>Próximas consultas del día</h2>
+                        <h2>Consultas de hoy</h2>
                         <ul id="listaConsultas"></ul>
+                        <a class="panel-link" href="../agenda/agenda.html">Ir a Agenda</a>
                     </div>
                 </div>
 
                 <div class="panel">
                     <div class="contenido">
-                        <h2>Citas / recordatorios</h2>
+                        <h2>Próximas citas</h2>
                         <ul id="listaRecordatorios"></ul>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="contenido">
+                        <h2>Solicitudes de cita</h2>
+                        <ul id="listaSolicitudes"></ul>
+                        <a class="panel-link" href="../agenda/agenda.html">Revisar en Agenda</a>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="contenido">
+                        <h2>Pacientes recientes</h2>
+                        <ul id="listaPacientesRecientes"></ul>
+                        <a class="panel-link" href="../pacientes/paciente.html">Ver pacientes</a>
                     </div>
                 </div>
 

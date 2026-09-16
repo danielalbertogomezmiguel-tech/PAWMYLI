@@ -135,7 +135,8 @@
 
         <section class="panel">
             <div class="tituloPanel">
-                <h2>Dieta</h2>
+                <h2>Alimentación</h2>
+                <span id="badgePlanStatus" class="badge-plan" hidden></span>
             </div>
             <div class="contenido">
                 <ul id="listaAlimentacion"></ul>
@@ -143,39 +144,97 @@
                 <form id="formDieta" style="margin-top:16px;">
                     <div class="fila">
                         <div>
-                            <label>Peso (kg)</label>
+                            <label>Peso actual (kg)</label>
                             <input type="number" id="dietaPeso" step="0.1" min="0.1" required>
                         </div>
                         <div>
-                            <label>Comidas/día</label>
-                            <input type="number" id="dietaComidas" min="1" value="2">
+                            <label>Peso objetivo (kg)</label>
+                            <input type="number" id="dietaPesoObjetivo" step="0.1" min="0.1" placeholder="Opcional">
                         </div>
                     </div>
-                    <label>Notas del veterinario</label>
+                    <div class="fila">
+                        <div>
+                            <label>Objetivo del plan</label>
+                            <select id="dietaObjetivo">
+                                <option value="">— Seleccionar —</option>
+                                <option value="control_peso">Control de peso</option>
+                                <option value="mantenimiento">Mantenimiento</option>
+                                <option value="crecimiento">Crecimiento</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Estado del plan</label>
+                            <select id="dietaEstado">
+                                <option value="ACTIVE">Activo</option>
+                                <option value="PAUSED">Pausado</option>
+                                <option value="FINISHED">Finalizado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="fila">
+                        <div>
+                            <label>Comidas/día</label>
+                            <input type="number" id="dietaComidas" min="1" max="8" value="2">
+                        </div>
+                        <div>
+                            <label>Fecha de inicio</label>
+                            <input type="date" id="dietaInicio">
+                        </div>
+                        <div>
+                            <label>Fecha de revisión</label>
+                            <input type="date" id="dietaRevision">
+                        </div>
+                    </div>
+                    <div class="fila">
+                        <div>
+                            <label>Tipo de alimento</label>
+                            <input type="text" id="dietaFoodType" placeholder="Ej. croqueta seca">
+                        </div>
+                        <div>
+                            <label>Marca / producto</label>
+                            <input type="text" id="dietaBrand" placeholder="Opcional">
+                        </div>
+                    </div>
+                    <label>Permitidos</label>
+                    <textarea id="dietaPermitidos" rows="2" placeholder="Alimentos que puede consumir..."></textarea>
+                    <label>Prohibidos</label>
+                    <textarea id="dietaProhibidos" rows="2" placeholder="Alimentos a evitar..."></textarea>
+                    <label>Notas / recomendaciones</label>
                     <textarea id="dietaNotas" rows="2" placeholder="Indicaciones especiales..."></textarea>
                     <div class="fila" style="margin-top:10px;">
                         <div>
-                            <label>Cantidad recomendada</label>
-                            <input type="text" id="dietaResultado" readonly>
+                            <label>Cantidad diaria recomendada</label>
+                            <input type="text" id="dietaResultado" placeholder="Ej. 180 g">
                         </div>
                         <div>
                             <label>kcal/día</label>
-                            <input type="text" id="dietaKcal" readonly>
+                            <input type="text" id="dietaKcal" placeholder="Opcional">
                         </div>
                     </div>
-                    <button class="guardar" type="submit" style="margin-top:10px;">Generar dieta</button>
+
+                    <h3 class="detalle-subtitulo" style="margin-top:16px;">Horarios de comidas</h3>
+                    <div id="editorComidas" class="editor-comidas"></div>
+                    <button class="consulta" type="button" id="btnAddComida" style="margin-top:8px;">
+                        + Agregar comida
+                    </button>
+
+                    <button class="guardar" type="submit" style="margin-top:10px;">Calcular cantidad sugerida</button>
                     <button class="consulta" type="button" id="btnGuardarDietaManual" style="margin-top:10px;">
-                        Guardar edición manual
+                        Guardar plan
                     </button>
                 </form>
             </div>
         </section>
 
-        <section class="panel" id="panelCalendarioAlimentacion">
+        <section class="panel" id="panelSeguimientoAlimentacion">
             <div class="tituloPanel">
-                <h2>Calendario de alimentación</h2>
+                <h2>Seguimiento de alimentación</h2>
             </div>
             <div class="contenido">
+                <div id="feedingSummaryCards" class="feeding-summary"></div>
+                <div id="feedingWeekGrid" class="feeding-week"></div>
+                <h3 class="detalle-subtitulo" style="margin-top:14px;">Registros recientes</h3>
                 <ul id="listaFeedingLogs" class="lista-logs"></ul>
             </div>
         </section>
@@ -272,6 +331,10 @@
                     <div>
                         <label for="consultaPropietario">Propietario</label>
                         <input type="text" id="consultaPropietario" name="ownerName" readonly>
+                        <label for="consultaPropietarioTel">Teléfono dueño</label>
+                        <input type="text" id="consultaPropietarioTel" readonly>
+                        <label for="consultaPropietarioEmail">Correo dueño</label>
+                        <input type="text" id="consultaPropietarioEmail" readonly>
                     </div>
                     <div>
                         <label for="consultaPeso">Peso</label>

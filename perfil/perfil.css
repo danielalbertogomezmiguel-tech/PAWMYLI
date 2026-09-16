@@ -294,6 +294,97 @@ header h1 {
     color: #5f7383;
 }
 
+.log-status.partial {
+    background: #ffe8cc;
+    color: #9a5b00;
+}
+
+.badge-plan {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #d4f7dd;
+    color: #1e6b3a;
+}
+
+.badge-plan.paused {
+    background: #fff3cd;
+    color: #9a6a00;
+}
+
+.badge-plan.finished {
+    background: #eef2f5;
+    color: #5f7383;
+}
+
+.editor-comidas .comida-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr 0.8fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.editor-comidas input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d0d8e0;
+    border-radius: 8px;
+}
+
+.feeding-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.feeding-summary .card-mini {
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+}
+
+.feeding-summary .card-mini strong {
+    display: block;
+    font-size: 22px;
+    color: #2c5f5a;
+}
+
+.feeding-summary .card-mini span {
+    font-size: 12px;
+    color: #6a7c88;
+}
+
+.feeding-week {
+    overflow-x: auto;
+}
+
+.feeding-week table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.feeding-week th,
+.feeding-week td {
+    border: 1px solid #e2e8ee;
+    padding: 6px 8px;
+    text-align: center;
+}
+
+.feeding-week th {
+    background: #f0f4f8;
+}
+
+.cell-ok { color: #1e6b3a; font-weight: 700; }
+.cell-partial { color: #9a5b00; font-weight: 700; }
+.cell-miss { color: #a33; font-weight: 700; }
+.cell-pending { color: #8a9aa8; }
+
 .encabezado-acciones {
     display: flex;
     flex-wrap: wrap;

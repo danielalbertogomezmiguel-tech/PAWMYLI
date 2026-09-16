@@ -69,7 +69,7 @@ function seleccionarDia(dia) {
 }
 
 function esEliminada(cita) {
-    return String(cita.status || "").toLowerCase() === "eliminada";
+    return /eliminad|cancelad/i.test(String(cita.status || ""));
 }
 
 function mostrarCitas() {
@@ -91,13 +91,21 @@ function mostrarCitas() {
         activas.forEach((cita) => {
             const item = document.createElement("div");
             item.className = "cita";
+            const status = cita.status || "Programada";
+            const esSolicitada = String(status).toLowerCase() === "solicitada";
             item.innerHTML = `
                 <h3>${cita.time}</h3>
                 <p><strong>Mascota:</strong> ${cita.petName}</p>
                 <p><strong>Dueño:</strong> ${cita.ownerName}</p>
+                <p><strong>Estado:</strong> ${status}</p>
                 <p>${cita.notes || ""}</p>
                 ${cita.patientId ? "<p><em>Vinculada a expediente</em></p>" : ""}
-                <button class="eliminar">Eliminar</button>`;
+                ${esSolicitada ? '<button class="aceptar" type="button">Aceptar solicitud</button>' : ""}
+                <button class="eliminar" type="button">Eliminar</button>`;
+            const btnAceptar = item.querySelector(".aceptar");
+            if (btnAceptar) {
+                btnAceptar.addEventListener("click", () => aceptarSolicitud(cita.id));
+            }
             item.querySelector(".eliminar").addEventListener("click", () => eliminarCita(cita.id));
             lista.appendChild(item);
         });
@@ -149,8 +157,22 @@ pacienteSelect.addEventListener("change", () => {
 
 async function cargarMes() {
     citas = await PawApi.api.listAppointmentsByMonth(anio, mes + 1);
+    if (!Array.isArray(citas)) {
+        citas = Array.isArray(citas && citas.data) ? citas.data : [];
+    }
     generarCalendario();
     mostrarCitas();
+}
+
+async function aceptarSolicitud(id) {
+    if (!confirm("¿Aceptar esta solicitud y programar la cita?")) return;
+    try {
+        await PawApi.api.acceptAppointment(id, {});
+        alert("Solicitud aceptada. La cita queda programada.");
+        await cargarMes();
+    } catch (err) {
+        alert(err.message || "No se pudo aceptar la solicitud.");
+    }
 }
 
 async function eliminarCita(id) {

@@ -519,26 +519,49 @@ function readFotoAsDataUrl(file) {
     });
 }
 
-function collectCreateMeals() {
-    const rows = document.querySelectorAll("#mealRows .meal-row");
-    const meals = [];
-    rows.forEach((row, index) => {
-        if (meals.length >= 3) return;
-        const label = (row.querySelector(".meal-label")?.value || "").trim();
-        const time = (row.querySelector(".meal-time")?.value || "").trim();
-        const amount = (row.querySelector(".meal-amount")?.value || "").trim();
-        const food = (row.querySelector(".meal-food")?.value || "").trim();
-        if (!label || !time) return;
-        meals.push({
-            label,
-            time,
-            amount: amount || undefined,
-            food: food || undefined,
-            sortOrder: index,
-        });
-    });
-    return meals;
+function approximateAgeLabel(year, month) {
+    const y = Number(year);
+    const m = Number(month);
+    if (!y || !m || m < 1 || m > 12) return "";
+    const now = new Date();
+    let years = now.getFullYear() - y;
+    let months = now.getMonth() + 1 - m;
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+    if (years < 0) return "";
+    if (years === 0) {
+        return months <= 1 ? "1 mes" : months + " meses";
+    }
+    if (months === 0) {
+        return years === 1 ? "1 año" : years + " años";
+    }
+    const yLabel = years === 1 ? "1 año" : years + " años";
+    const mLabel = months === 1 ? "1 mes" : months + " meses";
+    return yLabel + " " + mLabel;
 }
+
+function refreshAgeHint() {
+    const hint = document.getElementById("edadAproxHint");
+    if (!hint) return;
+    const label = approximateAgeLabel(
+        document.getElementById("anioNacimiento")?.value,
+        document.getElementById("mesNacimiento")?.value
+    );
+    hint.textContent = label
+        ? "Edad aproximada: " + label
+        : "La edad se calculará a partir del nacimiento.";
+}
+
+document.getElementById("anioNacimiento")?.addEventListener("input", refreshAgeHint);
+document.getElementById("mesNacimiento")?.addEventListener("change", refreshAgeHint);
+const anioEl = document.getElementById("anioNacimiento");
+if (anioEl && !anioEl.value) {
+    anioEl.max = String(new Date().getFullYear());
+    anioEl.value = String(new Date().getFullYear() - 1);
+}
+refreshAgeHint();
 
 let creatingPatient = false;
 
@@ -547,52 +570,30 @@ formulario.addEventListener("submit", async function (e) {
     if (creatingPatient) return;
 
     const submitBtn = formulario.querySelector("button.guardar, button[type='submit']");
-    const edadVal = document.getElementById("edad").value;
     const pesoVal = document.getElementById("peso").value.trim();
+    const anio = document.getElementById("anioNacimiento").value;
+    const mes = document.getElementById("mesNacimiento").value;
+    const ageLabel = approximateAgeLabel(anio, mes);
     const fotoInput = document.getElementById("foto");
     const file = fotoInput && fotoInput.files && fotoInput.files[0];
 
+    const pesoNum = pesoVal ? Number(String(pesoVal).replace(",", ".")) : NaN;
     const body = {
         name: document.getElementById("nombre").value.trim(),
         species: document.getElementById("especie").value.trim(),
         breed: document.getElementById("raza").value.trim(),
-        age: edadVal ? edadVal + " años" : "",
+        age: ageLabel,
         sex: document.getElementById("sexo").value,
         ownerName: document.getElementById("propietario").value.trim(),
-        weight: pesoVal ? pesoVal + " kg" : undefined,
+        weight: Number.isFinite(pesoNum) && pesoNum > 0 ? pesoNum.toFixed(1).replace(/\.0$/, "") + " kg" : undefined,
         color: document.getElementById("color").value.trim() || undefined,
         microchip: document.getElementById("microchip").value,
         photo: DEFAULT_FOTO,
     };
 
     if (!body.name || !body.species || !body.breed || !body.age || !body.ownerName) {
-        toast("warning", "Campos incompletos", "Completa los campos obligatorios.");
+        toast("warning", "Campos incompletos", "Completa los datos obligatorios, incluyendo año y mes de nacimiento.");
         return;
-    }
-
-    const recommendedAmount = document.getElementById("dietaCantidad").value.trim();
-    const mealsPerDay = Number(document.getElementById("dietaComidasDia").value) || 0;
-    const allowedFoods = document.getElementById("dietaPermitidos").value.trim();
-    const forbiddenFoods = document.getElementById("dietaProhibidos").value.trim();
-    const meals = collectCreateMeals();
-    if (recommendedAmount && mealsPerDay > 0) {
-        body.feeding = {
-            recommendedAmount,
-            mealsPerDay,
-            allowedFoods: allowedFoods || undefined,
-            forbiddenFoods: forbiddenFoods || undefined,
-            meals: meals.length ? meals : undefined,
-        };
-    }
-
-    const consultaMotivo = document.getElementById("consultaMotivo").value.trim();
-    if (consultaMotivo) {
-        body.firstConsultation = {
-            type: document.getElementById("consultaTipo").value || "GENERAL",
-            reason: consultaMotivo,
-            diagnosis: document.getElementById("consultaDiagnostico").value.trim() || undefined,
-            treatment: document.getElementById("consultaTratamiento").value.trim() || undefined,
-        };
     }
 
     creatingPatient = true;
