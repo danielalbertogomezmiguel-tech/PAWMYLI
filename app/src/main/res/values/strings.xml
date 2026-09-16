@@ -54,7 +54,7 @@
     <string name="feeding_plan_paused">Plan: Pausado</string>
     <string name="feeding_plan_finished">Plan: Finalizado</string>
     <string name="feeding_progress_today">Hoy: %1$d / %2$d comidas</string>
-    <string name="feeding_week_compliance">Cumplimiento semanal: %1$d%%</string>
+    <string name="feeding_week_compliance">Cumplimiento hasta hoy: %1$d%%</string>
     <string name="feeding_weights">Peso: %1$s · Objetivo: %2$s</string>
     <string name="feeding_objective">Objetivo: %1$s</string>
     <string name="meal_what_happened">¿Qué ocurrió con esta comida?</string>

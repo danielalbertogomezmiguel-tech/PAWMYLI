@@ -469,14 +469,20 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         val doneToday = logs.count {
             it.status.equals("EATEN", true) || it.status.equals("PARTIAL", true)
         }
-        val totalToday = meals.size.coerceAtLeast(1)
+        val totalToday = meals.size.coerceAtLeast(0)
+        val todayPercent = if (totalToday == 0) {
+            0
+        } else {
+            ((doneToday.toFloat() / totalToday) * 100).toInt().coerceIn(0, 100)
+        }
         view.findViewById<TextView>(R.id.tvTodayProgress)?.text =
             getString(R.string.feeding_progress_today, doneToday, meals.size)
         view.findViewById<ProgressBar>(R.id.progressToday)?.apply {
             max = 100
-            progress = ((doneToday.toFloat() / totalToday) * 100).toInt().coerceIn(0, 100)
+            progress = todayPercent
         }
-        val percent = summary?.compliance?.percent ?: 0
+        // Prefer API week-to-date %; fall back to today's % so the bar always moves on log.
+        val percent = summary?.compliance?.percent?.takeIf { it >= 0 } ?: todayPercent
         view.findViewById<TextView>(R.id.tvWeekCompliance)?.text =
             getString(R.string.feeding_week_compliance, percent)
     }
