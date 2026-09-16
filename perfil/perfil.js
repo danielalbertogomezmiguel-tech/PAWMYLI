@@ -937,43 +937,7 @@ document.getElementById("btnAddComida")?.addEventListener("click", () => {
 document.getElementById("formDieta").addEventListener("submit", async function (e) {
     e.preventDefault();
     if (isOwner) return;
-    const weightKg = Number(document.getElementById("dietaPeso").value);
-    const mealsPerDay = Number(document.getElementById("dietaComidas").value) || 2;
-    const vetNotes = document.getElementById("dietaNotas").value.trim() || undefined;
-    const objective = document.getElementById("dietaObjetivo").value || undefined;
-    const targetWeightKg = Number(document.getElementById("dietaPesoObjetivo").value) || undefined;
-    const startDate = document.getElementById("dietaInicio").value || undefined;
-    const reviewDate = document.getElementById("dietaRevision").value || undefined;
-
-    try {
-        const feeding = await PawApi.api.generateDiet(pacienteId, {
-            weightKg,
-            mealsPerDay,
-            vetNotes,
-            species: paciente.especie,
-            objective,
-            targetWeightKg,
-            startDate,
-            reviewDate,
-        });
-        document.getElementById("dietaResultado").value = feeding.recommendedAmount || "";
-        document.getElementById("dietaKcal").value =
-            feeding.caloriesPerDay != null ? String(feeding.caloriesPerDay) : "";
-        fillDietForm(feeding);
-        await refrescarPaciente();
-        alert("Cantidad sugerida calculada. Revisa horarios y guarda el plan.");
-    } catch (err) {
-        alert(err.message || "No se pudo generar la dieta.");
-    }
-});
-
-document.getElementById("btnGuardarDietaManual").addEventListener("click", async () => {
-    if (isOwner) return;
     const payload = buildFeedingPayload();
-    if (!payload.recommendedAmount || payload.recommendedAmount === "Por definir") {
-        alert("Calcula o escribe una cantidad diaria recomendada.");
-        return;
-    }
     if (!payload.meals.length) {
         alert("Agrega al menos una comida con etiqueta y hora.");
         return;
