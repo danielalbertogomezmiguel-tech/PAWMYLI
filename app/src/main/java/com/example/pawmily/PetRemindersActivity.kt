@@ -120,8 +120,9 @@ class PetRemindersActivity : AppCompatActivity() {
                 remoteReminders = RemotePetRepository.listReminders(key, forceRefresh = forceNetwork)
                 val all = RemotePetRepository.listMyAppointments(forceRefresh = true)
                 petAppointments = all.filter { appt ->
-                    appt.patientId == pet.backendId ||
-                        appt.petName.equals(pet.name, ignoreCase = true)
+                    val id = pet.backendId
+                    if (!id.isNullOrBlank()) appt.patientId == id
+                    else false
                 }.filterNot {
                     it.status.equals("Eliminada", ignoreCase = true) ||
                         it.status.equals("Cancelada", ignoreCase = true)
@@ -144,7 +145,7 @@ class PetRemindersActivity : AppCompatActivity() {
 
         if (showReminders) {
             if (remoteReminders.isEmpty()) {
-                binding.llRemindersList.addView(emptyText(getString(R.string.empty_reminders)))
+                binding.llRemindersList.addView(emptyText(getString(R.string.empty_personal_reminders)))
                 return
             }
             remoteReminders.forEach { reminder ->

@@ -24,7 +24,7 @@ class LoginActivity : AppCompatActivity() {
 
         btnConfirmLogin.setOnClickListener {
             val phone = etPhone.text.toString().trim()
-            val password = etPassword.text.toString().trim()
+            val password = etPassword.text.toString()
 
             if (phone.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Por favor rellena todos los campos", Toast.LENGTH_SHORT).show()

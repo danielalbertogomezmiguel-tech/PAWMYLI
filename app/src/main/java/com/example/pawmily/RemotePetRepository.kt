@@ -12,9 +12,14 @@ object RemotePetRepository {
     /** Creates a pending link request; returns a human status message. */
     suspend fun linkPet(code: String): String {
         val request = requestLink(code)
-        return "Solicitud enviada (${request.requestedRole ?: "pendiente"}). " +
-            if (request.requestedRole == "OWNER") "Espera aprobación del veterinario."
-            else "Espera aprobación del dueño."
+        return "Solicitud enviada. Cuando la clínica la apruebe, la mascota aparecerá en tu lista."
+            .let { base ->
+                val roleHint = when (request.requestedRole?.uppercase()) {
+                    "OWNER" -> " Espera aprobación del veterinario."
+                    else -> " Espera aprobación del dueño o de la clínica."
+                }
+                base + roleHint
+            }
     }
 
     suspend fun requestLink(code: String, requestedRole: String? = null): LinkRequestDto {

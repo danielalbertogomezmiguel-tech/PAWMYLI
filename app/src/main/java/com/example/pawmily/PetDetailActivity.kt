@@ -188,8 +188,9 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
         try {
             val next = RemotePetRepository.listMyAppointments()
                 .filter { appt ->
-                    appt.patientId == pet.backendId ||
-                        appt.petName.equals(pet.name, ignoreCase = true)
+                    val id = pet.backendId
+                    if (!id.isNullOrBlank()) appt.patientId == id
+                    else false
                 }
                 .filterNot {
                     val s = it.status.orEmpty()
@@ -398,11 +399,21 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
                 planStatus = feeding?.status ?: "ACTIVE"
                 val form = view.findViewById<View>(R.id.feedingForm)
                 if (form != null) {
-                    FeedingFormHelper.bind(form, feeding, editable = false)
-                    form.visibility = View.VISIBLE
+                    if (feeding == null) {
+                        form.visibility = View.GONE
+                    } else {
+                        FeedingFormHelper.bind(form, feeding, editable = false)
+                        form.visibility = View.VISIBLE
+                    }
                 }
-                view.findViewById<TextView>(R.id.tvEmptyFeeding)?.visibility =
-                    if (feeding == null) View.VISIBLE else View.GONE
+                view.findViewById<TextView>(R.id.tvEmptyFeeding)?.apply {
+                    visibility = if (feeding == null) View.VISIBLE else View.GONE
+                    if (feeding == null) text = getString(R.string.empty_feeding_owner)
+                }
+                view.findViewById<TextView>(R.id.tvDietReadOnly)?.apply {
+                    visibility = if (feeding != null) View.VISIBLE else View.GONE
+                    text = getString(R.string.diet_read_only_owner)
+                }
 
                 val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                     .format(java.util.Date())
@@ -587,21 +598,82 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         ivNo?.alpha = if (missed) 1f else 0.35f
     }
 
+    /**
+     * Late only after the scheduled meal time has passed for *today*.
+     * Supports 24h (HH:mm) and 12h (h:mm AM/PM / a.m.).
+     * Unparseable or future meal times are never late.
+     */
     private fun isMealLate(time: String?, today: String): Boolean {
         if (time.isNullOrBlank()) return false
         val todayCheck = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
             .format(java.util.Date())
         if (today != todayCheck) return false
-        val parts = time.split(":")
-        if (parts.size < 2) return false
-        val hour = parts[0].toIntOrNull() ?: return false
-        val minute = parts[1].take(2).toIntOrNull() ?: return false
+        val hm = parseMealHourMinute(time) ?: return false
         val now = java.util.Calendar.getInstance()
-        val mealCal = java.util.Calendar.getInstance()
-        mealCal.set(java.util.Calendar.HOUR_OF_DAY, hour)
-        mealCal.set(java.util.Calendar.MINUTE, minute)
-        mealCal.set(java.util.Calendar.SECOND, 0)
+        val mealCal = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, hm.first)
+            set(java.util.Calendar.MINUTE, hm.second)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
         return now.after(mealCal)
+    }
+
+    /** @return Pair(hourOfDay 0-23, minute) or null if unparseable */
+    private fun parseMealHourMinute(raw: String): Pair<Int, Int>? {
+        val cleaned = raw.trim().replace("\u00a0", " ")
+        if (cleaned.isEmpty()) return null
+        val patterns = listOf(
+            "H:mm",
+            "HH:mm",
+            "H:mm:ss",
+            "HH:mm:ss",
+            "h:mm a",
+            "hh:mm a",
+            "h:mm:ss a",
+            "hh:mm:ss a",
+        )
+        val locales = listOf(java.util.Locale.US, java.util.Locale("es", "ES"))
+        for (locale in locales) {
+            for (pattern in patterns) {
+                try {
+                    val sdf = java.text.SimpleDateFormat(pattern, locale).apply {
+                        isLenient = false
+                    }
+                    val date = sdf.parse(cleaned) ?: continue
+                    val cal = java.util.Calendar.getInstance().apply { time = date }
+                    return cal.get(java.util.Calendar.HOUR_OF_DAY) to cal.get(java.util.Calendar.MINUTE)
+                } catch (_: Exception) {
+                    // try next pattern
+                }
+            }
+        }
+        // Fallback: strip AM/PM markers then HH:mm
+        val lower = cleaned.lowercase(java.util.Locale.ROOT).replace(".", "")
+        val isPm = lower.contains("pm") || lower.contains("p m")
+        val isAm = lower.contains("am") || lower.contains("a m")
+        val numeric = lower
+            .replace("am", "")
+            .replace("pm", "")
+            .replace("p m", "")
+            .replace("a m", "")
+            .trim()
+        val parts = numeric.split(Regex("[:\\s.-]+")).filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return null
+        var hour = parts[0].toIntOrNull() ?: return null
+        val minute = parts.getOrNull(1)?.take(2)?.toIntOrNull() ?: 0
+        if (minute !in 0..59) return null
+        if (isPm || isAm) {
+            if (hour !in 1..12) return null
+            hour = when {
+                isPm && hour < 12 -> hour + 12
+                isAm && hour == 12 -> 0
+                else -> hour
+            }
+        } else if (hour !in 0..23) {
+            return null
+        }
+        return hour to minute
     }
 
     private fun markMeal(

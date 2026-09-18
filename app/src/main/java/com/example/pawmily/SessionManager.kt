@@ -143,7 +143,7 @@ class SessionManager(context: Context) : TokenProvider {
     fun getPetCode(): String? = getPetCodes().firstOrNull()
 
     fun areNotificationsEnabled(): Boolean =
-        prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true)
+        prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, false)
 
     fun setNotificationsEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled).apply()

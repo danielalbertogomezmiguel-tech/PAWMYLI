@@ -161,7 +161,7 @@ class HomeFragment : Fragment(), PetsSyncBus.Listener {
             petSummaryCard.visibility = View.GONE
             clearRemindersSection()
             emptyFavoritesText.visibility = View.VISIBLE
-            emptyFavoritesText.text = getString(R.string.empty_favorites)
+            emptyFavoritesText.text = getString(R.string.link_request_sent_hint)
         }
     }
 

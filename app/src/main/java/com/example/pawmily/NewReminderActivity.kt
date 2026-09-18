@@ -28,7 +28,9 @@ class NewReminderActivity : AppCompatActivity() {
     private val recurrenceLabels = listOf("Ninguna", "Diaria", "Semanal")
     private val priorities = listOf("baja", "media", "alta")
     private val colors = listOf("teal", "coral", "sage", "blue", "amber")
+    private val colorLabels = listOf("Verde azulado", "Coral", "Salvia", "Azul", "Ámbar")
     private val icons = listOf("bell", "paw", "pill", "food", "walk", "bath", "other")
+    private val iconLabels = listOf("Campana", "Huella", "Pastilla", "Comida", "Paseo", "Baño", "Otro")
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -64,8 +66,8 @@ class NewReminderActivity : AppCompatActivity() {
         binding.spinnerCategory.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
         binding.spinnerRecurrence.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, recurrenceLabels)
         binding.spinnerPriority.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, priorities)
-        binding.spinnerColor.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, colors)
-        binding.spinnerIcon.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, icons)
+        binding.spinnerColor.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, colorLabels)
+        binding.spinnerIcon.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, iconLabels)
         binding.spinnerPriority.setSelection(priorities.indexOf("media").coerceAtLeast(0))
     }
 

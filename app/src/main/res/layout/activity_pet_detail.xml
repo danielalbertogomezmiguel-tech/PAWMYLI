@@ -33,7 +33,7 @@
         android:id="@+id/screenTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="PERFIL DE MASCOTAS"
+        android:text="PERFIL DE MASCOTA"
         android:textColor="#7A8D8C"
         android:textSize="22sp"
         android:textStyle="bold"

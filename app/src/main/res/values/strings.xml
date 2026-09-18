@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">PawMily</string>
     <string name="welcome_title">El cuidado de tu mascota, siempre contigo.</string>
-    <string name="welcome_subtitle">Administra su alimentación, historial médico, recordatorios y ubicación desde una sola aplicación.</string>
-    <string name="btn_register">REGISTRATE</string>
+    <string name="welcome_subtitle">Administra su alimentación, historial médico y recordatorios desde una sola aplicación.</string>
+    <string name="btn_register">REGÍSTRATE</string>
     <string name="btn_login">INICIA SESIÓN</string>
     <string name="nav_start">INICIO</string>
     <string name="nav_pets">MASCOTAS</string>
@@ -16,9 +16,10 @@
     <string name="btn_confirm_register">REGISTRARSE</string>
     <string name="btn_confirm_login">ENTRAR</string>
     <string name="empty"> </string>
-    <string name="empty_pets">Aún no tienes mascotas vinculadas. Toca + para agregar una con su código.</string>
+    <string name="empty_pets">Aún no tienes mascotas vinculadas. Toca la tarjeta de código o escanea para solicitar vinculación.</string>
     <string name="empty_pets_reminders">Aún no tienes mascotas. Vincula una para ver sus recordatorios.</string>
     <string name="empty_reminders">No hay recordatorios prioritarios por ahora.</string>
+    <string name="link_request_sent_hint">Solicitud enviada. Cuando la clínica la apruebe, la mascota aparecerá aquí.</string>
     <string name="priority_reminders_title">Prioritarios</string>
     <string name="toast_max_priority_reminders">Ya hay 3 prioridades para esta mascota</string>
     <string name="empty_favorites">Marca hasta 3 recordatorios con estrella para verlos aquí.</string>
@@ -127,9 +128,9 @@
     <string name="error_save_reminder">No se pudo guardar el recordatorio</string>
     <string name="error_load_reminders">No se pudieron cargar los recordatorios</string>
     <string name="error_delete_reminder">No se pudo eliminar</string>
-    <string name="error_complete_reminder">No se pudo completar (¿ruta backend disponible?)</string>
-    <string name="error_confirm_appointment">No se pudo confirmar la cita (¿ruta backend disponible?)</string>
-    <string name="error_no_appointment">Esta cita no tiene appointmentId</string>
+    <string name="error_complete_reminder">No se pudo completar el recordatorio. Inténtalo de nuevo.</string>
+    <string name="error_confirm_appointment">No se pudo confirmar la cita. Inténtalo de nuevo.</string>
+    <string name="error_no_appointment">No se encontró el identificador de la cita.</string>
     <string name="confirm_delete_reminder">¿Eliminar \"%1$s\"?</string>
     <string name="btn_complete">Completar</string>
     <string name="btn_edit">Editar</string>

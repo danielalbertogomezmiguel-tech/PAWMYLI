@@ -22,6 +22,16 @@
             android:textColor="@color/text_muted"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/tvDietReadOnly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="8dp"
+            android:text="@string/diet_read_only_owner"
+            android:textColor="@color/text_muted"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardPlanHeader"
             android:layout_width="match_parent"

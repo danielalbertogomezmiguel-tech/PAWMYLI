@@ -14,6 +14,19 @@ object ReminderNotifier {
     const val CHANNEL_HIGH = "pawmily_reminders_high"
     const val CHANNEL_INBOX = "pawmily_inbox"
 
+    fun canNotify(context: Context): Boolean {
+        if (!SessionManager(context).areNotificationsEnabled()) return false
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (!nm.areNotificationsEnabled()) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        return true
+    }
+
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -53,7 +66,7 @@ object ReminderNotifier {
     /** Immediate notification for clinic/inbox messages (not an alarm). */
     fun notifyInbox(context: Context, title: String, body: String) {
         ensureChannels(context)
-        if (!SessionManager(context).areNotificationsEnabled()) return
+        if (!canNotify(context)) return
 
         val openIntent = Intent(context, InboxActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -93,7 +106,7 @@ object ReminderNotifier {
         ensureChannels(context)
         cancel(context, reminderId)
         if (!notifyEnabled) return
-        if (!SessionManager(context).areNotificationsEnabled()) return
+        if (!canNotify(context)) return
 
         val triggerAt = parseTriggerMillis(dateIso, timeHm) ?: return
         if (triggerAt <= System.currentTimeMillis()) return

@@ -52,7 +52,7 @@ class ProfileFragment : Fragment() {
         switchNotifications = view.findViewById(R.id.switchNotifications)
         switchNotifications?.apply {
             isEnabled = true
-            setSwitchChecked(sessionManager.areNotificationsEnabled())
+            setSwitchChecked(effectiveNotificationsEnabled())
             setOnCheckedChangeListener { _, isChecked ->
                 if (updatingSwitch) return@setOnCheckedChangeListener
                 onNotificationsToggled(isChecked)
@@ -94,7 +94,7 @@ class ProfileFragment : Fragment() {
                 if (unread > 0) getString(R.string.inbox_unread, unread)
                 else getString(R.string.inbox_hint)
         }
-        setSwitchChecked(sessionManager.areNotificationsEnabled())
+        setSwitchChecked(effectiveNotificationsEnabled())
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val appts = RemotePetRepository.listMyAppointments(forceRefresh = true)
@@ -115,6 +115,28 @@ class ProfileFragment : Fragment() {
         updatingSwitch = true
         sw.isChecked = checked
         updatingSwitch = false
+    }
+
+    /** Prefs + OS permission must both allow notifications. */
+    private fun effectiveNotificationsEnabled(): Boolean {
+        if (!sessionManager.areNotificationsEnabled()) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                sessionManager.setNotificationsEnabled(false)
+                return false
+            }
+        }
+        val nm = requireContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE)
+            as android.app.NotificationManager
+        if (!nm.areNotificationsEnabled()) {
+            sessionManager.setNotificationsEnabled(false)
+            return false
+        }
+        return true
     }
 
     private fun onNotificationsToggled(enabled: Boolean) {
