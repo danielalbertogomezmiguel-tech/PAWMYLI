@@ -23,9 +23,7 @@ const btnSiguiente = document.getElementById("siguiente");
 const pacienteSelect = document.getElementById("pacienteSelect");
 
 function pintarSidebar() {
-    const user = PawApi.getUser();
-    const title = document.querySelector(".perfilDoctor h2, .perfil h2");
-    if (user && title) title.textContent = user.name;
+    PawApi.applySidebar();
 }
 
 function formatoFecha(dia) {
@@ -54,7 +52,7 @@ function generarCalendario() {
         }
         if (d === diaSeleccionado) clases += " seleccionado";
         const fechaTexto = formatoFecha(d);
-        if (citas.some((c) => c.date === fechaTexto)) clases += " citaCalendario";
+        if (citas.some((c) => c.date === fechaTexto && !esEliminada(c))) clases += " citaCalendario";
         calendario.innerHTML += `<div class="${clases}" data-dia="${d}">${d}</div>`;
     }
 
@@ -66,37 +64,73 @@ function generarCalendario() {
 function seleccionarDia(dia) {
     diaSeleccionado = dia;
     numeroDia.textContent = dia;
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput) fechaInput.value = formatoFecha(dia);
     generarCalendario();
     mostrarCitas();
+}
+
+function esEliminada(cita) {
+    return /eliminad|cancelad/i.test(String(cita.status || ""));
 }
 
 function mostrarCitas() {
     lista.innerHTML = "";
     const fechaBuscar = formatoFecha(diaSeleccionado);
-    const resultado = citas.filter((c) => c.date === fechaBuscar).sort((a, b) => a.time.localeCompare(b.time));
+    const delDia = citas.filter((c) => c.date === fechaBuscar);
+    const activas = delDia.filter((c) => !esEliminada(c)).sort((a, b) => a.time.localeCompare(b.time));
+    const eliminadas = citas
+        .filter((c) => esEliminada(c))
+        .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
 
-    if (!resultado.length) {
+    if (!activas.length) {
         lista.innerHTML = `
         <div class="cita">
             <h3>No hay citas</h3>
             <p>Este día está disponible.</p>
         </div>`;
-        return;
+    } else {
+        activas.forEach((cita) => {
+            const item = document.createElement("div");
+            item.className = "cita";
+            const status = cita.status || "Programada";
+            const esSolicitada = String(status).toLowerCase() === "solicitada";
+            item.innerHTML = `
+                <h3>${cita.time}</h3>
+                <p><strong>Mascota:</strong> ${cita.petName}</p>
+                <p><strong>Dueño:</strong> ${cita.ownerName}</p>
+                <p><strong>Estado:</strong> ${status}</p>
+                <p>${cita.notes || ""}</p>
+                ${cita.patientId ? "<p><em>Vinculada a expediente</em></p>" : ""}
+                ${esSolicitada ? '<button class="aceptar" type="button">Aceptar solicitud</button>' : ""}
+                <button class="eliminar" type="button">Eliminar</button>`;
+            const btnAceptar = item.querySelector(".aceptar");
+            if (btnAceptar) {
+                btnAceptar.addEventListener("click", () => aceptarSolicitud(cita.id));
+            }
+            item.querySelector(".eliminar").addEventListener("click", () => eliminarCita(cita.id));
+            lista.appendChild(item);
+        });
     }
 
-    resultado.forEach((cita) => {
-        const item = document.createElement("div");
-        item.className = "cita";
-        item.innerHTML = `
-            <h3>${cita.time}</h3>
-            <p><strong>Mascota:</strong> ${cita.petName}</p>
-            <p><strong>Dueño:</strong> ${cita.ownerName}</p>
-            <p>${cita.notes || ""}</p>
-            ${cita.patientId ? "<p><em>Vinculada a expediente</em></p>" : ""}
-            <button class="eliminar">Eliminar</button>`;
-        item.querySelector(".eliminar").addEventListener("click", () => eliminarCita(cita.id));
-        lista.appendChild(item);
-    });
+    const listaElim = document.getElementById("listaEliminadas");
+    if (listaElim) {
+        listaElim.innerHTML = "";
+        if (!eliminadas.length) {
+            listaElim.innerHTML = `<div class="cita cita-eliminada"><p>Sin citas eliminadas este mes.</p></div>`;
+        } else {
+            eliminadas.slice(0, 30).forEach((cita) => {
+                const item = document.createElement("div");
+                item.className = "cita cita-eliminada";
+                item.innerHTML = `
+                    <h3>${cita.date} · ${cita.time}</h3>
+                    <p><strong>Mascota:</strong> ${cita.petName}</p>
+                    <p><strong>Dueño:</strong> ${cita.ownerName}</p>
+                    <p><span class="badge-eliminada">Eliminada</span></p>`;
+                listaElim.appendChild(item);
+            });
+        }
+    }
 }
 
 async function cargarPacientesSelect() {
@@ -125,14 +159,32 @@ pacienteSelect.addEventListener("change", () => {
 
 async function cargarMes() {
     citas = await PawApi.api.listAppointmentsByMonth(anio, mes + 1);
+    if (!Array.isArray(citas)) {
+        citas = Array.isArray(citas && citas.data) ? citas.data : [];
+    }
     generarCalendario();
     mostrarCitas();
 }
 
-async function eliminarCita(id) {
-    if (!confirm("¿Eliminar esta cita?")) return;
+async function aceptarSolicitud(id) {
+    if (!confirm("¿Aceptar esta solicitud y programar la cita?")) return;
     try {
-        await PawApi.api.deleteAppointment(id);
+        await PawApi.api.acceptAppointment(id, {});
+        alert("Solicitud aceptada. La cita queda programada.");
+        await cargarMes();
+    } catch (err) {
+        alert(err.message || "No se pudo aceptar la solicitud.");
+    }
+}
+
+async function eliminarCita(id) {
+    if (!confirm("¿Eliminar esta cita? Quedará registrada como eliminada.")) return;
+    try {
+        const removed = await PawApi.api.deleteAppointment(id);
+        alert(
+            `Cita eliminada: ${removed.petName || ""} (${removed.date || ""} ${removed.time || ""}).\n` +
+                "Aparece en el registro de citas eliminadas."
+        );
         await cargarMes();
     } catch (err) {
         alert(err.message || "No se pudo eliminar la cita.");
@@ -145,6 +197,11 @@ btnAnterior.onclick = async () => {
         mes = 11;
         anio--;
     }
+    const maxDia = new Date(anio, mes + 1, 0).getDate();
+    if (diaSeleccionado > maxDia) diaSeleccionado = maxDia;
+    numeroDia.textContent = diaSeleccionado;
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput) fechaInput.value = formatoFecha(diaSeleccionado);
     await cargarMes();
 };
 
@@ -154,11 +211,19 @@ btnSiguiente.onclick = async () => {
         mes = 0;
         anio++;
     }
+    const maxDia = new Date(anio, mes + 1, 0).getDate();
+    if (diaSeleccionado > maxDia) diaSeleccionado = maxDia;
+    numeroDia.textContent = diaSeleccionado;
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput) fechaInput.value = formatoFecha(diaSeleccionado);
     await cargarMes();
 };
 
+let creatingCita = false;
+
 document.getElementById("formCita").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (creatingCita) return;
     const patientId = pacienteSelect.value || undefined;
     const body = {
         petName: document.getElementById("nombreMascota").value.trim(),
@@ -169,6 +234,13 @@ document.getElementById("formCita").addEventListener("submit", async (e) => {
         patientId,
     };
 
+    const submitBtn = e.target.querySelector("button[type='submit'], button.guardar");
+    const originalLabel = submitBtn ? submitBtn.textContent : "";
+    creatingCita = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Guardando...";
+    }
     try {
         await PawApi.api.createAppointment(body);
         alert(
@@ -186,15 +258,20 @@ document.getElementById("formCita").addEventListener("submit", async (e) => {
         await cargarMes();
     } catch (err) {
         alert(err.message || "No se pudo registrar la cita.");
+    } finally {
+        creatingCita = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel || "Confirmar cita";
+        }
     }
 });
 
-document.querySelector(".cerrar").onclick = () => {
-    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
-};
-
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 numeroDia.textContent = diaSeleccionado;
+const fechaInputInit = document.getElementById("fecha");
+if (fechaInputInit) fechaInputInit.value = formatoFecha(diaSeleccionado);
 Promise.all([cargarMes(), cargarPacientesSelect()]).catch((err) => {
     lista.innerHTML = `<div class="cita"><h3>Error</h3><p>${err.message}</p></div>`;
 });

@@ -84,23 +84,24 @@ nav a i {
     text-align: center;
 }
 
-.cerrar {
+.btn-logout-perfil {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
     background: #e8556d;
     color: #fff;
-    border: none;
-    padding: 14px;
-    border-radius: 10px;
-    font-size: 20px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 700;
     cursor: pointer;
-    transition: background 0.25s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
 }
 
-.cerrar:hover {
+.btn-logout-perfil:hover {
     background: #d13d56;
 }
 

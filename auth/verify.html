@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar correo — PawMily</title>
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<div class="auth-container">
+    <div class="auth-card">
+        <h1>Verificación de correo</h1>
+        <p class="subtitulo" id="msg">Confirmando…</p>
+        <p class="auth-link"><a href="login.html">Ir al inicio de sesión</a></p>
+    </div>
+</div>
+<script src="../js/env.js"></script>
+<script src="../js/config.js"></script>
+<script src="../js/api.js"></script>
+<script>
+(async function () {
+    const token = new URLSearchParams(location.search).get("token");
+    const msg = document.getElementById("msg");
+    if (!token) {
+        msg.textContent = "Enlace inválido.";
+        return;
+    }
+    try {
+        await PawApi.api.confirmEmailVerification(token);
+        msg.textContent = "Correo verificado correctamente.";
+    } catch (err) {
+        msg.textContent = err.message || "No se pudo verificar el correo.";
+    }
+})();
+</script>
+</body>
+</html>

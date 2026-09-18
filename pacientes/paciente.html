@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pacientes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/modals.css">
+    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" href="../css/responsive.css">
     <link rel="stylesheet" href="paciente.css">
 </head>
 <body>
@@ -15,8 +18,8 @@
 
         <div>
             <div class="perfil">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
-                <h2>Dr. Daniel Ozuna</h2>
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
+                <h2>Usuario</h2>
             </div>
 
             <nav>
@@ -39,35 +42,58 @@
             </nav>
         </div>
 
-        <button class="cerrar" onclick="if(confirm('¿Desea cerrar sesión?')){window.location='../auth/login.html'}">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            Cerrar Sesión
-        </button>
-
     </aside>
 
     <main>
 
         <header>
             <h1>Pacientes</h1>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button id="vincularCodigo" class="nuevo" style="display:none;">
-                    <i class="fa-solid fa-link"></i> Vincular por código
+            <div class="header-actions">
+                <button id="btnMigrarCodigos" class="nuevo" type="button" title="Migrar códigos a formato seguro">
+                    <i class="fa-solid fa-print"></i> Reimprimir códigos
+                </button>
+                <button id="vincularCodigo" class="nuevo btn-vinculaciones" type="button" style="display:none;">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="vincularCodigoLabel">Vinculaciones</span>
+                    <span id="badgePendientes" class="badge-pendientes" hidden>0</span>
+                </button>
+                <button id="btnSolicitarVinculo" class="nuevo" type="button" style="display:none;">
+                    <i class="fa-solid fa-link"></i> Solicitar vinculación
                 </button>
                 <button id="nuevoPaciente" class="nuevo">
-                    <i class="fa-solid fa-plus"></i> Registrar Mascota
+                    <i class="fa-solid fa-plus"></i> Registrar mascota
                 </button>
             </div>
         </header>
+
+        <section id="panelVinculaciones" class="panel-vinculaciones" hidden>
+            <div class="panel-vinculaciones-head">
+                <h2><i class="fa-solid fa-link"></i> Vinculaciones pendientes</h2>
+                <button type="button" id="cerrarPanelVinculaciones" class="btn-cerrar-panel" aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="contenedorVinculaciones" class="vinculaciones-lista"></div>
+        </section>
 
         <section class="busqueda">
             <div class="input">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="buscar" placeholder="Buscar paciente...">
             </div>
-            <button class="qr">
-                <i class="fa-solid fa-camera"></i>
+            <button class="qr" type="button" title="Ingresar o escanear código">
+                <i class="fa-solid fa-barcode"></i>
             </button>
+            <!-- HID wedge: visually hidden but focusable for LS1203 -->
+            <input
+                type="text"
+                id="scanHidInput"
+                class="scan-hid-compact"
+                data-barcode-target="1"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Lector USB de código de barras"
+                tabindex="-1">
         </section>
 
         <section class="lista">
@@ -101,34 +127,56 @@
                     <input type="text" id="raza">
                 </div>
                 <div>
-                    <label>Edad</label>
-                    <input type="number" id="edad">
-                </div>
-            </div>
-            <div class="fila">
-                <div>
                     <label>Sexo</label>
                     <select id="sexo">
                         <option>Macho</option>
                         <option>Hembra</option>
                     </select>
                 </div>
+            </div>
+            <div class="fila">
+                <div>
+                    <label>Año de nacimiento</label>
+                    <input type="number" id="anioNacimiento" min="1990" max="2100" placeholder="Ej: 2022" required>
+                </div>
+                <div>
+                    <label>Mes de nacimiento</label>
+                    <select id="mesNacimiento" required>
+                        <option value="">Selecciona mes</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+            </div>
+            <p class="form-hint" id="edadAproxHint">La edad se calculará a partir del nacimiento.</p>
+            <div class="fila">
                 <div>
                     <label>Propietario</label>
                     <input type="text" id="propietario">
                 </div>
-            </div>
-            <div class="fila">
                 <div>
                     <label>Peso (kg)</label>
-                    <input type="text" id="peso" placeholder="Ej: 12.5">
+                    <div class="input-con-sufijo">
+                        <input type="number" id="peso" min="0" step="0.1" placeholder="Ej: 12.5" inputmode="decimal">
+                        <span class="sufijo">kg</span>
+                    </div>
                 </div>
+            </div>
+            <div class="fila">
                 <div>
                     <label>Color</label>
                     <input type="text" id="color" placeholder="Ej: Blanco">
                 </div>
-            </div>
-            <div class="fila">
                 <div>
                     <label>Microchip</label>
                     <select id="microchip">
@@ -136,12 +184,16 @@
                         <option>Sí</option>
                     </select>
                 </div>
+            </div>
+            <div class="fila">
                 <div>
                     <label>Foto</label>
                     <input type="file" id="foto">
                 </div>
+                <div></div>
             </div>
-            <button class="guardar">Guardar Paciente</button>
+
+            <button class="guardar">Guardar mascota</button>
         </form>
     </div>
 </div>
@@ -158,9 +210,14 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/toast.js"></script>
+<script src="../js/code-modal.js"></script>
+<script src="../js/barcode-local.js"></script>
+<script src="../js/barcode-hid.js"></script>
 <script src="paciente.js"></script>
 
 </body>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Mascota">
+  <rect width="128" height="128" rx="24" fill="#E8F5F3"/>
+  <circle cx="64" cy="58" r="28" fill="#2A9D8F"/>
+  <ellipse cx="40" cy="36" rx="10" ry="14" fill="#2A9D8F"/>
+  <ellipse cx="88" cy="36" rx="10" ry="14" fill="#2A9D8F"/>
+  <circle cx="54" cy="56" r="4" fill="#fff"/>
+  <circle cx="74" cy="56" r="4" fill="#fff"/>
+  <ellipse cx="64" cy="68" rx="6" ry="4" fill="#1D6F66"/>
+  <path d="M40 96c8 12 40 12 48 0" fill="none" stroke="#2A9D8F" stroke-width="8" stroke-linecap="round"/>
+</svg>

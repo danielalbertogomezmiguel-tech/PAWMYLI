@@ -230,6 +230,34 @@ header h1 {
     color: #fff;
 }
 
+.registroEliminadas {
+    margin-top: 22px;
+    padding-top: 12px;
+    border-top: 1px dashed #dce3ea;
+}
+
+.registroEliminadas h3 {
+    color: #2c5f5a;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.cita-eliminada {
+    opacity: 0.9;
+    background: #fff6f7;
+    border-left: 4px solid #e8556d;
+}
+
+.badge-eliminada {
+    display: inline-block;
+    background: #ffd8d8;
+    color: #b42318;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
 /* ─── PANEL DERECHO ─── */
 
 .panelDerecho {

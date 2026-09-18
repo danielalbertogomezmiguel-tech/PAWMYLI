@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Clínica</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../css/modals.css">
+    <link rel="stylesheet" href="../css/responsive.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,8 +17,8 @@
 
         <div>
             <div class="perfilDoctor">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Doctor">
-                <h2>Dr. Daniel Ozuna</h2>
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
+                <h2>Usuario</h2>
             </div>
 
             <nav>
@@ -39,59 +41,83 @@
             </nav>
         </div>
 
-        <button class="cerrar" onclick="cerrarSesion()">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            Cerrar Sesión
-        </button>
-
     </aside>
 
     <main>
 
         <header>
             <h1>Inicio</h1>
+            <p class="header-sub">Resumen operativo de tu clínica</p>
         </header>
 
         <section class="dashboard">
 
             <div class="stats">
 
-                <h2>Stats Generales</h2>
+                <h2>Resumen general</h2>
 
                 <div class="card">
-                    <div class="circulo">3</div>
-                    <p>Pacientes Hoy</p>
+                    <div class="circulo">—</div>
+                    <p>Citas Hoy</p>
                 </div>
 
                 <div class="card">
-                    <div class="circulo">7</div>
+                    <div class="circulo">—</div>
                     <p>Consultas Semana</p>
                 </div>
 
                 <div class="card">
-                    <div class="circulo">1</div>
-                    <p>Recordatorios Pendientes</p>
+                    <div class="circulo">—</div>
+                    <p>Citas próximas</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">—</div>
+                    <p>Solicitudes de cita</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">—</div>
+                    <p>Pacientes</p>
+                </div>
+
+                <div class="card">
+                    <div class="circulo">—</div>
+                    <p>Vinculaciones</p>
                 </div>
 
             </div>
 
             <div class="right">
 
-                <button class="scan">
-                    <i class="fa-solid fa-camera"></i> Escanear Código
-                </button>
-
                 <div class="panel">
                     <div class="contenido">
-                        <h2>Próximas consultas del día</h2>
+                        <h2>Consultas de hoy</h2>
                         <ul id="listaConsultas"></ul>
+                        <a class="panel-link" href="../agenda/agenda.html">Ir a Agenda</a>
                     </div>
                 </div>
 
                 <div class="panel">
                     <div class="contenido">
-                        <h2>Citas / recordatorios</h2>
+                        <h2>Próximas citas</h2>
                         <ul id="listaRecordatorios"></ul>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="contenido">
+                        <h2>Solicitudes de cita</h2>
+                        <ul id="listaSolicitudes"></ul>
+                        <a class="panel-link" href="../agenda/agenda.html">Revisar en Agenda</a>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="contenido">
+                        <h2>Pacientes recientes</h2>
+                        <ul id="listaPacientesRecientes"></ul>
+                        <a class="panel-link" href="../pacientes/paciente.html">Ver pacientes</a>
                     </div>
                 </div>
 

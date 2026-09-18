@@ -3,13 +3,7 @@ if (!PawApi.requireAuth()) {
 }
 
 function pintarSidebar() {
-    const user = PawApi.getUser();
-    const title = document.querySelector(".perfilDoctor h2");
-    if (user && title) title.textContent = user.name;
-    if (user?.photo) {
-        const img = document.querySelector(".perfilDoctor img");
-        if (img) img.src = user.photo;
-    }
+    PawApi.applySidebar();
 }
 
 function hoyISO() {
@@ -19,91 +13,120 @@ function hoyISO() {
     return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+function esCitaActiva(a) {
+    return !/cancelad|eliminad/i.test(String(a && a.status || ""));
+}
+
+function semanaRango() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - start.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+}
+
 async function cargarDashboard() {
     const lista = document.getElementById("listaConsultas");
     const lista2 = document.getElementById("listaRecordatorios");
+    const listaSolicitudes = document.getElementById("listaSolicitudes");
+    const listaPacientes = document.getElementById("listaPacientesRecientes");
     const cards = document.querySelectorAll(".stats .card .circulo");
 
     lista.innerHTML = "<li>Cargando...</li>";
     lista2.innerHTML = "<li>Cargando...</li>";
+    if (listaSolicitudes) listaSolicitudes.innerHTML = "<li>Cargando...</li>";
+    if (listaPacientes) listaPacientes.innerHTML = "<li>Cargando...</li>";
 
     const today = hoyISO();
-    const [appointmentsRes, patientsRes] = await Promise.all([
-        PawApi.api.listAppointments({ date: today, limit: 50 }),
-        PawApi.api.listPatients({ limit: 100 }),
+    const [appointmentsRes, upcomingRes, patientsRes, pendingRes] = await Promise.all([
+        PawApi.api.listAppointments({ date: today, limit: 100 }),
+        PawApi.api.listAppointments({ limit: 100 }),
+        PawApi.api.listPatients({ limit: 8 }),
+        PawApi.api.pendingLinkRequests ? PawApi.api.pendingLinkRequests().catch(() => []) : Promise.resolve([]),
     ]);
 
-    const citasHoy = appointmentsRes.data || [];
-    const pacientes = patientsRes.data || [];
+    const allToday = (appointmentsRes.data || []).filter(esCitaActiva);
+    const allUpcoming = (upcomingRes.data || []).filter(esCitaActiva);
+    const citasHoy = allToday.slice().sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
 
     lista.innerHTML = "";
     if (!citasHoy.length) {
         lista.innerHTML = "<li>No hay consultas programadas hoy</li>";
     } else {
-        citasHoy
-            .slice()
-            .sort((a, b) => a.time.localeCompare(b.time))
-            .forEach((c) => {
-                lista.innerHTML += `<li>${c.petName} - ${c.ownerName} ${c.time}</li>`;
-            });
-    }
-
-    const reminderLists = await Promise.all(
-        pacientes.slice(0, 30).map((p) =>
-            PawApi.api.listReminders(p.id).catch(() => [])
-        )
-    );
-    const reminders = reminderLists.flat();
-    const citasReminder = reminders
-        .filter((r) => r.type === "cita" && r.date && r.date >= today)
-        .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-    const vencidos = reminders.filter((r) => r.date && r.date <= today && r.type !== "cita");
-    const destacados = [...citasReminder.slice(0, 8), ...vencidos.slice(0, 8)];
-
-    lista2.innerHTML = "";
-    if (!destacados.length) {
-        lista2.innerHTML = "<li>Sin recordatorios pendientes</li>";
-    } else {
-        destacados.forEach((r) => {
-            const tag = r.type === "cita" ? "[Cita] " : "";
-            lista2.innerHTML += `<li>${tag}${r.title}${r.date ? " - " + r.date : ""}${r.time ? " " + r.time : ""}</li>`;
+        citasHoy.forEach((c) => {
+            const estado = c.status ? ` · ${c.status}` : "";
+            lista.innerHTML += `<li><strong>${c.petName}</strong> — ${c.ownerName} · ${c.time || "—"}${estado}</li>`;
         });
     }
 
-    if (cards[0]) cards[0].textContent = String(citasHoy.length);
-    if (cards[1]) {
-        const week = await PawApi.api.listAppointments({ limit: 100 });
-        const start = new Date();
-        start.setDate(start.getDate() - start.getDay());
-        const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        const count = (week.data || []).filter((a) => {
-            const d = new Date(a.date + "T00:00:00");
-            return d >= start && d <= end;
-        }).length;
-        cards[1].textContent = String(count);
+    const proximas = allUpcoming
+        .filter((a) => a.date && a.date >= today)
+        .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+
+    lista2.innerHTML = "";
+    if (!proximas.length) {
+        lista2.innerHTML = "<li>Sin citas próximas</li>";
+    } else {
+        proximas.slice(0, 12).forEach((a) => {
+            lista2.innerHTML += `<li><strong>${a.petName}</strong> — ${a.date}${a.time ? " " + a.time : ""}${a.status ? " (" + a.status + ")" : ""}</li>`;
+        });
     }
-    if (cards[2]) cards[2].textContent = String(citasReminder.length + vencidos.length);
-}
 
-document.querySelector(".scan").addEventListener("click", () => {
-    const code = prompt("Ingresa el código del paciente (PAW-XXXXXX):");
-    if (!code) return;
-    PawApi.api
-        .get("/patients/code/" + encodeURIComponent(code.trim()))
-        .then((patient) => {
-            localStorage.setItem("pacienteID", patient.id);
-            window.location.href = "../perfil/perfil.html";
-        })
-        .catch((err) => alert(err.message || "Paciente no encontrado."));
-});
+    const solicitudes = allUpcoming.filter((a) => String(a.status || "").toLowerCase() === "solicitada");
+    if (listaSolicitudes) {
+        listaSolicitudes.innerHTML = "";
+        if (!solicitudes.length) {
+            listaSolicitudes.innerHTML = "<li>No hay solicitudes pendientes</li>";
+        } else {
+            solicitudes.slice(0, 8).forEach((a) => {
+                listaSolicitudes.innerHTML += `<li><strong>${a.petName}</strong> — ${a.date} ${a.time || ""} · revisar en Agenda</li>`;
+            });
+        }
+    }
 
-function cerrarSesion() {
-    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
+    const pacientes = patientsRes.data || [];
+    if (listaPacientes) {
+        listaPacientes.innerHTML = "";
+        if (!pacientes.length) {
+            listaPacientes.innerHTML = "<li>Aún no hay pacientes registrados</li>";
+        } else {
+            pacientes.slice(0, 8).forEach((p) => {
+                const code = p.code || p.barcodePayload || "";
+                listaPacientes.innerHTML += `<li><strong>${p.name}</strong>${code ? " · " + code : ""}${p.species ? " · " + p.species : ""}</li>`;
+            });
+        }
+    }
+
+    const { start, end } = semanaRango();
+    const weekCount = allUpcoming.filter((a) => {
+        if (!a.date) return false;
+        const d = new Date(a.date + "T00:00:00");
+        return d >= start && d <= end;
+    }).length;
+
+    const pendingLinks = Array.isArray(pendingRes) ? pendingRes : pendingRes.data || [];
+
+    if (cards[0]) cards[0].textContent = String(citasHoy.length);
+    if (cards[1]) cards[1].textContent = String(weekCount);
+    if (cards[2]) cards[2].textContent = String(proximas.length);
+    if (cards[3]) cards[3].textContent = String(solicitudes.length);
+    if (cards[4]) {
+        const total =
+            (patientsRes.meta && (patientsRes.meta.total ?? patientsRes.meta.count)) ??
+            pacientes.length;
+        cards[4].textContent = String(total || 0);
+    }
+    if (cards[5]) cards[5].textContent = String(pendingLinks.length);
 }
 
 pintarSidebar();
+PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 cargarDashboard().catch((err) => {
-    document.getElementById("listaConsultas").innerHTML = `<li>${err.message}</li>`;
-    document.getElementById("listaRecordatorios").innerHTML = `<li>${err.message}</li>`;
+    const msg = (err && err.message) || "Error al cargar";
+    ["listaConsultas", "listaRecordatorios", "listaSolicitudes", "listaPacientesRecientes"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<li>${msg}</li>`;
+    });
 });
