@@ -112,7 +112,12 @@ async function cargarDashboard() {
     if (cards[1]) cards[1].textContent = String(weekCount);
     if (cards[2]) cards[2].textContent = String(proximas.length);
     if (cards[3]) cards[3].textContent = String(solicitudes.length);
-    if (cards[4]) cards[4].textContent = String(pacientes.length || (patientsRes.meta && patientsRes.meta.total) || 0);
+    if (cards[4]) {
+        const total =
+            (patientsRes.meta && (patientsRes.meta.total ?? patientsRes.meta.count)) ??
+            pacientes.length;
+        cards[4].textContent = String(total || 0);
+    }
     if (cards[5]) cards[5].textContent = String(pendingLinks.length);
 }
 

@@ -268,7 +268,7 @@ function mostrarDetalleConsulta(item) {
     html += detalleRow("Estado", item.estado || item.status);
     html += detalleRow("Peso", item.weightAtVisit);
     html += detalleRow("Temperatura", item.temperature);
-    html += detalleRow("Frecuencia cardiaca", item.heartRate);
+    html += detalleRow("Frecuencia cardíaca", item.heartRate);
     html += detalleRow("Frecuencia respiratoria", item.respiratoryRate);
     html += detalleRow("Observaciones", item.observations);
     html += detalleRow("Diagnóstico", item.diagnostico || item.diagnosis);
@@ -728,12 +728,26 @@ document.getElementById("btnImprimirBarcode").addEventListener("click", () => {
 
 const modal = document.getElementById("modalEditar");
 
+/** Keep full age labels like "2 años 3 meses"; only append "años" for bare numbers. */
+function normalizeAgeForSave(raw) {
+    const value = String(raw || "").trim();
+    if (!value) return "";
+    if (/año|mes/i.test(value)) return value;
+    if (/^\d+(\.\d+)?$/.test(value)) {
+        const n = Number(value);
+        return n === 1 ? "1 año" : n + " años";
+    }
+    return value;
+}
+
 document.querySelector(".editar").addEventListener("click", () => {
     if (isOwner) return;
     document.getElementById("editNombre").value = paciente.nombre;
     document.getElementById("editEspecie").value = paciente.especie;
     document.getElementById("editRaza").value = paciente.raza;
-    document.getElementById("editEdad").value = paciente.edad ? String(paciente.edad).replace(" años", "") : "";
+    document.getElementById("editEdad").value = paciente.edad
+        ? String(paciente.edad).trim()
+        : "";
     document.getElementById("editSexo").value = paciente.sexo;
     document.getElementById("editPeso").value = paciente.peso ? String(paciente.peso).replace(" kg", "") : "";
     document.getElementById("editColor").value = paciente.color || "";
@@ -756,7 +770,7 @@ document.getElementById("formEditar").addEventListener("submit", async function 
         name: document.getElementById("editNombre").value.trim(),
         species: document.getElementById("editEspecie").value.trim(),
         breed: document.getElementById("editRaza").value.trim(),
-        age: document.getElementById("editEdad").value + " años",
+        age: normalizeAgeForSave(document.getElementById("editEdad").value),
         sex: document.getElementById("editSexo").value,
         weight: document.getElementById("editPeso").value
             ? document.getElementById("editPeso").value + " kg"

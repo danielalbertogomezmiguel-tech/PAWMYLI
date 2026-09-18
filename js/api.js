@@ -67,30 +67,48 @@
     }
 
     function getToken() {
-        return localStorage.getItem(TOKEN_KEY);
+        return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     }
 
     function getRefreshToken() {
-        return localStorage.getItem(REFRESH_KEY);
+        return localStorage.getItem(REFRESH_KEY) || sessionStorage.getItem(REFRESH_KEY);
     }
 
-    function setSession(accessToken, user, refreshToken) {
-        localStorage.setItem(TOKEN_KEY, accessToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+    function setSession(accessToken, user, refreshToken, options) {
+        const remember =
+            options && typeof options.remember === "boolean"
+                ? options.remember
+                : localStorage.getItem("recordarSesion") === "true" ||
+                  Boolean(localStorage.getItem(TOKEN_KEY));
+        const keepRefresh = refreshToken || getRefreshToken();
+        clearSessionKeysOnly();
+        if (remember) localStorage.setItem("recordarSesion", "true");
+        else localStorage.removeItem("recordarSesion");
+        const store = remember ? localStorage : sessionStorage;
+        store.setItem(TOKEN_KEY, accessToken);
+        store.setItem(USER_KEY, JSON.stringify(user));
+        if (keepRefresh) store.setItem(REFRESH_KEY, keepRefresh);
+    }
+
+    function clearSessionKeysOnly() {
+        [localStorage, sessionStorage].forEach((store) => {
+            store.removeItem(TOKEN_KEY);
+            store.removeItem(REFRESH_KEY);
+            store.removeItem(USER_KEY);
+        });
     }
 
     function clearSession() {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_KEY);
-        localStorage.removeItem(USER_KEY);
+        clearSessionKeysOnly();
         localStorage.removeItem("recordarSesion");
         localStorage.removeItem("pacienteID");
     }
 
     function getUser() {
         try {
-            return JSON.parse(localStorage.getItem(USER_KEY) || "null");
+            const raw =
+                localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY) || "null";
+            return JSON.parse(raw);
         } catch {
             return null;
         }
@@ -113,7 +131,11 @@
         try {
             const profile = await api.profile();
             const token = getToken();
-            if (token && profile) setSession(token, profile);
+            if (token && profile) {
+                setSession(token, profile, getRefreshToken(), {
+                    remember: localStorage.getItem("recordarSesion") === "true" || Boolean(localStorage.getItem(TOKEN_KEY)),
+                });
+            }
             applySidebar(profile);
             return profile;
         } catch {

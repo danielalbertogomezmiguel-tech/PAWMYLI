@@ -63,6 +63,7 @@ async function cargarTodo() {
 document.getElementById("guardarPerfil").addEventListener("click", async () => {
     const body = {
         name: document.getElementById("nombre").value.trim(),
+        email: document.getElementById("correo").value.trim() || undefined,
         phone: document.getElementById("telefono").value.trim() || undefined,
         license: document.getElementById("licencia").value.trim() || undefined,
         clinic: document.getElementById("clinica").value.trim() || undefined,
@@ -116,7 +117,15 @@ document.getElementById("guardarPrefs").addEventListener("click", async () => {
 
     try {
         clinicConfig = await PawApi.api.updateConfig(body);
-        toast("success", "Preferencias guardadas correctamente");
+        if (body.language && body.language !== "es") {
+            toast(
+                "info",
+                "Preferencia guardada",
+                "Por ahora la interfaz de la clínica permanece en español."
+            );
+        } else {
+            toast("success", "Preferencias guardadas correctamente");
+        }
     } catch (err) {
         toast("error", "No se pudieron guardar las preferencias", friendlyError(err));
     }

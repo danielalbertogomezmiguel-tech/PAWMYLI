@@ -64,6 +64,8 @@ function generarCalendario() {
 function seleccionarDia(dia) {
     diaSeleccionado = dia;
     numeroDia.textContent = dia;
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput) fechaInput.value = formatoFecha(dia);
     generarCalendario();
     mostrarCitas();
 }
@@ -195,6 +197,11 @@ btnAnterior.onclick = async () => {
         mes = 11;
         anio--;
     }
+    const maxDia = new Date(anio, mes + 1, 0).getDate();
+    if (diaSeleccionado > maxDia) diaSeleccionado = maxDia;
+    numeroDia.textContent = diaSeleccionado;
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput) fechaInput.value = formatoFecha(diaSeleccionado);
     await cargarMes();
 };
 
@@ -204,6 +211,11 @@ btnSiguiente.onclick = async () => {
         mes = 0;
         anio++;
     }
+    const maxDia = new Date(anio, mes + 1, 0).getDate();
+    if (diaSeleccionado > maxDia) diaSeleccionado = maxDia;
+    numeroDia.textContent = diaSeleccionado;
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput) fechaInput.value = formatoFecha(diaSeleccionado);
     await cargarMes();
 };
 
@@ -258,6 +270,8 @@ document.getElementById("formCita").addEventListener("submit", async (e) => {
 pintarSidebar();
 PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 numeroDia.textContent = diaSeleccionado;
+const fechaInputInit = document.getElementById("fecha");
+if (fechaInputInit) fechaInputInit.value = formatoFecha(diaSeleccionado);
 Promise.all([cargarMes(), cargarPacientesSelect()]).catch((err) => {
     lista.innerHTML = `<div class="cita"><h3>Error</h3><p>${err.message}</p></div>`;
 });

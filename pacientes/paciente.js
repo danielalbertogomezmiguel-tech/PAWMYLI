@@ -389,7 +389,7 @@ async function decideRequest(id, approve) {
 async function solicitarVinculacion() {
     const code = await PawCodeModal.ask({
         title: "Solicitar vinculación",
-        message: "Ingresa o escanea el código de la mascota (PAW-XXXXXXX).",
+        message: "Ingresa o escanea el código de la mascota (PAW-XXXXXX).",
     });
     if (!code) return;
     try {
@@ -460,7 +460,7 @@ async function migrarCodigosSiVet() {
     const btn = document.getElementById("btnMigrarCodigos");
     if (!btn) return;
     btn.addEventListener("click", async () => {
-        if (!confirm("¿Reimprimir/migrar todos los códigos a formato seguro PAW-XXXXXXX?")) return;
+        if (!confirm("¿Reimprimir/migrar todos los códigos a formato seguro PAW-XXXXXX?")) return;
         try {
             const result = await PawApi.api.migratePatientCodes();
             toast(
@@ -479,7 +479,7 @@ migrarCodigosSiVet();
 document.querySelector(".qr")?.addEventListener("click", async () => {
     const code = await PawCodeModal.ask({
         title: "Buscar por código",
-        message: "Ingresa o escanea el código del paciente (PAW-XXXXXX).",
+        message: "Ingresa o escanea el código de la mascota (PAW-XXXXXX).",
     });
     if (code) await resolverCodigo(code);
 });
@@ -600,7 +600,7 @@ formulario.addEventListener("submit", async function (e) {
     const originalLabel = submitBtn ? submitBtn.textContent : "";
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = "Creando perfil...";
+        submitBtn.textContent = "Creando mascota...";
     }
     const idempotencyKey =
         (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
@@ -626,7 +626,7 @@ formulario.addEventListener("submit", async function (e) {
         creatingPatient = false;
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = originalLabel || "Guardar Paciente";
+            submitBtn.textContent = originalLabel || "Guardar mascota";
         }
     }
 });

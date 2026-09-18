@@ -59,6 +59,26 @@ if (registroForm) {
         }
 
         try {
+            let licensePhoto;
+            const docInput = document.getElementById("documento");
+            const file = docInput && docInput.files && docInput.files[0];
+            if (file) {
+                if (file.size > 2_500_000) {
+                    alert("El archivo de licencia es demasiado grande (máx. ~2.5 MB).");
+                    return;
+                }
+                if (!/^image\//i.test(file.type) && file.type !== "application/pdf") {
+                    alert("Adjunta una imagen o PDF de la licencia.");
+                    return;
+                }
+                licensePhoto = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result || ""));
+                    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+                    reader.readAsDataURL(file);
+                });
+            }
+
             const result = await PawApi.api.register({
                 name: nombre,
                 email: correo,
@@ -67,8 +87,9 @@ if (registroForm) {
                 clinic: clinica,
                 address: direccion,
                 license: licencia,
+                photo: licensePhoto,
             });
-            PawApi.setSession(result.accessToken, result.user, result.refreshToken);
+            PawApi.setSession(result.accessToken, result.user, result.refreshToken, { remember: true });
             alert("Registro exitoso. Bienvenido " + result.user.name);
             window.location.href = "../dashboard/index.html";
         } catch (err) {
@@ -95,13 +116,8 @@ if (loginForm) {
 
         try {
             const result = await PawApi.api.login({ email: correo, password });
-            PawApi.setSession(result.accessToken, result.user, result.refreshToken);
-
-            if (document.getElementById("recordar")?.checked) {
-                localStorage.setItem("recordarSesion", "true");
-            } else {
-                localStorage.removeItem("recordarSesion");
-            }
+            const remember = Boolean(document.getElementById("recordar")?.checked);
+            PawApi.setSession(result.accessToken, result.user, result.refreshToken, { remember });
 
             alert("Bienvenido " + result.user.name);
             window.location.href = "../dashboard/index.html";

@@ -31,6 +31,13 @@
                     <input type="password" id="password" minlength="6" required>
                 </div>
             </div>
+            <div class="input-group">
+                <label>Confirmar contraseña</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="passwordConfirm" minlength="6" required>
+                </div>
+            </div>
             <button class="btn-auth" type="submit">Guardar contraseña</button>
         </form>
         <p class="auth-link"><a href="login.html">Volver al inicio de sesión</a></p>
@@ -51,8 +58,14 @@
         document.getElementById("subtitle").textContent = "Elige una nueva contraseña";
         confirmForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const password = document.getElementById("password").value;
+            const confirm = document.getElementById("passwordConfirm").value;
+            if (password !== confirm) {
+                alert("Las contraseñas no coinciden.");
+                return;
+            }
             try {
-                await PawApi.api.confirmPasswordReset(token, document.getElementById("password").value);
+                await PawApi.api.confirmPasswordReset(token, password);
                 alert("Contraseña actualizada. Ya puedes iniciar sesión.");
                 location.href = "login.html";
             } catch (err) {
