@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correo clínico</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="../dashboard/style.css">
+    <style>
+        .correo-lista { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+        .correo-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 18px;
+            border: 1px solid #dce5ea;
+            box-shadow: 0 2px 8px rgba(30, 68, 64, 0.06);
+        }
+        .correo-item.unread { border-left: 4px solid #2c5f5a; }
+        .correo-item h3 { font-size: 16px; color: #1e4440; margin-bottom: 6px; }
+        .correo-item p { color: #4a5f5c; font-size: 14px; line-height: 1.45; }
+        .correo-meta { margin-top: 8px; font-size: 12px; color: #8a9aa8; }
+        .correo-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .correo-actions button {
+            background: #2c5f5a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .correo-actions button.secondary { background: #8fc3a7; color: #1e4440; }
+        .btn-aceptar-dash {
+            margin-left: 8px;
+            background: #2c5f5a;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="contenedor">
+    <aside class="sidebar">
+        <div>
+            <div class="perfilDoctor">
+                <img src="../assets/placeholder-user.svg" alt="Usuario">
+                <h2>Usuario</h2>
+            </div>
+            <nav>
+                <a href="../dashboard/index.html">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="../pacientes/paciente.html">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="../agenda/agenda.html">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="index.html" class="activo">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Correo</span>
+                </a>
+                <a href="../configuracion/configuracion.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <h1>Correo clínico</h1>
+            <p style="color:#6a7f7c;margin-top:6px;">Solicitudes de cita y avisos del sistema</p>
+        </header>
+
+        <section class="panel" style="margin:24px;padding:20px;">
+            <div class="correo-actions">
+                <button type="button" id="btnMarcarLeidos">Marcar todos leídos</button>
+                <button type="button" class="secondary" id="btnRecargar">Actualizar</button>
+            </div>
+            <ul class="correo-lista" id="listaCorreoCompleta" style="margin-top:18px;"></ul>
+        </section>
+    </main>
+</div>
+
+<script src="../js/env.js"></script>
+<script src="../js/config.js"></script>
+<script src="../js/api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

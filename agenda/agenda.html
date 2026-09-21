@@ -33,6 +33,10 @@
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>Agenda</span>
                 </a>
+                <a href="../correo/index.html">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Correo</span>
+                </a>
                 <a href="../configuracion/configuracion.html">
                     <i class="fa-solid fa-gear"></i>
                     <span>Configuración</span>
@@ -69,11 +73,19 @@
                 <div class="calendario">
 
                     <div class="cabeceraCalendario">
-                        <button id="anterior">
+                        <button id="anterior" type="button" aria-label="Mes anterior">
                             <i class="fa-solid fa-chevron-left"></i>
                         </button>
-                        <h2 id="mesActual"></h2>
-                        <button id="siguiente">
+                        <div class="cabeceraCentro">
+                            <div class="filtrosEstado" role="group" aria-label="Filtros de estado">
+                                <button type="button" class="filtro-punto gris activo" data-filtro="all" title="Todos los estados" aria-pressed="true"></button>
+                                <button type="button" class="filtro-punto verde" data-filtro="completed" title="Completados" aria-pressed="false"></button>
+                                <button type="button" class="filtro-punto naranja" data-filtro="pending" title="Pendientes" aria-pressed="false"></button>
+                                <button type="button" class="filtro-punto rojo" data-filtro="cancelled" title="Cancelados" aria-pressed="false"></button>
+                            </div>
+                            <h2 id="mesActual"></h2>
+                        </div>
+                        <button id="siguiente" type="button" aria-label="Mes siguiente">
                             <i class="fa-solid fa-chevron-right"></i>
                         </button>
                     </div>
@@ -94,6 +106,9 @@
 
                 <div class="crearCita">
                     <h2>Crear cita</h2>
+                    <p id="avisoFechaPasada" class="aviso-fecha-pasada" hidden>
+                        Solo visualización: no se pueden crear citas en fechas pasadas.
+                    </p>
                     <form id="formCita">
                         <label>Paciente registrado (opcional)</label>
                         <select id="pacienteSelect">

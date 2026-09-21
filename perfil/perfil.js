@@ -298,8 +298,65 @@ function mostrarDetalleConsulta(item) {
     }
 
     if (!html) html = "<p>Sin datos de consulta.</p>";
+
+    const hasMed =
+        item.medication ||
+        (item.typePayload &&
+            typeof item.typePayload === "object" &&
+            (item.typePayload.medication || item.typePayload.vaccine || item.typePayload.product));
+
+    if (hasMed && paciente && paciente.id && item.id) {
+        html +=
+            `<div style="margin-top:16px;padding-top:12px;border-top:1px solid #dce5ea;">` +
+            `<p style="font-size:13px;color:#6a7f7c;margin-bottom:10px;">Programa las tomas cuando sepas a qué hora empieza el tratamiento (no se crean solos al guardar la consulta).</p>` +
+            `<button type="button" class="guardar" id="btnProgramarMedicamento" style="width:auto;padding:10px 16px;">Programar recordatorios de tomas</button>` +
+            `</div>`;
+    }
+
     box.innerHTML = html;
     modal.classList.add("activo");
+
+    const btnRx = document.getElementById("btnProgramarMedicamento");
+    if (btnRx) {
+        btnRx.addEventListener("click", () => programarMedicamentoDesdeConsulta(item));
+    }
+}
+
+async function programarMedicamentoDesdeConsulta(item) {
+    if (!paciente || !paciente.id || !item || !item.id) return;
+    const firstDoseDate = prompt(
+        "Fecha de la primera toma (AAAA-MM-DD):",
+        item.fecha || hoyISOLocal()
+    );
+    if (!firstDoseDate) return;
+    const firstDoseTime = prompt("Hora de la primera toma (HH:MM):", "09:00");
+    if (!firstDoseTime) return;
+    const intervalRaw = prompt("Horas entre tomas (ej. 8, 12, 24):", "12");
+    const durationRaw = prompt("Días de tratamiento:", "7");
+    const intervalHours = Number(intervalRaw);
+    const durationDays = Number(durationRaw);
+    try {
+        const result = await PawApi.api.scheduleMedication(paciente.id, item.id, {
+            firstDoseDate: String(firstDoseDate).trim(),
+            firstDoseTime: String(firstDoseTime).trim().slice(0, 5),
+            intervalHours: Number.isFinite(intervalHours) && intervalHours > 0 ? intervalHours : undefined,
+            durationDays: Number.isFinite(durationDays) && durationDays > 0 ? durationDays : undefined,
+        });
+        alert(
+            `Listo: se crearon ${result.created || 0} recordatorios de ${
+                result.medication || "medicamento"
+            }.`
+        );
+    } catch (err) {
+        alert((err && err.message) || "No se pudieron programar las tomas");
+    }
+}
+
+function hoyISOLocal() {
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
 function pintarComidas(feeding) {

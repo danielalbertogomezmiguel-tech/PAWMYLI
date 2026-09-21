@@ -288,3 +288,19 @@ header .header-sub {
     .scan { align-self: stretch; justify-content: center; font-size: 18px; padding: 14px; }
     .contenido li { font-size: 15px; padding: 12px 14px; }
 }
+
+.btn-aceptar-dash {
+    margin-left: 8px;
+    background: #2c5f5a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.btn-aceptar-dash:hover {
+    background: #1e4440;
+}

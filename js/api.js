@@ -325,6 +325,29 @@
                     encodeURIComponent(recordId),
                 { method: "DELETE" }
             ),
+        scheduleMedication: (id, recordId, body) =>
+            request(
+                "/patients/" +
+                    encodeURIComponent(id) +
+                    "/medical-records/" +
+                    encodeURIComponent(recordId) +
+                    "/schedule-medication",
+                { method: "POST", body: JSON.stringify(body) }
+            ),
+        listInbox: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.unreadOnly) q.set("unreadOnly", "true");
+            if (params.limit) q.set("limit", String(params.limit));
+            const qs = q.toString();
+            return request("/inbox" + (qs ? "?" + qs : ""));
+        },
+        markInboxRead: (id) =>
+            request("/inbox/" + encodeURIComponent(id) + "/read", {
+                method: "POST",
+                body: JSON.stringify({}),
+            }),
+        markAllInboxRead: () =>
+            request("/inbox/read-all", { method: "POST", body: JSON.stringify({}) }),
         updateFeeding: (id, body) =>
             request("/patients/" + encodeURIComponent(id) + "/feeding", {
                 method: "PUT",
