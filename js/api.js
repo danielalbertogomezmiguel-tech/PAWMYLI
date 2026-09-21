@@ -463,6 +463,16 @@
                 method: "POST",
                 body: JSON.stringify(body || {}),
             }),
+        rejectAppointment: (id, body = {}) =>
+            request("/appointments/" + encodeURIComponent(id) + "/reject", {
+                method: "POST",
+                body: JSON.stringify(body || {}),
+            }),
+        suggestAppointment: (id, body) =>
+            request("/appointments/" + encodeURIComponent(id) + "/suggest", {
+                method: "POST",
+                body: JSON.stringify(body || {}),
+            }),
         deleteAppointment: async (id) => {
             const result = await request("/appointments/" + encodeURIComponent(id), {
                 method: "DELETE",
