@@ -75,7 +75,8 @@ interface ApiService {
     suspend fun getFeedingSummary(
         @Path("id") patientId: String,
         @Query("from") from: String? = null,
-        @Query("to") to: String? = null
+        @Query("to") to: String? = null,
+        @Query("asOf") asOf: String? = null
     ): Response<FeedingSummaryDto>
 
     @PUT("patients/{id}/feeding")

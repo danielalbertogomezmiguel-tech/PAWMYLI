@@ -26,7 +26,7 @@ class DashboardActivity : AppCompatActivity() {
         // Show UI immediately from local cache; refresh token only when needed.
         sessionReady = true
         if (savedInstanceState == null) {
-            loadFragment(HomeFragment())
+            showTab(R.id.navigation_home)
         }
         wireBottomNav()
 
@@ -83,23 +83,42 @@ class DashboardActivity : AppCompatActivity() {
         super.onPause()
     }
 
+    private var currentTabId = R.id.navigation_home
+
     private fun wireBottomNav() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_home -> loadFragment(HomeFragment())
-                R.id.navigation_pets -> loadFragment(PetsFragment())
-                R.id.navigation_reminders -> loadFragment(RemindersFragment())
-                R.id.navigation_profile -> loadFragment(ProfileFragment())
-                else -> return@setOnItemSelectedListener false
+            if (item.itemId == currentTabId &&
+                supportFragmentManager.findFragmentByTag(item.itemId.toString()) != null
+            ) {
+                return@setOnItemSelectedListener true
             }
+            showTab(item.itemId)
             true
         }
     }
 
-    private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.nav_host_fragment, fragment)
-            .commit()
+    private fun showTab(itemId: Int) {
+        val factory: () -> Fragment = when (itemId) {
+            R.id.navigation_home -> { { HomeFragment() } }
+            R.id.navigation_pets -> { { PetsFragment() } }
+            R.id.navigation_reminders -> { { RemindersFragment() } }
+            R.id.navigation_profile -> { { ProfileFragment() } }
+            else -> return
+        }
+        val tag = itemId.toString()
+        val fm = supportFragmentManager
+        val tx = fm.beginTransaction()
+        fm.fragments.forEach { fragment ->
+            if (fragment.isVisible && fragment.tag != tag) tx.hide(fragment)
+        }
+        val existing = fm.findFragmentByTag(tag)
+        if (existing == null) {
+            tx.add(R.id.nav_host_fragment, factory(), tag)
+        } else {
+            tx.show(existing)
+        }
+        tx.commit()
+        currentTabId = itemId
     }
 }

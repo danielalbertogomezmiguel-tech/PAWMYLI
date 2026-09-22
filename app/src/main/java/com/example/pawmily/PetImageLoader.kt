@@ -3,6 +3,7 @@ package com.example.pawmily
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.util.LruCache
 import android.widget.ImageView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,30 +13,44 @@ import java.util.concurrent.TimeUnit
 
 object PetImageLoader {
     private val http = OkHttpClient.Builder()
-        .connectTimeout(12, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(12, TimeUnit.SECONDS)
         .build()
+
+    private val memory = object : LruCache<String, Bitmap>(12 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
 
     suspend fun loadInto(
         imageView: ImageView,
         source: String?,
-        fallbackRes: Int = android.R.drawable.ic_menu_gallery
+        fallbackRes: Int = android.R.drawable.ic_menu_gallery,
+        cacheKey: String? = null
     ) {
         if (source.isNullOrBlank()) {
             imageView.setImageResource(fallbackRes)
             return
         }
+        val key = cacheKey?.takeIf { it.isNotBlank() } ?: source.take(120) + source.length
+        memory.get(key)?.let {
+            imageView.setImageBitmap(it)
+            return
+        }
+        val context = imageView.context.applicationContext
         val bitmap = withContext(Dispatchers.IO) {
-            runCatching { decode(source) }.getOrNull()
+            runCatching { decode(context, source) }.getOrNull()
         }
         if (bitmap != null) {
-            imageView.setImageBitmap(bitmap)
-        } else {
+            runCatching { memory.put(key, bitmap) }
+            if (imageView.isAttachedToWindow) {
+                imageView.setImageBitmap(bitmap)
+            }
+        } else if (imageView.isAttachedToWindow) {
             imageView.setImageResource(fallbackRes)
         }
     }
 
-    private fun decode(source: String): Bitmap? = when {
+    private fun decode(context: android.content.Context, source: String): Bitmap? = when {
         source.startsWith("data:image", ignoreCase = true) -> {
             val base64 = source.substringAfter("base64,", missingDelimiterValue = "")
             if (base64.isBlank()) null
@@ -51,6 +66,12 @@ object PetImageLoader {
                 if (!res.isSuccessful) return null
                 val bytes = res.body?.bytes() ?: return null
                 decodeSampled(bytes)
+            }
+        }
+        source.startsWith("content:", ignoreCase = true) ||
+            source.startsWith("file:", ignoreCase = true) -> {
+            context.contentResolver.openInputStream(android.net.Uri.parse(source))?.use { input ->
+                decodeSampled(input.readBytes())
             }
         }
         else -> null

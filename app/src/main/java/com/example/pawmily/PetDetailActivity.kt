@@ -39,7 +39,13 @@ class PetDetailActivity : AppCompatActivity() {
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
                     binding.detailPetImage.setImageURI(imageUri)
-                    petCode?.let { sessionManager.savePetImageUri(it, imageUri.toString()) }
+                    val uriText = imageUri.toString()
+                    petCode?.let { sessionManager.savePetImageUri(it, uriText) }
+                    petBackendId?.let { sessionManager.savePetImageUri(it, uriText) }
+                    loadedPet?.let { pet ->
+                        sessionManager.savePetImageUri(pet.id, uriText)
+                        pet.backendId?.let { sessionManager.savePetImageUri(it, uriText) }
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -87,6 +93,12 @@ class PetDetailActivity : AppCompatActivity() {
     }
 
     private fun loadPetHeader(code: String) {
+        PetsMemoryCache.find(code)?.let { cached ->
+            loadedPet = cached
+            petCode = cached.id
+            petBackendId = cached.backendId ?: petBackendId
+            bindHeader(cached)
+        }
         lifecycleScope.launch {
             try {
                 val pet = RemotePetRepository.getPet(code)
@@ -95,6 +107,7 @@ class PetDetailActivity : AppCompatActivity() {
                 petBackendId = pet.backendId
                 bindHeader(pet)
             } catch (e: Exception) {
+                if (loadedPet != null) return@launch
                 Toast.makeText(
                     this@PetDetailActivity,
                     e.message ?: getString(R.string.error_load_pet_detail),
@@ -108,18 +121,26 @@ class PetDetailActivity : AppCompatActivity() {
         binding.detailPetName.text = pet.name
         binding.detailPetBreed.text = pet.breed
 
-        val savedUri = sessionManager.getPetImageUri(pet.id)
+        val savedUri = sessionManager.getPetImageUri(pet.id, pet.backendId)
         if (savedUri != null) {
             try {
                 binding.detailPetImage.setImageURI(Uri.parse(savedUri))
             } catch (_: Exception) {
                 lifecycleScope.launch {
-                    PetImageLoader.loadInto(binding.detailPetImage, pet.imageUrl)
+                    PetImageLoader.loadInto(
+                        binding.detailPetImage,
+                        pet.imageUrl,
+                        cacheKey = pet.backendId ?: pet.id,
+                    )
                 }
             }
         } else {
             lifecycleScope.launch {
-                PetImageLoader.loadInto(binding.detailPetImage, pet.imageUrl)
+                PetImageLoader.loadInto(
+                    binding.detailPetImage,
+                    pet.imageUrl,
+                    cacheKey = pet.backendId ?: pet.id,
+                )
             }
         }
     }
@@ -218,16 +239,8 @@ class SummaryFragment : Fragment(R.layout.fragment_pet_summary) {
 
     private suspend fun loadBarcode(view: View, pet: Pet) {
         val iv = view.findViewById<ImageView>(R.id.ivPetBarcode) ?: return
-        val patientId = pet.backendId ?: return
-        try {
-            val barcode = RemotePetRepository.getBarcode(patientId)
-            val payload = barcode.code?.takeIf { it.isNotBlank() } ?: pet.id
-            val bmp = BarcodeBitmap.code128(payload)
-            if (bmp != null) iv.setImageBitmap(bmp)
-        } catch (_: Exception) {
-            runCatching {
-                BarcodeBitmap.code128(pet.id)?.let { iv.setImageBitmap(it) }
-            }
+        runCatching {
+            BarcodeBitmap.code128(pet.id)?.let { iv.setImageBitmap(it) }
         }
     }
 
@@ -343,21 +356,32 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
         row.findViewById<TextView>(R.id.tvRecordType).text = type
         row.findViewById<TextView>(R.id.tvRecordDoctor).text = doctor
         row.findViewById<View>(R.id.ivReportIcon).setOnClickListener {
-            val intent = Intent(requireContext(), MedicalReportActivity::class.java).apply {
-                putExtra("PET_NAME", pet.name)
-                putExtra("RECORD_DATE", date)
-                putExtra("RECORD_DOCTOR", doctor)
-                putExtra("RECORD_REASON", reason)
-                putExtra("RECORD_DIAGNOSIS", diagnosis)
-                putExtra("RECORD_TREATMENT", treatment)
-                putExtra("RECORD_MEDICATION", medication)
-                putExtra("RECORD_OBSERVATIONS", observations)
-                putExtra("RECORD_FOLLOW_UP", followUp)
-                putExtra("RECORD_NUMBER", consultationNumber)
-                putExtra("RECORD_TYPE", consultType)
-                putExtra("PET_IMAGE_URI", SessionManager(requireContext()).getPetImageUri(pet.id))
+            try {
+                MedicalReportDraft.open(
+                    requireContext(),
+                    MedicalReportDraft.Content(
+                        petName = pet.name,
+                        date = date,
+                        doctor = doctor,
+                        reason = reason,
+                        diagnosis = diagnosis,
+                        treatment = treatment,
+                        medication = medication,
+                        observations = observations,
+                        followUp = followUp,
+                        number = consultationNumber,
+                        type = consultType,
+                        petId = pet.id,
+                        petBackendId = pet.backendId,
+                    )
+                )
+            } catch (_: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.error_load_pet_detail),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            startActivity(intent)
         }
         container.addView(row)
     }
@@ -415,20 +439,26 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
                     text = getString(R.string.diet_read_only_owner)
                 }
 
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-                    .format(java.util.Date())
+                val today = MealClock.localIsoDate()
+                val (weekFrom, _) = MealClock.localWeekRange(today)
                 val logs = try {
-                    RemotePetRepository.listFeedingLogs(patientId!!, today, today)
+                    RemotePetRepository.listFeedingLogs(patientId!!, weekFrom, today)
                 } catch (_: Exception) {
                     emptyList()
                 }
                 val summary = try {
-                    RemotePetRepository.getFeedingSummary(patientId!!)
+                    RemotePetRepository.getFeedingSummary(
+                        patientId!!,
+                        from = weekFrom,
+                        to = today,
+                        asOf = today
+                    )
                 } catch (_: Exception) {
                     null
                 }
-                bindPlanHeader(view, feeding, logs, summary)
-                renderMealsToday(view, feeding, logs, today)
+                val logsToday = logs.filter { it.scheduledDate == today }
+                bindPlanHeader(view, feeding, logsToday, logs, summary, today)
+                renderMealsToday(view, feeding, logsToday, today)
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
@@ -442,8 +472,10 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
     private fun bindPlanHeader(
         view: View,
         feeding: FeedingDto?,
-        logs: List<FeedingLogDto>,
-        summary: FeedingSummaryDto?
+        logsToday: List<FeedingLogDto>,
+        weekLogs: List<FeedingLogDto>,
+        summary: FeedingSummaryDto?,
+        today: String
     ) {
         val card = view.findViewById<View>(R.id.cardPlanHeader) ?: return
         if (feeding == null) {
@@ -477,17 +509,25 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         weightsTv?.text = getString(R.string.feeding_weights, current, target)
 
         val meals = feeding.meals.orEmpty()
-        val doneToday = logs.count {
+        val doneToday = logsToday.count {
             it.status.equals("EATEN", true) || it.status.equals("PARTIAL", true)
         }
-        val totalToday = meals.size.coerceAtLeast(1)
+        val dueToday = meals.count { MealClock.hasTimePassed(it.time) }.coerceAtLeast(0)
+        val totalToday = if (dueToday > 0) dueToday else meals.size.coerceAtLeast(1)
         view.findViewById<TextView>(R.id.tvTodayProgress)?.text =
             getString(R.string.feeding_progress_today, doneToday, meals.size)
         view.findViewById<ProgressBar>(R.id.progressToday)?.apply {
             max = 100
             progress = ((doneToday.toFloat() / totalToday) * 100).toInt().coerceIn(0, 100)
         }
-        val percent = summary?.compliance?.percent ?: 0
+        val (weekFrom, _) = MealClock.localWeekRange(today)
+        val localPercent = MealClock.dueCompliancePercent(meals, weekLogs, weekFrom, today)
+        val apiPercent = summary?.compliance?.percent
+        val percent = when {
+            meals.any { !it.id.isNullOrBlank() } -> localPercent
+            apiPercent != null -> apiPercent
+            else -> 0
+        }
         view.findViewById<TextView>(R.id.tvWeekCompliance)?.text =
             getString(R.string.feeding_week_compliance, percent)
     }
@@ -522,7 +562,7 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
                 meal.amount?.takeIf { it.isNotBlank() }?.let { append(" · $it") }
             }
             val status = byMeal[mealId]?.status
-            val late = isMealLate(meal.time, today) && status.isNullOrBlank()
+            val late = MealClock.isMealLate(meal.time, today) && status.isNullOrBlank()
             timeView?.text = buildString {
                 append(meal.time.orEmpty())
                 when {
@@ -596,84 +636,6 @@ class FeedingFragment : Fragment(R.layout.fragment_pet_feeding) {
         val missed = status.equals("UNLOGGED", true)
         ivYes?.alpha = if (eaten) 1f else 0.35f
         ivNo?.alpha = if (missed) 1f else 0.35f
-    }
-
-    /**
-     * Late only after the scheduled meal time has passed for *today*.
-     * Supports 24h (HH:mm) and 12h (h:mm AM/PM / a.m.).
-     * Unparseable or future meal times are never late.
-     */
-    private fun isMealLate(time: String?, today: String): Boolean {
-        if (time.isNullOrBlank()) return false
-        val todayCheck = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-            .format(java.util.Date())
-        if (today != todayCheck) return false
-        val hm = parseMealHourMinute(time) ?: return false
-        val now = java.util.Calendar.getInstance()
-        val mealCal = java.util.Calendar.getInstance().apply {
-            set(java.util.Calendar.HOUR_OF_DAY, hm.first)
-            set(java.util.Calendar.MINUTE, hm.second)
-            set(java.util.Calendar.SECOND, 0)
-            set(java.util.Calendar.MILLISECOND, 0)
-        }
-        return now.after(mealCal)
-    }
-
-    /** @return Pair(hourOfDay 0-23, minute) or null if unparseable */
-    private fun parseMealHourMinute(raw: String): Pair<Int, Int>? {
-        val cleaned = raw.trim().replace("\u00a0", " ")
-        if (cleaned.isEmpty()) return null
-        val patterns = listOf(
-            "H:mm",
-            "HH:mm",
-            "H:mm:ss",
-            "HH:mm:ss",
-            "h:mm a",
-            "hh:mm a",
-            "h:mm:ss a",
-            "hh:mm:ss a",
-        )
-        val locales = listOf(java.util.Locale.US, java.util.Locale("es", "ES"))
-        for (locale in locales) {
-            for (pattern in patterns) {
-                try {
-                    val sdf = java.text.SimpleDateFormat(pattern, locale).apply {
-                        isLenient = false
-                    }
-                    val date = sdf.parse(cleaned) ?: continue
-                    val cal = java.util.Calendar.getInstance().apply { time = date }
-                    return cal.get(java.util.Calendar.HOUR_OF_DAY) to cal.get(java.util.Calendar.MINUTE)
-                } catch (_: Exception) {
-                    // try next pattern
-                }
-            }
-        }
-        // Fallback: strip AM/PM markers then HH:mm
-        val lower = cleaned.lowercase(java.util.Locale.ROOT).replace(".", "")
-        val isPm = lower.contains("pm") || lower.contains("p m")
-        val isAm = lower.contains("am") || lower.contains("a m")
-        val numeric = lower
-            .replace("am", "")
-            .replace("pm", "")
-            .replace("p m", "")
-            .replace("a m", "")
-            .trim()
-        val parts = numeric.split(Regex("[:\\s.-]+")).filter { it.isNotEmpty() }
-        if (parts.isEmpty()) return null
-        var hour = parts[0].toIntOrNull() ?: return null
-        val minute = parts.getOrNull(1)?.take(2)?.toIntOrNull() ?: 0
-        if (minute !in 0..59) return null
-        if (isPm || isAm) {
-            if (hour !in 1..12) return null
-            hour = when {
-                isPm && hour < 12 -> hour + 12
-                isAm && hour == 12 -> 0
-                else -> hour
-            }
-        } else if (hour !in 0..23) {
-            return null
-        }
-        return hour to minute
     }
 
     private fun markMeal(

@@ -118,7 +118,7 @@ class PetRemindersActivity : AppCompatActivity() {
                 petBackendId = pet.backendId ?: petBackendId
                 val key = pet.backendId ?: pet.id
                 remoteReminders = RemotePetRepository.listReminders(key, forceRefresh = forceNetwork)
-                val all = RemotePetRepository.listMyAppointments(forceRefresh = true)
+                val all = RemotePetRepository.listMyAppointments(forceRefresh = forceNetwork)
                 petAppointments = all.filter { appt ->
                     val id = pet.backendId
                     if (!id.isNullOrBlank()) appt.patientId == id

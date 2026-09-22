@@ -120,18 +120,18 @@ class PetsFragment : Fragment(), PetsSyncBus.Listener {
         petView.findViewById<TextView>(R.id.petBreed).text = pet.breed
 
         val petImage = petView.findViewById<ImageView>(R.id.petImage)
-        val savedUri = sessionManager.getPetImageUri(pet.id)
+        val savedUri = sessionManager.getPetImageUri(pet.id, pet.backendId)
         if (savedUri != null) {
             try {
                 petImage.setImageURI(Uri.parse(savedUri))
             } catch (_: Exception) {
                 viewLifecycleOwner.lifecycleScope.launch {
-                    PetImageLoader.loadInto(petImage, pet.imageUrl)
+                    PetImageLoader.loadInto(petImage, pet.imageUrl, cacheKey = pet.backendId ?: pet.id)
                 }
             }
         } else {
             viewLifecycleOwner.lifecycleScope.launch {
-                PetImageLoader.loadInto(petImage, pet.imageUrl)
+                PetImageLoader.loadInto(petImage, pet.imageUrl, cacheKey = pet.backendId ?: pet.id)
             }
         }
 

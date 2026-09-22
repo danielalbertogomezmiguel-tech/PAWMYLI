@@ -25,6 +25,27 @@ object PetsMemoryCache {
     }
 
     @Synchronized
+    fun find(idOrCode: String?): Pet? {
+        if (idOrCode.isNullOrBlank()) return null
+        val key = idOrCode.trim()
+        return pets.firstOrNull {
+            it.id.equals(key, ignoreCase = true) || it.backendId.equals(key, ignoreCase = true)
+        }?.copy()
+    }
+
+    @Synchronized
+    fun upsert(pet: Pet) {
+        val next = pets.toMutableList()
+        val idx = next.indexOfFirst {
+            (!pet.backendId.isNullOrBlank() && it.backendId == pet.backendId) ||
+                it.id.equals(pet.id, ignoreCase = true)
+        }
+        if (idx >= 0) next[idx] = pet.copy() else next.add(pet.copy())
+        pets = next
+        if (fetchedAtMs == 0L) fetchedAtMs = System.currentTimeMillis()
+    }
+
+    @Synchronized
     fun isFresh(ttlMs: Long = TTL_MS): Boolean {
         if (fetchedAtMs == 0L) return false
         return System.currentTimeMillis() - fetchedAtMs < ttlMs

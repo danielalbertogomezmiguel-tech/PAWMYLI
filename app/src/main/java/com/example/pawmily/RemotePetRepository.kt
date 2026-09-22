@@ -7,7 +7,17 @@ object RemotePetRepository {
 
     private const val PETS_TTL_MS = 10 * 60_000L
     private const val REMINDERS_TTL_MS = 5 * 60_000L
-    private const val APPOINTMENTS_TTL_MS = 60_000L
+    private const val APPOINTMENTS_TTL_MS = 5 * 60_000L
+    private const val DETAIL_TTL_MS = 5 * 60_000L
+
+    private data class Timed<T>(val at: Long, val value: T) {
+        fun fresh(ttl: Long = DETAIL_TTL_MS) = System.currentTimeMillis() - at < ttl
+    }
+
+    private val medicalCache = java.util.concurrent.ConcurrentHashMap<String, Timed<List<MedicalRecordDto>>>()
+    private val feedingCache = java.util.concurrent.ConcurrentHashMap<String, Timed<FeedingDto?>>()
+    private val feedingLogsCache = java.util.concurrent.ConcurrentHashMap<String, Timed<List<FeedingLogDto>>>()
+    private val feedingSummaryCache = java.util.concurrent.ConcurrentHashMap<String, Timed<FeedingSummaryDto>>()
 
     /** Creates a pending link request; returns a human status message. */
     suspend fun linkPet(code: String): String {
@@ -100,11 +110,16 @@ object RemotePetRepository {
         }
     }
 
-    suspend fun getPet(idOrCode: String): Pet {
+    suspend fun getPet(idOrCode: String, forceRefresh: Boolean = false): Pet {
         val key = idOrCode.trim()
         if (key.isEmpty()) throw ApiException("Código o ID inválido")
 
-        val cached = runCatching { LocalCacheStore.getPet(key) }.getOrNull()
+        val cached = PetsMemoryCache.find(key)
+            ?: runCatching { LocalCacheStore.getPet(key) }.getOrNull()
+        if (cached != null && !forceRefresh && PetsMemoryCache.isFresh(PETS_TTL_MS)) {
+            return cached
+        }
+
         return try {
             fetchPetRemote(key).also { mergePetIntoCache(it) }
         } catch (e: Exception) {
@@ -132,6 +147,7 @@ object RemotePetRepository {
     }
 
     private suspend fun mergePetIntoCache(pet: Pet) {
+        PetsMemoryCache.upsert(pet)
         val current = runCatching { LocalCacheStore.getPets() }.getOrDefault(emptyList()).toMutableList()
         val idx = current.indexOfFirst {
             it.backendId == pet.backendId || it.id.equals(pet.id, ignoreCase = true)
@@ -149,11 +165,17 @@ object RemotePetRepository {
     }
 
     suspend fun getFeeding(patientId: String): FeedingDto? {
+        feedingCache[patientId]?.takeIf { it.fresh() }?.let { return it.value }
         val response = RetrofitClient.instance.getFeeding(patientId)
         if (response.isSuccessful) {
-            return response.body()
+            val body = response.body()
+            feedingCache[patientId] = Timed(System.currentTimeMillis(), body)
+            return body
         }
-        if (response.code() == 404) return null
+        if (response.code() == 404) {
+            feedingCache[patientId] = Timed(System.currentTimeMillis(), null)
+            return null
+        }
         throw ApiException(
             RetrofitClient.parseErrorMessage(response.errorBody()?.string())
                 ?: "Error al cargar alimentación"
@@ -162,7 +184,13 @@ object RemotePetRepository {
 
     suspend fun updateFeeding(patientId: String, body: FeedingUpdateDto): FeedingDto {
         val response = RetrofitClient.instance.updateFeeding(patientId, body)
-        return unwrap(response, "Error al actualizar alimentación")
+        val updated = unwrap(response, "Error al actualizar alimentación")
+        feedingCache.remove(patientId)
+        feedingLogsCache.keys.filter { it.startsWith("$patientId|") }
+            .forEach { feedingLogsCache.remove(it) }
+        feedingSummaryCache.keys.filter { it.startsWith("$patientId|") }
+            .forEach { feedingSummaryCache.remove(it) }
+        return updated
     }
 
     suspend fun listFeedingLogs(
@@ -170,28 +198,43 @@ object RemotePetRepository {
         from: String? = null,
         to: String? = null
     ): List<FeedingLogDto> {
-        return unwrap(
+        val cacheKey = "$patientId|$from|$to"
+        feedingLogsCache[cacheKey]?.takeIf { it.fresh() }?.let { return it.value }
+        val list = unwrap(
             RetrofitClient.instance.getFeedingLogs(patientId, from, to),
             "Error al cargar registros de alimentación"
         )
+        feedingLogsCache[cacheKey] = Timed(System.currentTimeMillis(), list)
+        return list
     }
 
     suspend fun getFeedingSummary(
         patientId: String,
         from: String? = null,
-        to: String? = null
+        to: String? = null,
+        asOf: String? = null
     ): FeedingSummaryDto {
-        return unwrap(
-            RetrofitClient.instance.getFeedingSummary(patientId, from, to),
+        val cacheKey = "$patientId|$from|$to|$asOf"
+        feedingSummaryCache[cacheKey]?.takeIf { it.fresh() }?.let { return it.value }
+        val summary = unwrap(
+            RetrofitClient.instance.getFeedingSummary(patientId, from, to, asOf),
             "Error al cargar seguimiento de alimentación"
         )
+        feedingSummaryCache[cacheKey] = Timed(System.currentTimeMillis(), summary)
+        return summary
     }
 
     suspend fun markFeedingLog(patientId: String, body: FeedingLogCreateDto): FeedingLogDto {
-        return unwrap(
+        val result = unwrap(
             RetrofitClient.instance.createFeedingLog(patientId, body),
             "Error al registrar comida"
         )
+        feedingLogsCache.keys.filter { it.startsWith("$patientId|") }
+            .forEach { feedingLogsCache.remove(it) }
+        feedingSummaryCache.keys.filter { it.startsWith("$patientId|") }
+            .forEach { feedingSummaryCache.remove(it) }
+        feedingCache.remove(patientId)
+        return result
     }
 
     suspend fun listFavorites(): List<FavoriteDto> {
@@ -261,7 +304,7 @@ object RemotePetRepository {
         if (!forceRefresh) {
             val syncAt = runCatching { LocalCacheStore.remindersSyncAt(petId) }.getOrDefault(0L)
             val cached = runCatching { LocalCacheStore.getReminders(petId) }.getOrDefault(emptyList())
-            if (cached.isNotEmpty() && !LocalCacheStore.isStale(syncAt, REMINDERS_TTL_MS)) {
+            if (!LocalCacheStore.isStale(syncAt, REMINDERS_TTL_MS)) {
                 return cached
             }
         }
@@ -327,7 +370,7 @@ object RemotePetRepository {
             val cached = activeOnly(
                 runCatching { LocalCacheStore.getAppointments() }.getOrDefault(emptyList())
             )
-            if (cached.isNotEmpty() && !LocalCacheStore.isStale(syncAt, APPOINTMENTS_TTL_MS)) {
+            if (!LocalCacheStore.isStale(syncAt, APPOINTMENTS_TTL_MS)) {
                 return cached
             }
         }
@@ -387,8 +430,13 @@ object RemotePetRepository {
     }
 
     suspend fun getMedicalRecords(patientId: String): List<MedicalRecordDto> {
-        val response = RetrofitClient.instance.getMedicalRecords(patientId)
-        return unwrap(response, "Error al cargar historial médico")
+        medicalCache[patientId]?.takeIf { it.fresh() }?.let { return it.value }
+        val list = unwrap(
+            RetrofitClient.instance.getMedicalRecords(patientId),
+            "Error al cargar historial médico"
+        )
+        medicalCache[patientId] = Timed(System.currentTimeMillis(), list)
+        return list
     }
 
     suspend fun getBarcode(patientId: String): BarcodeDto {

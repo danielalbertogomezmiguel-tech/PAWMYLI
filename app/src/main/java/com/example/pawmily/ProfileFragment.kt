@@ -97,7 +97,7 @@ class ProfileFragment : Fragment() {
         setSwitchChecked(effectiveNotificationsEnabled())
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val appts = RemotePetRepository.listMyAppointments(forceRefresh = true)
+                val appts = RemotePetRepository.listMyAppointments(forceRefresh = false)
                 InboxStore.syncFromAppointments(requireContext(), appts)
                 view?.findViewById<TextView>(R.id.tvInboxBadge)?.text =
                     InboxStore.unreadCount(requireContext()).let { n ->

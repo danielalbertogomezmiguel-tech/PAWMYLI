@@ -94,7 +94,7 @@ class HomeFragment : Fragment(), PetsSyncBus.Listener {
         refreshPetInfo(force = false)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val appts = RemotePetRepository.listMyAppointments(forceRefresh = true)
+                val appts = RemotePetRepository.listMyAppointments(forceRefresh = false)
                 InboxStore.syncFromAppointments(requireContext(), appts)
             } catch (_: Exception) {
             }
@@ -232,18 +232,18 @@ class HomeFragment : Fragment(), PetsSyncBus.Listener {
         summaryPetBreed.text = pet.breed
         summaryPetDetails.text = formatPetDetails(pet)
 
-        val savedUri = sessionManager.getPetImageUri(pet.id)
+        val savedUri = sessionManager.getPetImageUri(pet.id, pet.backendId)
         if (savedUri != null) {
             try {
                 summaryPetImage.setImageURI(Uri.parse(savedUri))
             } catch (_: Exception) {
                 viewLifecycleOwner.lifecycleScope.launch {
-                    PetImageLoader.loadInto(summaryPetImage, pet.imageUrl)
+                    PetImageLoader.loadInto(summaryPetImage, pet.imageUrl, cacheKey = pet.backendId ?: pet.id)
                 }
             }
         } else {
             viewLifecycleOwner.lifecycleScope.launch {
-                PetImageLoader.loadInto(summaryPetImage, pet.imageUrl)
+                PetImageLoader.loadInto(summaryPetImage, pet.imageUrl, cacheKey = pet.backendId ?: pet.id)
             }
         }
 

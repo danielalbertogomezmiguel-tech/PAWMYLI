@@ -1,10 +1,11 @@
 package com.example.pawmily
 
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.pawmily.databinding.ActivityMedicalReportBinding
+import kotlinx.coroutines.launch
 
 class MedicalReportActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMedicalReportBinding
@@ -16,18 +17,20 @@ class MedicalReportActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
 
-        val petName = intent.getStringExtra("PET_NAME") ?: "Mascota"
-        val date = intent.getStringExtra("RECORD_DATE") ?: ""
-        val doctor = intent.getStringExtra("RECORD_DOCTOR") ?: ""
-        val reason = intent.getStringExtra("RECORD_REASON") ?: ""
-        val diagnosis = intent.getStringExtra("RECORD_DIAGNOSIS") ?: ""
-        val treatment = intent.getStringExtra("RECORD_TREATMENT") ?: ""
-        val medication = intent.getStringExtra("RECORD_MEDICATION").orEmpty()
-        val observations = intent.getStringExtra("RECORD_OBSERVATIONS").orEmpty()
-        val followUp = intent.getStringExtra("RECORD_FOLLOW_UP").orEmpty()
-        val number = intent.getStringExtra("RECORD_NUMBER").orEmpty()
-        val type = intent.getStringExtra("RECORD_TYPE").orEmpty()
-        val petImageUri = intent.getStringExtra("PET_IMAGE_URI")
+        val draft = MedicalReportDraft.current
+        val petName = draft?.petName ?: intent.getStringExtra("PET_NAME") ?: "Mascota"
+        val date = draft?.date ?: intent.getStringExtra("RECORD_DATE").orEmpty()
+        val doctor = draft?.doctor ?: intent.getStringExtra("RECORD_DOCTOR").orEmpty()
+        val reason = draft?.reason ?: intent.getStringExtra("RECORD_REASON").orEmpty()
+        val diagnosis = draft?.diagnosis ?: intent.getStringExtra("RECORD_DIAGNOSIS").orEmpty()
+        val treatment = draft?.treatment ?: intent.getStringExtra("RECORD_TREATMENT").orEmpty()
+        val medication = draft?.medication ?: intent.getStringExtra("RECORD_MEDICATION").orEmpty()
+        val observations = draft?.observations ?: intent.getStringExtra("RECORD_OBSERVATIONS").orEmpty()
+        val followUp = draft?.followUp ?: intent.getStringExtra("RECORD_FOLLOW_UP").orEmpty()
+        val number = draft?.number ?: intent.getStringExtra("RECORD_NUMBER").orEmpty()
+        val type = draft?.type ?: intent.getStringExtra("RECORD_TYPE").orEmpty()
+        val petId = draft?.petId ?: intent.getStringExtra("PET_ID")
+        val petBackendId = draft?.petBackendId ?: intent.getStringExtra("PET_BACKEND_ID")
 
         binding.tvReportHeader.text = listOf(date, doctor).filter { it.isNotBlank() }.joinToString(" - ")
         binding.tvPetNameReport.text = petName
@@ -57,10 +60,18 @@ class MedicalReportActivity : AppCompatActivity() {
         binding.tvFollowUpText.visibility =
             if (followUp.isBlank()) View.GONE else View.VISIBLE
 
-        if (petImageUri != null) {
-            try {
-                binding.ivPet.setImageURI(Uri.parse(petImageUri))
-            } catch (_: Exception) {
+        lifecycleScope.launch {
+            runCatching {
+                val session = SessionManager(this@MedicalReportActivity)
+                val source = session.getPetImageUri(petId, petBackendId)
+                    ?: PetsMemoryCache.find(petId)?.imageUrl
+                    ?: PetsMemoryCache.find(petBackendId)?.imageUrl
+                if (isFinishing || isDestroyed) return@runCatching
+                PetImageLoader.loadInto(
+                    binding.ivPet,
+                    source,
+                    cacheKey = petId ?: petBackendId,
+                )
             }
         }
     }

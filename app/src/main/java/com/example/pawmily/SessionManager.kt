@@ -69,8 +69,13 @@ class SessionManager(context: Context) : TokenProvider {
         prefs.edit().putString(KEY_PET_IMAGE_URI + "_" + petId, uri).apply()
     }
 
-    fun getPetImageUri(petId: String): String? {
-        return prefs.getString(KEY_PET_IMAGE_URI + "_" + petId, null)
+    fun getPetImageUri(vararg petIds: String?): String? {
+        for (petId in petIds) {
+            if (petId.isNullOrBlank()) continue
+            val uri = prefs.getString(KEY_PET_IMAGE_URI + "_" + petId, null)
+            if (!uri.isNullOrBlank()) return uri
+        }
+        return null
     }
 
     fun saveAuthSession(accessToken: String, user: UserDto, refreshToken: String? = null) {
