@@ -6,13 +6,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Local "correo" / inbox for clinic notifications (appointment changes, requests).
- * Survives offline; no push server required for school demo.
+ * Local "correo" / inbox for clinic notifications (appointment changes, prescriptions).
+ * Survives offline; merges server ClinicMessage rows when online.
  */
 object InboxStore {
     private const val PREFS = "PawMilyInbox"
     private const val KEY_MESSAGES = "messages"
     private const val KEY_APPT_SNAPSHOT = "appt_status_snapshot"
+    private const val KEY_SYNCED_SERVER_IDS = "synced_server_ids"
     private const val MAX = 80
 
     data class Message(
@@ -21,6 +22,15 @@ object InboxStore {
         val body: String,
         val createdAtMs: Long,
         val read: Boolean,
+        val patientId: String? = null,
+        val recordId: String? = null,
+        val type: String? = null,
+        val medication: String? = null,
+        val appointmentId: String? = null,
+        val suggestedDate: String? = null,
+        val suggestedTime: String? = null,
+        val action: String? = null,
+        val outcome: String? = null,
     )
 
     private fun prefs(context: Context): SharedPreferences =
@@ -42,6 +52,15 @@ object InboxStore {
                             body = o.getString("body"),
                             createdAtMs = o.getLong("createdAtMs"),
                             read = o.optBoolean("read", false),
+                            patientId = o.optString("patientId").takeIf { it.isNotBlank() },
+                            recordId = o.optString("recordId").takeIf { it.isNotBlank() },
+                            type = o.optString("type").takeIf { it.isNotBlank() },
+                            medication = o.optString("medication").takeIf { it.isNotBlank() },
+                            appointmentId = o.optString("appointmentId").takeIf { it.isNotBlank() },
+                            suggestedDate = o.optString("suggestedDate").takeIf { it.isNotBlank() },
+                            suggestedTime = o.optString("suggestedTime").takeIf { it.isNotBlank() },
+                            action = o.optString("action").takeIf { it.isNotBlank() },
+                            outcome = o.optString("outcome").takeIf { it.isNotBlank() },
                         )
                     )
                 }
@@ -51,25 +70,115 @@ object InboxStore {
         }
     }
 
-    fun add(context: Context, title: String, body: String) {
+    fun add(
+        context: Context,
+        title: String,
+        body: String,
+        id: String? = null,
+        patientId: String? = null,
+        recordId: String? = null,
+        type: String? = null,
+        medication: String? = null,
+        notify: Boolean = true,
+    ) {
         val messages = list(context).toMutableList()
+        val msgId = id ?: "msg_${System.currentTimeMillis()}_${messages.size}"
+        if (messages.any { it.id == msgId }) return
         messages.add(
             0,
             Message(
-                id = "msg_${System.currentTimeMillis()}_${messages.size}",
+                id = msgId,
                 title = title,
                 body = body,
                 createdAtMs = System.currentTimeMillis(),
                 read = false,
+                patientId = patientId,
+                recordId = recordId,
+                type = type,
+                medication = medication,
             )
         )
         while (messages.size > MAX) messages.removeAt(messages.lastIndex)
         save(context, messages)
-        ReminderNotifier.notifyInbox(context, title, body)
+        if (notify) ReminderNotifier.notifyInbox(context, title, body)
     }
 
     fun markAllRead(context: Context) {
         save(context, list(context).map { it.copy(read = true) })
+    }
+
+    /** Optimistically clear action buttons for every local row of this appointment. */
+    fun resolveAppointment(
+        context: Context,
+        appointmentId: String,
+        outcome: String,
+        markReadId: String? = null,
+    ) {
+        val next = list(context).map { msg ->
+            if (msg.appointmentId != appointmentId) {
+                if (markReadId != null && msg.id == markReadId) msg.copy(read = true) else msg
+            } else {
+                msg.copy(
+                    action = "none",
+                    outcome = outcome,
+                    read = if (markReadId != null && msg.id == markReadId) true else msg.read,
+                )
+            }
+        }
+        save(context, next)
+    }
+
+    /** Merge server clinic messages into local inbox (idempotent by server id). */
+    fun syncFromClinicMessages(context: Context, messages: List<ClinicMessageDto>) {
+        val prefs = prefs(context)
+        val synced = prefs.getStringSet(KEY_SYNCED_SERVER_IDS, emptySet())?.toMutableSet()
+            ?: mutableSetOf()
+        val local = list(context).toMutableList()
+        messages.forEach { m ->
+            val payload = m.payload
+            val patientId = m.patientId ?: payload?.get("patientId")?.toString()
+            val recordId = payload?.get("recordId")?.toString()
+            val medication = payload?.get("medication")?.toString()
+            val appointmentId = payload?.get("appointmentId")?.toString()
+            val suggestedDate = payload?.get("date")?.toString()
+            val suggestedTime = payload?.get("time")?.toString()
+            val action = payload?.get("action")?.toString()
+            val outcome = payload?.get("outcome")?.toString()
+            val createdMs = runCatching {
+                java.time.Instant.parse(m.createdAt).toEpochMilli()
+            }.getOrElse { System.currentTimeMillis() }
+            val idx = local.indexOfFirst { it.id == m.id }
+            val isNew = idx < 0
+            val msg = Message(
+                id = m.id,
+                title = m.title,
+                body = m.body,
+                createdAtMs = if (isNew) createdMs else local[idx].createdAtMs,
+                read = if (isNew) !m.readAt.isNullOrBlank() else local[idx].read,
+                patientId = patientId,
+                recordId = recordId,
+                type = m.type,
+                medication = medication,
+                appointmentId = appointmentId,
+                suggestedDate = suggestedDate,
+                suggestedTime = suggestedTime,
+                action = action,
+                outcome = outcome,
+            )
+            if (isNew) {
+                local.add(0, msg)
+                if (m.readAt.isNullOrBlank()) {
+                    ReminderNotifier.notifyInbox(context, m.title, m.body)
+                }
+            } else {
+                local[idx] = msg
+            }
+            synced.add(m.id)
+        }
+        while (local.size > MAX) local.removeAt(local.lastIndex)
+        save(context, local)
+        val store = if (synced.size > 200) synced.toList().takeLast(120).toSet() else synced
+        prefs.edit().putStringSet(KEY_SYNCED_SERVER_IDS, store).apply()
     }
 
     /**
@@ -117,7 +226,6 @@ object InboxStore {
                 }
             }
         }
-        // Detect appointments that disappeared from the active list (soft-deleted filtered out).
         val vanished = mutableListOf<String>()
         prev.keys().forEach { id ->
             if (!next.has(id)) {
@@ -153,6 +261,15 @@ object InboxStore {
                     .put("body", m.body)
                     .put("createdAtMs", m.createdAtMs)
                     .put("read", m.read)
+                    .put("patientId", m.patientId)
+                    .put("recordId", m.recordId)
+                    .put("type", m.type)
+                    .put("medication", m.medication)
+                    .put("appointmentId", m.appointmentId)
+                    .put("suggestedDate", m.suggestedDate)
+                    .put("suggestedTime", m.suggestedTime)
+                    .put("action", m.action)
+                    .put("outcome", m.outcome)
             )
         }
         prefs(context).edit().putString(KEY_MESSAGES, arr.toString()).apply()

@@ -91,11 +91,15 @@ class HomeFragment : Fragment(), PetsSyncBus.Listener {
 
     override fun onResume() {
         super.onResume()
-        refreshPetInfo(force = false)
+        refreshPetInfo(force = LinkRefresh.isActive())
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val appts = RemotePetRepository.listMyAppointments(forceRefresh = false)
                 InboxStore.syncFromAppointments(requireContext(), appts)
+                runCatching {
+                    val inbox = RemotePetRepository.listInbox()
+                    InboxStore.syncFromClinicMessages(requireContext(), inbox)
+                }
             } catch (_: Exception) {
             }
         }

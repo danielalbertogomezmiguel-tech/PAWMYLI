@@ -23,6 +23,7 @@ object MedicalReportDraft {
         val type: String = "",
         val petId: String? = null,
         val petBackendId: String? = null,
+        val recordId: String? = null,
     )
 
     @Volatile

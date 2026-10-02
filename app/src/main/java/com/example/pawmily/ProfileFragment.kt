@@ -99,6 +99,10 @@ class ProfileFragment : Fragment() {
             try {
                 val appts = RemotePetRepository.listMyAppointments(forceRefresh = false)
                 InboxStore.syncFromAppointments(requireContext(), appts)
+                runCatching {
+                    val inbox = RemotePetRepository.listInbox()
+                    InboxStore.syncFromClinicMessages(requireContext(), inbox)
+                }
                 view?.findViewById<TextView>(R.id.tvInboxBadge)?.text =
                     InboxStore.unreadCount(requireContext()).let { n ->
                         if (n > 0) getString(R.string.inbox_unread, n)

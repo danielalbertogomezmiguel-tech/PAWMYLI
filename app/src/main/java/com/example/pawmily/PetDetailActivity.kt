@@ -308,7 +308,8 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
                                 record.followUpTime?.takeIf { it.isNotBlank() }
                             ).joinToString(" · "),
                             consultationNumber = record.consultationNumber.orEmpty(),
-                            consultType = record.type.orEmpty()
+                            consultType = record.type.orEmpty(),
+                            recordId = record.id
                         )
                     }
                 } else {
@@ -348,7 +349,8 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
         observations: String = "",
         followUp: String = "",
         consultationNumber: String = "",
-        consultType: String = ""
+        consultType: String = "",
+        recordId: String? = null
     ) {
         val row = LayoutInflater.from(requireContext())
             .inflate(R.layout.item_medical_record, container, false)
@@ -373,6 +375,7 @@ class HistoryFragment : Fragment(R.layout.fragment_pet_history) {
                         type = consultType,
                         petId = pet.id,
                         petBackendId = pet.backendId,
+                        recordId = recordId,
                     )
                 )
             } catch (_: Exception) {

@@ -1,5 +1,6 @@
 package com.example.pawmily
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -31,6 +32,7 @@ class MedicalReportActivity : AppCompatActivity() {
         val type = draft?.type ?: intent.getStringExtra("RECORD_TYPE").orEmpty()
         val petId = draft?.petId ?: intent.getStringExtra("PET_ID")
         val petBackendId = draft?.petBackendId ?: intent.getStringExtra("PET_BACKEND_ID")
+        val recordId = draft?.recordId ?: intent.getStringExtra("RECORD_ID")
 
         binding.tvReportHeader.text = listOf(date, doctor).filter { it.isNotBlank() }.joinToString(" - ")
         binding.tvPetNameReport.text = petName
@@ -59,6 +61,21 @@ class MedicalReportActivity : AppCompatActivity() {
             if (followUp.isBlank()) "" else getString(R.string.report_follow_up, followUp)
         binding.tvFollowUpText.visibility =
             if (followUp.isBlank()) View.GONE else View.VISIBLE
+
+        val canSchedule =
+            medication.isNotBlank() &&
+                !petBackendId.isNullOrBlank() &&
+                !recordId.isNullOrBlank()
+        binding.btnScheduleMedication.visibility = if (canSchedule) View.VISIBLE else View.GONE
+        binding.btnScheduleMedication.setOnClickListener {
+            startActivity(
+                Intent(this, ScheduleMedicationActivity::class.java)
+                    .putExtra(ScheduleMedicationActivity.EXTRA_PET_BACKEND_ID, petBackendId)
+                    .putExtra(ScheduleMedicationActivity.EXTRA_PET_NAME, petName)
+                    .putExtra(ScheduleMedicationActivity.EXTRA_RECORD_ID, recordId)
+                    .putExtra(ScheduleMedicationActivity.EXTRA_MEDICATION, medication)
+            )
+        }
 
         lifecycleScope.launch {
             runCatching {

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_grey"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/schedule_med_title"
+            android:textColor="@color/primary_teal"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/btn_back"
+            android:src="@drawable/left"
+            app:tint="@color/primary_teal" />
+
+        <TextView
+            android:id="@+id/tvPetLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/ink"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvMedicationLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/accent_pink"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_first_dose_date"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvFirstDoseDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@color/white"
+            android:padding="14dp"
+            android:text="@string/select_date"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_first_dose_time"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvFirstDoseTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@color/white"
+            android:padding="14dp"
+            android:text="@string/select_time"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_interval_hours"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etIntervalHours"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@color/white"
+            android:hint="12"
+            android:inputType="number"
+            android:padding="14dp"
+            android:textColor="@color/ink" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_duration_days"
+            android:textColor="@color/primary_teal"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etDurationDays"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@color/white"
+            android:hint="7"
+            android:inputType="number"
+            android:padding="14dp"
+            android:textColor="@color/ink" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:backgroundTint="@color/primary_teal"
+            android:text="@string/btn_schedule_medication"
+            android:textColor="@color/white" />
+    </LinearLayout>
+</ScrollView>

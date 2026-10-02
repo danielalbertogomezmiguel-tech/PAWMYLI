@@ -35,6 +35,12 @@ object PetsSyncBus {
         listeners.toList().forEach { runCatching { it.onPetsShouldRefresh() } }
     }
 
+    /** Repaint open screens from the latest cache without wiping it. */
+    @Synchronized
+    fun notifyRepaint() {
+        listeners.toList().forEach { runCatching { it.onPetsShouldRefresh() } }
+    }
+
     /** Reminder priority / content changed — refresh pet summary without clearing pet list cache. */
     @Synchronized
     fun notifyRemindersChanged() {

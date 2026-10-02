@@ -1,11 +1,8 @@
 package com.example.pawmily
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -51,19 +48,6 @@ class BarcodeScanActivity : AppCompatActivity() {
         SessionManager(this)
 
         binding.btnBack.setOnClickListener { finish() }
-        binding.btnLinkCode.setOnClickListener {
-            linkAndOpen(binding.etBarcodeInput.text.toString())
-        }
-        binding.etBarcodeInput.setOnEditorActionListener { _, actionId, event ->
-            val isEnter = event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
-            if (actionId == EditorInfo.IME_ACTION_DONE || isEnter) {
-                linkAndOpen(binding.etBarcodeInput.text.toString())
-                true
-            } else {
-                false
-            }
-        }
-
         binding.barcodeScanner.decodeContinuous(scanCallback)
         ensureCameraPermission()
     }
@@ -97,7 +81,6 @@ class BarcodeScanActivity : AppCompatActivity() {
         val code = rawCode.trim()
         if (code.isEmpty() || linking) return
         linking = true
-        binding.btnLinkCode.isEnabled = false
 
         lifecycleScope.launch {
             try {
@@ -107,12 +90,10 @@ class BarcodeScanActivity : AppCompatActivity() {
             } catch (e: ApiException) {
                 Toast.makeText(this@BarcodeScanActivity, e.message, Toast.LENGTH_LONG).show()
                 linking = false
-                binding.btnLinkCode.isEnabled = true
                 if (hasCameraPermission()) binding.barcodeScanner.resume()
             } catch (_: Exception) {
                 Toast.makeText(this@BarcodeScanActivity, R.string.error_link_pet, Toast.LENGTH_SHORT).show()
                 linking = false
-                binding.btnLinkCode.isEnabled = true
                 if (hasCameraPermission()) binding.barcodeScanner.resume()
             }
         }

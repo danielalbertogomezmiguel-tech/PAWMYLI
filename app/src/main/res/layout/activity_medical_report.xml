@@ -232,6 +232,15 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textColor="@color/accent_pink" />
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnScheduleMedication"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="@color/primary_teal"
+                    android:text="@string/btn_schedule_from_report"
+                    android:textColor="@color/white"
+                    android:visibility="gone" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

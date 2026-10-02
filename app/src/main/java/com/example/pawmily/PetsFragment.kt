@@ -63,7 +63,7 @@ class PetsFragment : Fragment(), PetsSyncBus.Listener {
 
     override fun onResume() {
         super.onResume()
-        loadPets(force = false)
+        loadPets(force = LinkRefresh.isActive())
     }
 
     private fun loadPets(force: Boolean = false) {

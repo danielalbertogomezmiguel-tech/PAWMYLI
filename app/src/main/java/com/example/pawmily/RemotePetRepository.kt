@@ -22,6 +22,7 @@ object RemotePetRepository {
     /** Creates a pending link request; returns a human status message. */
     suspend fun linkPet(code: String): String {
         val request = requestLink(code)
+        LinkRefresh.arm()
         return "Solicitud enviada. Cuando la clínica la apruebe, la mascota aparecerá en tu lista."
             .let { base ->
                 val roleHint = when (request.requestedRole?.uppercase()) {
@@ -429,6 +430,44 @@ object RemotePetRepository {
         return result
     }
 
+    suspend fun acceptAppointment(appointmentId: String): AppointmentDto {
+        val result = unwrap(
+            RetrofitClient.instance.acceptAppointment(appointmentId, AppointmentAcceptDto()),
+            "Error al aceptar cita"
+        )
+        runCatching { listMyAppointments(forceRefresh = true) }
+        return result
+    }
+
+    suspend fun rejectAppointment(appointmentId: String, notes: String? = null): AppointmentDto {
+        val result = unwrap(
+            RetrofitClient.instance.rejectAppointment(
+                appointmentId,
+                AppointmentRejectDto(notes = notes)
+            ),
+            "Error al rechazar cita"
+        )
+        runCatching { listMyAppointments(forceRefresh = true) }
+        return result
+    }
+
+    suspend fun suggestAppointment(
+        appointmentId: String,
+        date: String,
+        time: String,
+        notes: String? = null
+    ): AppointmentDto {
+        val result = unwrap(
+            RetrofitClient.instance.suggestAppointment(
+                appointmentId,
+                AppointmentPostponeDto(date = date, time = time, notes = notes)
+            ),
+            "Error al sugerir fecha"
+        )
+        runCatching { listMyAppointments(forceRefresh = true) }
+        return result
+    }
+
     suspend fun getMedicalRecords(patientId: String): List<MedicalRecordDto> {
         medicalCache[patientId]?.takeIf { it.fresh() }?.let { return it.value }
         val list = unwrap(
@@ -437,6 +476,48 @@ object RemotePetRepository {
         )
         medicalCache[patientId] = Timed(System.currentTimeMillis(), list)
         return list
+    }
+
+    suspend fun listInbox(limit: Int = 50): List<ClinicMessageDto> {
+        val body = unwrap(
+            RetrofitClient.instance.listInbox(limit = limit),
+            "Error al cargar correo clínico"
+        )
+        return body.data
+    }
+
+    suspend fun markInboxRead(id: String): ClinicMessageDto {
+        return unwrap(RetrofitClient.instance.markInboxRead(id), "Error al marcar mensaje")
+    }
+
+    suspend fun markAllInboxRead(): Int {
+        return unwrap(RetrofitClient.instance.markAllInboxRead(), "Error al marcar mensajes").marked
+    }
+
+    suspend fun scheduleMedication(
+        petId: String,
+        recordId: String,
+        firstDoseDate: String,
+        firstDoseTime: String,
+        intervalHours: Int? = null,
+        durationDays: Int? = null
+    ): ScheduleMedicationResponse {
+        val result = unwrap(
+            RetrofitClient.instance.scheduleMedication(
+                petId,
+                recordId,
+                ScheduleMedicationRequest(
+                    firstDoseDate = firstDoseDate,
+                    firstDoseTime = firstDoseTime,
+                    intervalHours = intervalHours,
+                    durationDays = durationDays
+                )
+            ),
+            "Error al programar medicamento"
+        )
+        // Reminders changed for this pet
+        runCatching { listReminders(petId, forceRefresh = true) }
+        return result
     }
 
     suspend fun getBarcode(patientId: String): BarcodeDto {

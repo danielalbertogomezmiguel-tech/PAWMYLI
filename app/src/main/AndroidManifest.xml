@@ -30,6 +30,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,27 +40,42 @@
         </activity>
         <activity
             android:name=".LoginActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".RegisterActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".DashboardActivity"
-            android:exported="false" />
-        <activity android:name=".PetDetailActivity" />
-        <activity android:name=".MedicalReportActivity" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".PetDetailActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".MedicalReportActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".NewReminderActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".PetRemindersActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".RequestAppointmentActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".InboxActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ScheduleMedicationActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".BarcodeScanActivity"
             android:screenOrientation="portrait"

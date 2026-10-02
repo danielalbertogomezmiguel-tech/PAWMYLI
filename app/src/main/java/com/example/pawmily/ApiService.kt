@@ -158,6 +158,44 @@ interface ApiService {
         @Path("id") id: String,
         @Body body: AppointmentPostponeDto
     ): Response<AppointmentDto>
+
+    @POST("appointments/{id}/accept")
+    suspend fun acceptAppointment(
+        @Path("id") id: String,
+        @Body body: AppointmentAcceptDto = AppointmentAcceptDto()
+    ): Response<AppointmentDto>
+
+    @POST("appointments/{id}/reject")
+    suspend fun rejectAppointment(
+        @Path("id") id: String,
+        @Body body: AppointmentRejectDto = AppointmentRejectDto()
+    ): Response<AppointmentDto>
+
+    @POST("appointments/{id}/suggest")
+    suspend fun suggestAppointment(
+        @Path("id") id: String,
+        @Body body: AppointmentPostponeDto
+    ): Response<AppointmentDto>
+
+    // Clinical inbox (correo clínico)
+    @GET("inbox")
+    suspend fun listInbox(
+        @Query("limit") limit: Int = 50,
+        @Query("unreadOnly") unreadOnly: Boolean? = null
+    ): Response<InboxListResponse>
+
+    @POST("inbox/{id}/read")
+    suspend fun markInboxRead(@Path("id") id: String): Response<ClinicMessageDto>
+
+    @POST("inbox/read-all")
+    suspend fun markAllInboxRead(): Response<InboxMarkAllResponse>
+
+    @POST("patients/{id}/medical-records/{recordId}/schedule-medication")
+    suspend fun scheduleMedication(
+        @Path("id") petId: String,
+        @Path("recordId") recordId: String,
+        @Body body: ScheduleMedicationRequest
+    ): Response<ScheduleMedicationResponse>
 }
 
 data class LoginRequest(
@@ -504,10 +542,52 @@ data class AppointmentPostponeDto(
     val notes: String? = null
 )
 
+data class AppointmentAcceptDto(
+    val date: String? = null,
+    val time: String? = null,
+    val notes: String? = null
+)
+
+data class AppointmentRejectDto(
+    val notes: String? = null
+)
+
 data class BarcodeDto(
     val code: String? = null,
     val format: String? = null,
     val imageUrl: String? = null
+)
+
+data class ClinicMessageDto(
+    val id: String,
+    val userId: String? = null,
+    val patientId: String? = null,
+    val type: String? = null,
+    val title: String,
+    val body: String,
+    val payload: Map<String, Any?>? = null,
+    val readAt: String? = null,
+    val createdAt: String? = null
+)
+
+data class InboxListResponse(
+    val data: List<ClinicMessageDto> = emptyList()
+)
+
+data class InboxMarkAllResponse(
+    val marked: Int = 0
+)
+
+data class ScheduleMedicationRequest(
+    val firstDoseDate: String,
+    val firstDoseTime: String,
+    val intervalHours: Int? = null,
+    val durationDays: Int? = null
+)
+
+data class ScheduleMedicationResponse(
+    val created: Int = 0,
+    val medication: String? = null
 )
 
 data class ApiErrorResponse(
