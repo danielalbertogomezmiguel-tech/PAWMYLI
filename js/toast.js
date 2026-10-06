@@ -91,8 +91,35 @@
         return el;
     }
 
+    const FLASH_KEY = "pawmily_flash";
+
+    function queue(opts) {
+        const options = typeof opts === "string" ? { message: opts } : opts || {};
+        try {
+            sessionStorage.setItem(FLASH_KEY, JSON.stringify(options));
+        } catch (_) {}
+    }
+
+    function consume() {
+        let raw = null;
+        try {
+            raw = sessionStorage.getItem(FLASH_KEY);
+            if (raw) sessionStorage.removeItem(FLASH_KEY);
+        } catch (_) {
+            return null;
+        }
+        if (!raw) return null;
+        try {
+            return show(JSON.parse(raw));
+        } catch (_) {
+            return null;
+        }
+    }
+
     global.PawToast = {
         show,
+        queue,
+        consume,
         success: (title, message, duration) =>
             show({ type: "success", title, message, duration }),
         error: (title, message, duration) =>

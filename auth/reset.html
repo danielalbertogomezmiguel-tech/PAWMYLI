@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restablecer contraseña — PawMily</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="../css/toast.css">
     <link rel="stylesheet" href="auth.css">
 </head>
 <body>
@@ -46,6 +47,7 @@
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/toast.js"></script>
 <script>
 (function () {
     const params = new URLSearchParams(location.search);
@@ -61,15 +63,19 @@
             const password = document.getElementById("password").value;
             const confirm = document.getElementById("passwordConfirm").value;
             if (password !== confirm) {
-                alert("Las contraseñas no coinciden.");
+                PawToast.error("Contraseña", "Las contraseñas no coinciden.");
                 return;
             }
             try {
                 await PawApi.api.confirmPasswordReset(token, password);
-                alert("Contraseña actualizada. Ya puedes iniciar sesión.");
+                PawToast.queue({
+                    type: "success",
+                    title: "Contraseña actualizada",
+                    message: "Ya puedes iniciar sesión.",
+                });
                 location.href = "login.html";
             } catch (err) {
-                alert(err.message || "No se pudo restablecer.");
+                PawToast.error("Contraseña", err.message || "No se pudo restablecer.");
             }
         });
     } else {
@@ -77,9 +83,9 @@
             e.preventDefault();
             try {
                 await PawApi.api.requestPasswordReset(document.getElementById("correo").value.trim());
-                alert("Si el correo existe, enviamos un enlace de restablecimiento.");
+                PawToast.success("Correo enviado", "Si el correo existe, enviamos un enlace de restablecimiento.");
             } catch (err) {
-                alert(err.message || "No se pudo enviar el correo.");
+                PawToast.error("Correo", err.message || "No se pudo enviar el correo.");
             }
         });
     }

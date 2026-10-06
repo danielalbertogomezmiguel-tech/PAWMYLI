@@ -324,15 +324,27 @@ function mostrarDetalleConsulta(item) {
 
 async function programarMedicamentoDesdeConsulta(item) {
     if (!paciente || !paciente.id || !item || !item.id) return;
-    const firstDoseDate = prompt(
+    const firstDoseDate = await PawUi.prompt(
         "Fecha de la primera toma (AAAA-MM-DD):",
-        item.fecha || hoyISOLocal()
+        item.fecha || hoyISOLocal(),
+        { title: "Programar tomas", inputLabel: "Fecha" }
     );
     if (!firstDoseDate) return;
-    const firstDoseTime = prompt("Hora de la primera toma (HH:MM):", "09:00");
+    const firstDoseTime = await PawUi.prompt("Hora de la primera toma (HH:MM):", "09:00", {
+        title: "Programar tomas",
+        inputLabel: "Hora",
+    });
     if (!firstDoseTime) return;
-    const intervalRaw = prompt("Horas entre tomas (ej. 8, 12, 24):", "12");
-    const durationRaw = prompt("Días de tratamiento:", "7");
+    const intervalRaw = await PawUi.prompt("Horas entre tomas (ej. 8, 12, 24):", "12", {
+        title: "Programar tomas",
+        inputLabel: "Intervalo",
+    });
+    if (intervalRaw == null) return;
+    const durationRaw = await PawUi.prompt("Días de tratamiento:", "7", {
+        title: "Programar tomas",
+        inputLabel: "Días",
+    });
+    if (durationRaw == null) return;
     const intervalHours = Number(intervalRaw);
     const durationDays = Number(durationRaw);
     try {
@@ -342,13 +354,14 @@ async function programarMedicamentoDesdeConsulta(item) {
             intervalHours: Number.isFinite(intervalHours) && intervalHours > 0 ? intervalHours : undefined,
             durationDays: Number.isFinite(durationDays) && durationDays > 0 ? durationDays : undefined,
         });
-        alert(
+        PawToast.success(
+            "Recordatorios",
             `Listo: se crearon ${result.created || 0} recordatorios de ${
                 result.medication || "medicamento"
             }.`
         );
     } catch (err) {
-        alert((err && err.message) || "No se pudieron programar las tomas");
+        PawToast.error("Recordatorios", (err && err.message) || "No se pudieron programar las tomas");
     }
 }
 
@@ -614,26 +627,35 @@ function cargarPerfil() {
         const linked = (paciente.linkStatus || "") === "LINKED";
         btnUnlink.hidden = !(isVet && linked);
         btnUnlink.onclick = async () => {
-            const ok = window.confirm(
-                "¿Desvincular esta mascota del usuario?\n\n" +
-                    "La mascota seguirá en el sistema veterinario con su historial y datos médicos. " +
-                    "Solo se elimina la relación con el usuario; no se borra la mascota."
+            const ok = await PawUi.confirm(
+                "La mascota seguirá en el sistema veterinario con su historial y datos médicos. Solo se elimina la relación con el usuario; no se borra la mascota.",
+                { title: "¿Desvincular esta mascota del usuario?", confirmLabel: "Desvincular" }
             );
             if (!ok) return;
             btnUnlink.disabled = true;
             try {
                 await PawApi.api.unlinkPatient(paciente.id);
                 await refrescarPaciente();
-                alert("Mascota desvinculada. Sigue disponible en tu listado de pacientes.");
+                PawToast.success(
+                    "Desvinculada",
+                    "Mascota desvinculada. Sigue disponible en tu listado de pacientes."
+                );
             } catch (err) {
-                alert(err.message || "No se pudo desvincular.");
+                PawToast.error("Desvincular", err.message || "No se pudo desvincular.");
             } finally {
                 btnUnlink.disabled = false;
             }
         };
     }
     document.getElementById("especie").textContent = paciente.especie;
-    document.getElementById("raza").textContent = paciente.raza;
+    const datoRaza = document.getElementById("datoRaza");
+    const valorDetalle = String(paciente.raza || "").trim();
+    if (datoRaza) {
+        datoRaza.hidden = !valorDetalle;
+        const etiqueta = document.getElementById("etiquetaRaza");
+        if (etiqueta) etiqueta.textContent = PawSpecies.detailLabel(paciente.especie);
+    }
+    document.getElementById("raza").textContent = valorDetalle;
     document.getElementById("edad").textContent = paciente.edad;
     document.getElementById("sexo").textContent = paciente.sexo;
     document.getElementById("peso").textContent = paciente.peso || "—";
@@ -772,18 +794,59 @@ document.getElementById("btnDescargarBarcode").addEventListener("click", () => {
     a.click();
 });
 
-document.getElementById("btnImprimirBarcode").addEventListener("click", () => {
-    const code = paciente?.codigo || "";
-    const src = document.getElementById("barcodeImg").src;
-    const w = window.open("", "_blank");
-    w.document.write(
-        `<html><head><title>${code}</title></head><body style="text-align:center;font-family:sans-serif;">` +
-            `<h2>${code}</h2><img src="${src}" style="max-width:90%;"><script>window.onload=()=>window.print()<\\/script></body></html>`
-    );
-    w.document.close();
+document.getElementById("btnImprimirBarcode").addEventListener("click", async () => {
+    const btn = document.getElementById("btnImprimirBarcode");
+    const img = document.getElementById("barcodeImg");
+    const code = paciente?.codigo || paciente?.barcodePayload || "";
+    if (!img || !paciente?.id) return;
+    let imagen = img.src || "";
+    if (imagen.indexOf("data:") !== 0) {
+        try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width || 300;
+            canvas.height = img.naturalHeight || img.height || 80;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("canvas");
+            ctx.drawImage(img, 0, 0);
+            imagen = canvas.toDataURL("image/png");
+        } catch (_) {
+            imagen = "";
+        }
+    }
+    if (!imagen || imagen.indexOf("data:") !== 0) {
+        PawToast.error("Correo", "No se pudo preparar la imagen del código de barras.");
+        return;
+    }
+    btn.disabled = true;
+    try {
+        const result = await PawApi.api.emailBarcode(paciente.id, imagen);
+        if (result && result.delivered) {
+            PawToast.success("Código enviado", "La imagen se envió al correo.");
+        } else {
+            PawToast.warning("Correo no enviado", "El servidor de correo no está configurado.");
+        }
+    } catch (err) {
+        PawToast.error("Correo no enviado", (err && err.message) || "No se pudo enviar la imagen.");
+    } finally {
+        btn.disabled = false;
+    }
 });
 
 const modal = document.getElementById("modalEditar");
+const selectEditEspecie = document.getElementById("editEspecie");
+const inputEditEspecieOtra = document.getElementById("editEspecieOtra");
+const inputEditRaza = document.getElementById("editRaza");
+const inputEditTipo = document.getElementById("editTipo");
+PawSpecies.fillSelect(selectEditEspecie);
+const syncEditSpecies = PawSpecies.bind(
+    selectEditEspecie,
+    document.getElementById("filaEditEspecieOtra"),
+    document.getElementById("campoEditRaza"),
+    inputEditRaza,
+    inputEditEspecieOtra,
+    document.getElementById("campoEditTipo"),
+    inputEditTipo
+);
 
 /** Keep full age labels like "2 años 3 meses"; only append "años" for bare numbers. */
 function normalizeAgeForSave(raw) {
@@ -800,8 +863,11 @@ function normalizeAgeForSave(raw) {
 document.querySelector(".editar").addEventListener("click", () => {
     if (isOwner) return;
     document.getElementById("editNombre").value = paciente.nombre;
-    document.getElementById("editEspecie").value = paciente.especie;
-    document.getElementById("editRaza").value = paciente.raza;
+    PawSpecies.applySpecies(selectEditEspecie, inputEditEspecieOtra, paciente.especie);
+    syncEditSpecies();
+    const especieActual = PawSpecies.readSpecies(selectEditEspecie, inputEditEspecieOtra);
+    if (PawSpecies.requiresBreed(especieActual)) inputEditRaza.value = paciente.raza || "";
+    if (PawSpecies.usesType(especieActual)) inputEditTipo.value = paciente.raza || "";
     document.getElementById("editEdad").value = paciente.edad
         ? String(paciente.edad).trim()
         : "";
@@ -823,10 +889,13 @@ let updatingPaciente = false;
 document.getElementById("formEditar").addEventListener("submit", async function (e) {
     e.preventDefault();
     if (updatingPaciente) return;
+    const species = PawSpecies.readSpecies(selectEditEspecie, inputEditEspecieOtra);
+    const askBreed = PawSpecies.requiresBreed(species);
+    const askType = PawSpecies.usesType(species);
     const body = {
         name: document.getElementById("editNombre").value.trim(),
-        species: document.getElementById("editEspecie").value.trim(),
-        breed: document.getElementById("editRaza").value.trim(),
+        species,
+        breed: askBreed ? inputEditRaza.value.trim() : askType ? inputEditTipo.value.trim() : "",
         age: normalizeAgeForSave(document.getElementById("editEdad").value),
         sex: document.getElementById("editSexo").value,
         weight: document.getElementById("editPeso").value
@@ -840,6 +909,16 @@ document.getElementById("formEditar").addEventListener("submit", async function 
         photo: paciente.foto,
     };
 
+    if (!body.name || !body.species || (askBreed && !body.breed)) {
+        PawToast.warning(
+            "Campos incompletos",
+            askBreed && body.species
+                ? "Indica la raza de la mascota."
+                : "Selecciona la especie."
+        );
+        return;
+    }
+
     const submitBtn = this.querySelector("button[type='submit'], button.guardar");
     const originalLabel = submitBtn ? submitBtn.textContent : "";
     updatingPaciente = true;
@@ -851,9 +930,9 @@ document.getElementById("formEditar").addEventListener("submit", async function 
         await PawApi.api.updatePatient(pacienteId, body);
         await refrescarPaciente();
         modal.classList.remove("activo");
-        alert("Paciente actualizado correctamente.");
+        PawToast.success("Paciente", "Paciente actualizado correctamente.");
     } catch (err) {
-        alert(err.message || "No se pudo actualizar.");
+        PawToast.error("Paciente", err.message || "No se pudo actualizar.");
     } finally {
         updatingPaciente = false;
         if (submitBtn) {
@@ -984,13 +1063,14 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
         this.reset();
         showConsultaTipoSection("GENERAL");
         modalConsulta.classList.remove("activo");
-        alert(
+        PawToast.success(
+            "Consulta",
             created && created.consultationNumber
                 ? "Consulta registrada: " + created.consultationNumber
                 : "Consulta registrada correctamente."
         );
     } catch (err) {
-        alert(err.message || "No se pudo registrar la consulta.");
+        PawToast.error("Consulta", err.message || "No se pudo registrar la consulta.");
     } finally {
         creatingConsulta = false;
         if (submitBtn) {
@@ -1010,16 +1090,16 @@ document.getElementById("formDieta").addEventListener("submit", async function (
     if (isOwner) return;
     const payload = buildFeedingPayload();
     if (!payload.meals.length) {
-        alert("Agrega al menos una comida con etiqueta y hora.");
+        PawToast.warning("Alimentación", "Agrega al menos una comida con etiqueta y hora.");
         return;
     }
 
     try {
         await PawApi.api.updateFeeding(pacienteId, payload);
         await refrescarPaciente();
-        alert("Plan de alimentación guardado.");
+        PawToast.success("Alimentación", "Plan de alimentación guardado.");
     } catch (err) {
-        alert(err.message || "No se pudo guardar el plan.");
+        PawToast.error("Alimentación", err.message || "No se pudo guardar el plan.");
     }
 });
 

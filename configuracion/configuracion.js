@@ -171,8 +171,12 @@ document.getElementById("foto").addEventListener("change", async function (e) {
     reader.readAsDataURL(file);
 });
 
-document.getElementById("cerrarSesionPerfil").addEventListener("click", () => {
-    if (confirm("¿Desea cerrar sesión?")) PawApi.logout();
+document.getElementById("cerrarSesionPerfil").addEventListener("click", async () => {
+    const ok = await PawUi.confirm("¿Desea cerrar sesión?", {
+        title: "Cerrar sesión",
+        confirmLabel: "Salir",
+    });
+    if (ok) PawApi.logout();
 });
 
 pintarSidebar();

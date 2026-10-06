@@ -57,7 +57,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 22px clamp(20px, 5vw, 56px);
+    padding: calc(22px + env(safe-area-inset-top, 0px)) clamp(20px, 5vw, 56px) 22px;
     color: var(--white);
 }
 

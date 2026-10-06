@@ -1,6 +1,7 @@
 if (!PawApi.requireAuth()) {
-    throw new Error("Auth required");
-}
+    // redirected to login — do not throw (avoids red console / blank flash)
+} else {
+(function () {
 
 const meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -54,8 +55,20 @@ function esFechaPasada(isoDate) {
     return String(isoDate || "") < hoyISO();
 }
 
-function esEliminada(cita) {
-    return /eliminad|cancelad/i.test(String(cita.status || ""));
+function statusDisplay(cita) {
+    const raw = String(cita.status || "Programada");
+    // Legacy "Eliminada" is shown and filtered as Cancelada.
+    if (/eliminad/i.test(raw)) return "Cancelada";
+    return raw;
+}
+
+/** Vet should only accept owner proposals; web-created ones wait for the owner. */
+function puedeVetAceptar(cita) {
+    if (String(cita.status || "").toLowerCase() !== "solicitada") return false;
+    const notes = String(cita.notes || "");
+    const tags = [...notes.matchAll(/\[Propuesta (vet|owner)\]/gi)];
+    if (!tags.length) return true; // classic owner request without tag
+    return /owner/i.test(tags[tags.length - 1][1]);
 }
 
 /** Map API status → filter bucket: pending | completed | cancelled */
@@ -68,8 +81,9 @@ function bucketEstado(cita) {
 }
 
 function pasaFiltro(cita) {
-    if (filtros.all) return true;
     const bucket = bucketEstado(cita);
+    // Grey ("all"): every status, including Cancelada / legacy Eliminada.
+    if (filtros.all) return true;
     if (bucket === "completed") return filtros.completed;
     if (bucket === "pending") return filtros.pending;
     if (bucket === "cancelled") return filtros.cancelled;
@@ -199,71 +213,56 @@ function mostrarCitas() {
         .filter((c) => c.date === fechaBuscar && pasaFiltro(c))
         .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
 
-    const eliminadas = citas
-        .filter((c) => esEliminada(c))
-        .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
-
     if (!delDia.length) {
         lista.innerHTML = `
         <div class="cita">
             <h3>No hay citas</h3>
             <p>No hay citas con los filtros seleccionados para este día.</p>
         </div>`;
-    } else {
-        delDia.forEach((cita) => {
-            const item = document.createElement("div");
-            const bucket = bucketEstado(cita);
-            item.className = "cita" + (bucket === "cancelled" ? " cita-cancelada-dia" : "");
-            const status = cita.status || "Programada";
-            const esSolicitada = String(status).toLowerCase() === "solicitada";
-            const puedeEliminar = bucket !== "cancelled";
-            item.innerHTML = `
-                <h3>${escapeHtml(cita.time)}</h3>
-                <p><strong>Mascota:</strong> ${escapeHtml(cita.petName)}</p>
-                <p><strong>Dueño:</strong> ${escapeHtml(cita.ownerName)}</p>
-                <p><strong>Estado:</strong> ${escapeHtml(status)}
-                    <span class="badge-estado ${bucket}">${
-                        bucket === "cancelled"
-                            ? "Cancelado"
-                            : bucket === "completed"
-                              ? "Completado"
-                              : "Pendiente"
-                    }</span>
-                </p>
-                <p>${escapeHtml(cita.notes || "")}</p>
-                ${cita.patientId ? "<p><em>Vinculada a expediente</em></p>" : ""}
-                ${esSolicitada && bucket !== "cancelled" ? '<button class="aceptar" type="button">Aceptar solicitud</button>' : ""}
-                ${puedeEliminar ? '<button class="eliminar" type="button">Eliminar</button>' : ""}`;
-            const btnAceptar = item.querySelector(".aceptar");
-            if (btnAceptar) {
-                btnAceptar.addEventListener("click", () => aceptarSolicitud(cita.id));
-            }
-            const btnEliminar = item.querySelector(".eliminar");
-            if (btnEliminar) {
-                btnEliminar.addEventListener("click", () => eliminarCita(cita.id));
-            }
-            lista.appendChild(item);
-        });
+        return;
     }
 
-    const listaElim = document.getElementById("listaEliminadas");
-    if (listaElim) {
-        listaElim.innerHTML = "";
-        if (!eliminadas.length) {
-            listaElim.innerHTML = `<div class="cita cita-eliminada"><p>Sin citas eliminadas este mes.</p></div>`;
-        } else {
-            eliminadas.slice(0, 30).forEach((cita) => {
-                const item = document.createElement("div");
-                item.className = "cita cita-eliminada";
-                item.innerHTML = `
-                    <h3>${escapeHtml(cita.date)} · ${escapeHtml(cita.time)}</h3>
-                    <p><strong>Mascota:</strong> ${escapeHtml(cita.petName)}</p>
-                    <p><strong>Dueño:</strong> ${escapeHtml(cita.ownerName)}</p>
-                    <p><span class="badge-eliminada">Eliminada</span></p>`;
-                listaElim.appendChild(item);
-            });
+    delDia.forEach((cita) => {
+        const item = document.createElement("div");
+        const bucket = bucketEstado(cita);
+        item.className = "cita" + (bucket === "cancelled" ? " cita-cancelada-dia" : "");
+        const status = statusDisplay(cita);
+        const esSolicitada = String(cita.status || "").toLowerCase() === "solicitada";
+        const puedeCancelar = bucket !== "cancelled";
+        const mostrarAceptar = puedeVetAceptar(cita) && bucket !== "cancelled";
+        item.innerHTML = `
+            <h3>${escapeHtml(cita.time)}</h3>
+            <p><strong>Mascota:</strong> ${escapeHtml(cita.petName)}</p>
+            <p><strong>Dueño:</strong> ${escapeHtml(cita.ownerName)}</p>
+            <p><strong>Estado:</strong> ${escapeHtml(status)}
+                <span class="badge-estado ${bucket}">${
+                    bucket === "cancelled"
+                        ? "Cancelado"
+                        : bucket === "completed"
+                          ? "Completado"
+                          : esSolicitada
+                            ? "Por aceptar"
+                            : "Pendiente"
+                }</span>
+            </p>
+            <p>${escapeHtml(cita.notes || "")}</p>
+            ${cita.patientId ? "<p><em>Vinculada a expediente</em></p>" : ""}
+            ${
+                mostrarAceptar
+                    ? '<button class="aceptar" type="button">Aceptar solicitud</button>'
+                    : ""
+            }
+            ${puedeCancelar ? '<button class="eliminar" type="button">Cancelar</button>' : ""}`;
+        const btnAceptar = item.querySelector(".aceptar");
+        if (btnAceptar) {
+            btnAceptar.addEventListener("click", () => aceptarSolicitud(cita.id));
         }
-    }
+        const btnEliminar = item.querySelector(".eliminar");
+        if (btnEliminar) {
+            btnEliminar.addEventListener("click", () => cancelarCita(cita.id));
+        }
+        lista.appendChild(item);
+    });
 }
 
 async function cargarPacientesSelect() {
@@ -300,28 +299,59 @@ async function cargarMes() {
     actualizarFormularioFecha();
 }
 
-async function aceptarSolicitud(id) {
-    if (!confirm("¿Aceptar esta solicitud y programar la cita?")) return;
-    try {
-        await PawApi.api.acceptAppointment(id, {});
-        alert("Solicitud aceptada. La cita queda programada.");
-        await cargarMes();
-    } catch (err) {
-        alert(err.message || "No se pudo aceptar la solicitud.");
+async function uiConfirm(message, title) {
+    if (window.PawUi && PawUi.confirm) {
+        return PawUi.confirm(message, { title: title || "Confirmar" });
+    }
+    return window.confirm(message);
+}
+
+function uiAlert(message, title) {
+    if (window.PawToast) {
+        const label = title || "Aviso";
+        const type = /error/i.test(label)
+            ? "error"
+            : /inválid|lectura/i.test(label)
+              ? "warning"
+              : "success";
+        PawToast.show({ type, title: label, message: message || "" });
+        return;
+    }
+    if (window.PawUi && PawUi.alert) {
+        return PawUi.alert(message, { title: title || "Aviso" });
     }
 }
 
-async function eliminarCita(id) {
-    if (!confirm("¿Eliminar esta cita? Quedará registrada como eliminada.")) return;
+async function aceptarSolicitud(id) {
+    const ok = await uiConfirm(
+        "¿Aceptar esta solicitud y programar la cita?",
+        "Aceptar solicitud"
+    );
+    if (!ok) return;
+    try {
+        await PawApi.api.acceptAppointment(id, {});
+        await uiAlert("Solicitud aceptada. La cita queda programada.", "Listo");
+        await cargarMes();
+    } catch (err) {
+        await uiAlert(err.message || "No se pudo aceptar la solicitud.", "Error");
+    }
+}
+
+async function cancelarCita(id) {
+    const ok = await uiConfirm(
+        "¿Cancelar esta cita? Quedará en el registro de citas canceladas.",
+        "Cancelar cita"
+    );
+    if (!ok) return;
     try {
         const removed = await PawApi.api.deleteAppointment(id);
-        alert(
-            `Cita eliminada: ${removed.petName || ""} (${removed.date || ""} ${removed.time || ""}).\n` +
-                "Aparece en el registro de citas eliminadas."
+        await uiAlert(
+            `Cita cancelada: ${removed.petName || ""} (${removed.date || ""} ${removed.time || ""}).`,
+            "Listo"
         );
         await cargarMes();
     } catch (err) {
-        alert(err.message || "No se pudo eliminar la cita.");
+        await uiAlert(err.message || "No se pudo cancelar la cita.", "Error");
     }
 }
 
@@ -361,11 +391,11 @@ formCita.addEventListener("submit", async (e) => {
 
     const dateVal = document.getElementById("fecha").value;
     if (esFechaPasada(dateVal)) {
-        alert("No se pueden crear citas en fechas pasadas.");
+        await uiAlert("No se pueden crear citas en fechas pasadas.", "Fecha inválida");
         return;
     }
     if (esFechaPasada(formatoFecha(diaSeleccionado))) {
-        alert("Solo visualización en fechas pasadas.");
+        await uiAlert("Solo visualización en fechas pasadas.", "Solo lectura");
         return;
     }
 
@@ -388,10 +418,11 @@ formCita.addEventListener("submit", async (e) => {
     }
     try {
         await PawApi.api.createAppointment(body);
-        alert(
+        await uiAlert(
             patientId
-                ? "Cita registrada y recordatorio de tipo cita creado."
-                : "Cita registrada correctamente."
+                ? "Propuesta enviada al dueño. Aparecerá como Programada cuando acepte en Correo."
+                : "Cita registrada correctamente.",
+            "Listo"
         );
         e.target.reset();
         pacienteSelect.value = "";
@@ -402,7 +433,7 @@ formCita.addEventListener("submit", async (e) => {
         numeroDia.textContent = d;
         await cargarMes();
     } catch (err) {
-        alert(err.message || "No se pudo registrar la cita.");
+        await uiAlert(err.message || "No se pudo registrar la cita.", "Error");
     } finally {
         creatingCita = false;
         if (submitBtn) {
@@ -421,3 +452,5 @@ actualizarFormularioFecha();
 Promise.all([cargarMes(), cargarPacientesSelect()]).catch((err) => {
     lista.innerHTML = `<div class="cita"><h3>Error</h3><p>${escapeHtml(err.message)}</p></div>`;
 });
+})();
+}

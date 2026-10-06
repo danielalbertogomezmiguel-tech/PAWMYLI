@@ -26,6 +26,20 @@ const contenedorVinculaciones = document.getElementById("contenedorVinculaciones
 const badgePendientes = document.getElementById("badgePendientes");
 const cerrarModal = document.querySelector(".cerrarModal");
 const formulario = document.getElementById("formMascota");
+const selectEspecie = document.getElementById("especie");
+const inputEspecieOtra = document.getElementById("especieOtra");
+const inputRaza = document.getElementById("raza");
+const inputTipo = document.getElementById("tipo");
+PawSpecies.fillSelect(selectEspecie);
+PawSpecies.bind(
+    selectEspecie,
+    document.getElementById("filaEspecieOtra"),
+    document.getElementById("campoRaza"),
+    inputRaza,
+    inputEspecieOtra,
+    document.getElementById("campoTipo"),
+    inputTipo
+);
 
 function toast(type, title, message) {
     if (window.PawToast) {
@@ -165,7 +179,11 @@ function mostrarPacientes(lista) {
                 <p style="font-size:14px;color:#8a9aa8;margin-bottom:6px;">Código: ${paciente.codigo}</p>
                 <div class="detalles">
                     <p><strong>Especie:</strong> ${paciente.especie}</p>
-                    <p><strong>Raza:</strong> ${paciente.raza}</p>
+                    ${
+                        paciente.raza
+                            ? `<p><strong>${PawSpecies.detailLabel(paciente.especie)}:</strong> ${paciente.raza}</p>`
+                            : ""
+                    }
                     <p><strong>Edad:</strong> ${paciente.edad}</p>
                     <p><strong>Sexo:</strong> ${paciente.sexo}</p>
                     <p><strong>Peso:</strong> ${paciente.peso || "—"}</p>
@@ -418,6 +436,65 @@ document.getElementById("btnVerExpediente").addEventListener("click", () => {
     if (ultimoCreadoId) abrirPerfil(ultimoCreadoId);
 });
 
+function descargarCodigo(img, code) {
+    const nombre = String(code || "codigo").replace(/[^\w.-]+/g, "_") + ".png";
+    const enlace = document.createElement("a");
+    enlace.download = nombre;
+    if (img.src && img.src.indexOf("data:") === 0) {
+        enlace.href = img.src;
+    } else {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width || 300;
+        canvas.height = img.naturalHeight || img.height || 80;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return "";
+        ctx.drawImage(img, 0, 0);
+        enlace.href = canvas.toDataURL("image/png");
+    }
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    return enlace.href;
+}
+
+document.getElementById("btnEnviarCodigo").addEventListener("click", async () => {
+    const btn = document.getElementById("btnEnviarCodigo");
+    const img = document.getElementById("exitoBarcode");
+    const code = (document.getElementById("exitoCodigo").textContent || "").trim();
+    if (!img || !img.src) return;
+    btn.disabled = true;
+    let imagen = "";
+    try {
+        imagen = descargarCodigo(img, code);
+    } catch (_) {
+        imagen = "";
+    }
+    try {
+        if (!imagen || imagen.indexOf("data:") !== 0) {
+            toast("error", "Código", "No se pudo preparar la imagen del código de barras.");
+            return;
+        }
+        if (!ultimoCreadoId) {
+            toast("warning", "Código descargado", "La imagen se guardó en tu equipo.");
+            return;
+        }
+        const result = await PawApi.api.emailBarcode(ultimoCreadoId, imagen);
+        if (result && result.delivered) {
+            toast("success", "Código enviado", "Se descargó la imagen y se envió el correo.");
+        } else {
+            toast(
+                "warning",
+                "Correo no enviado",
+                "La imagen se descargó. El servidor de correo no está configurado."
+            );
+        }
+    } catch (err) {
+        toast("error", "Correo no enviado", "La imagen se descargó. " + friendlyError(err));
+    } finally {
+        btn.disabled = false;
+    }
+});
+
 window.addEventListener("click", (e) => {
     if (e.target === modal) modal.classList.remove("activo");
     if (e.target === modalExito) modalExito.classList.remove("activo");
@@ -460,7 +537,11 @@ async function migrarCodigosSiVet() {
     const btn = document.getElementById("btnMigrarCodigos");
     if (!btn) return;
     btn.addEventListener("click", async () => {
-        if (!confirm("¿Reimprimir/migrar todos los códigos a formato seguro PAW-XXXXXX?")) return;
+        const ok = await PawUi.confirm(
+            "¿Reimprimir/migrar todos los códigos a formato seguro PAW-XXXXXX?",
+            { title: "Reimprimir códigos", confirmLabel: "Continuar" }
+        );
+        if (!ok) return;
         try {
             const result = await PawApi.api.migratePatientCodes();
             toast(
@@ -578,10 +659,13 @@ formulario.addEventListener("submit", async function (e) {
     const file = fotoInput && fotoInput.files && fotoInput.files[0];
 
     const pesoNum = pesoVal ? Number(String(pesoVal).replace(",", ".")) : NaN;
+    const species = PawSpecies.readSpecies(selectEspecie, inputEspecieOtra);
+    const askBreed = PawSpecies.requiresBreed(species);
+    const askType = PawSpecies.usesType(species);
     const body = {
         name: document.getElementById("nombre").value.trim(),
-        species: document.getElementById("especie").value.trim(),
-        breed: document.getElementById("raza").value.trim(),
+        species,
+        breed: askBreed ? inputRaza.value.trim() : askType ? inputTipo.value.trim() : "",
         age: ageLabel,
         sex: document.getElementById("sexo").value,
         ownerName: document.getElementById("propietario").value.trim(),
@@ -591,8 +675,14 @@ formulario.addEventListener("submit", async function (e) {
         photo: DEFAULT_FOTO,
     };
 
-    if (!body.name || !body.species || !body.breed || !body.age || !body.ownerName) {
-        toast("warning", "Campos incompletos", "Completa los datos obligatorios, incluyendo año y mes de nacimiento.");
+    if (!body.name || !body.species || !body.age || !body.ownerName || (askBreed && !body.breed)) {
+        toast(
+            "warning",
+            "Campos incompletos",
+            askBreed && body.species && !body.breed
+                ? "Indica la raza de la mascota."
+                : "Completa los datos obligatorios, incluyendo especie, año y mes de nacimiento."
+        );
         return;
     }
 

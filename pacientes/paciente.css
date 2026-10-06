@@ -660,10 +660,70 @@ header h1 {
     font-weight: 700;
 }
 
+.exito-codigo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.exito-codigo p {
+    margin: 0;
+    color: #1e4440;
+}
+
+.btn-icono-codigo {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: #2c5f5a;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icono-codigo:hover {
+    background: #1e4440;
+}
+
+.btn-icono-codigo:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.btn-icono-codigo .fa-envelope {
+    font-size: 16px;
+}
+
+.btn-icono-codigo .fa-download {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    font-size: 10px;
+    background: #fff;
+    color: #2c5f5a;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .fila {
     display: flex;
     gap: 16px;
     margin-bottom: 16px;
+}
+
+.fila[hidden],
+.fila div[hidden] {
+    display: none !important;
 }
 
 .fila div {

@@ -1,6 +1,8 @@
 if (!PawApi.requireAuth()) {
-    throw new Error("Auth required");
-}
+    // requireAuth already redirects to login — avoid throwing (breaks Live Server / console).
+} else {
+(function () {
+
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -35,13 +37,27 @@ function hoyISO() {
 
 function canActOnMessage(m, payload) {
     if (!payload || !payload.appointmentId) return false;
-    if (payload.action === "none" || payload.outcome === "accepted" || payload.outcome === "rejected") {
+    if (payload.action === "none") return false;
+    const outcome = String(payload.outcome || "").toLowerCase();
+    if (
+        outcome === "accepted" ||
+        outcome === "rejected" ||
+        outcome === "suggested" ||
+        outcome === "owner_confirmed"
+    ) {
         return false;
     }
-    return (
-        m.type === "appointment_request" ||
-        m.type === "appointment_update"
-    );
+    return m.type === "appointment_request" || m.type === "appointment_update";
+}
+
+function estadoLabel(payload) {
+    const outcome = String((payload && payload.outcome) || "").toLowerCase();
+    if (outcome === "accepted") return "Estado: Aceptada";
+    if (outcome === "rejected") return "Estado: Rechazada";
+    if (outcome === "suggested") return "Estado: Sugerencia enviada";
+    if (outcome === "owner_confirmed") return "Estado: Asistencia confirmada";
+    if (payload && payload.action === "none") return "Estado: Resuelta";
+    return "";
 }
 
 function detalleHtml(payload, body) {
@@ -64,9 +80,42 @@ function detalleHtml(payload, body) {
     )}</p>`;
 }
 
+async function uiConfirm(message, title) {
+    if (window.PawUi && PawUi.confirm) {
+        return PawUi.confirm(message, { title: title || "Confirmar" });
+    }
+    return window.confirm(message);
+}
+
+async function uiPrompt(message, initial, title, inputLabel) {
+    if (window.PawUi && PawUi.prompt) {
+        return PawUi.prompt(message, initial, {
+            title: title || "Ingresar",
+            inputLabel: inputLabel || "Valor",
+        });
+    }
+    return window.prompt(message, initial);
+}
+
+function uiAlert(message, title) {
+    if (window.PawToast) {
+        const label = title || "Aviso";
+        const type = /error/i.test(label) ? "error" : "success";
+        PawToast.show({ type, title: label, message: message || "" });
+        return;
+    }
+    if (window.PawUi && PawUi.alert) {
+        return PawUi.alert(message, { title: title || "Aviso" });
+    }
+}
+
 async function aceptarSolicitud(appointmentId, messageId) {
     if (!appointmentId) return;
-    if (!confirm("¿Aceptar esta solicitud y programar la cita como pendiente?")) return;
+    const ok = await uiConfirm(
+        "¿Aceptar esta solicitud y programar la cita como pendiente?",
+        "Aceptar cita"
+    );
+    if (!ok) return;
     try {
         await PawApi.api.acceptAppointment(appointmentId, {});
         if (messageId) {
@@ -75,16 +124,23 @@ async function aceptarSolicitud(appointmentId, messageId) {
             } catch (_) {}
         }
         await cargarCorreo();
-        alert("Solicitud aceptada. La cita quedó programada (Pendiente).");
+        await uiAlert("Solicitud aceptada. La cita quedó programada (Pendiente).", "Listo");
     } catch (err) {
-        alert((err && err.message) || "No se pudo aceptar");
+        await uiAlert((err && err.message) || "No se pudo aceptar", "Error");
     }
 }
 
 async function rechazarSolicitud(appointmentId, messageId) {
     if (!appointmentId) return;
-    if (!confirm("¿Rechazar esta solicitud de cita?")) return;
-    const notes = prompt("Motivo del rechazo (opcional):", "") || undefined;
+    const ok = await uiConfirm("¿Rechazar esta solicitud de cita?", "Rechazar cita");
+    if (!ok) return;
+    const notes = await uiPrompt(
+        "Motivo del rechazo (opcional)",
+        "",
+        "Motivo",
+        "Motivo"
+    );
+    if (notes === null) return;
     try {
         await PawApi.api.rejectAppointment(appointmentId, notes ? { notes } : {});
         if (messageId) {
@@ -93,18 +149,28 @@ async function rechazarSolicitud(appointmentId, messageId) {
             } catch (_) {}
         }
         await cargarCorreo();
-        alert("Solicitud rechazada. Se notificó a la otra parte.");
+        await uiAlert("Solicitud rechazada. Se notificó a la otra parte.", "Listo");
     } catch (err) {
-        alert((err && err.message) || "No se pudo rechazar");
+        await uiAlert((err && err.message) || "No se pudo rechazar", "Error");
     }
 }
 
 async function sugerirFecha(appointmentId, messageId, currentDate, currentTime) {
     if (!appointmentId) return;
-    const date = prompt("Nueva fecha sugerida (AAAA-MM-DD):", currentDate || hoyISO());
-    if (!date) return;
-    const time = prompt("Nueva hora sugerida (HH:MM):", currentTime || "09:00");
-    if (!time) return;
+    const date = await uiPrompt(
+        "Nueva fecha sugerida (AAAA-MM-DD)",
+        currentDate || hoyISO(),
+        "Sugerir fecha",
+        "Fecha"
+    );
+    if (date === null || !String(date).trim()) return;
+    const time = await uiPrompt(
+        "Nueva hora sugerida (HH:MM)",
+        currentTime || "09:00",
+        "Sugerir hora",
+        "Hora"
+    );
+    if (time === null || !String(time).trim()) return;
     try {
         await PawApi.api.suggestAppointment(appointmentId, {
             date: String(date).trim(),
@@ -116,9 +182,9 @@ async function sugerirFecha(appointmentId, messageId, currentDate, currentTime) 
             } catch (_) {}
         }
         await cargarCorreo();
-        alert("Sugerencia enviada. La otra parte recibirá un aviso en Correo.");
+        await uiAlert("Sugerencia enviada. La otra parte recibirá un aviso en Correo.", "Listo");
     } catch (err) {
-        alert((err && err.message) || "No se pudo sugerir");
+        await uiAlert((err && err.message) || "No se pudo sugerir", "Error");
     }
 }
 
@@ -141,6 +207,7 @@ async function cargarCorreo() {
             const payload = m.payload && typeof m.payload === "object" ? m.payload : {};
             const appointmentId = payload.appointmentId || "";
             const showActions = canActOnMessage(m, payload);
+            const estado = estadoLabel(payload);
 
             li.innerHTML =
                 `<h3>${escapeHtml(m.title)}</h3>` +
@@ -162,7 +229,9 @@ async function cargarCorreo() {
                             payload.date || ""
                         )}" data-time="${escapeHtml(payload.time || "")}">Sugerir</button>
                       </div>`
-                    : "");
+                    : estado
+                      ? `<div class="correo-estado">${escapeHtml(estado)}</div>`
+                      : "");
 
             lista.appendChild(li);
 
@@ -218,10 +287,12 @@ document.getElementById("btnMarcarLeidos")?.addEventListener("click", async () =
         await PawApi.api.markAllInboxRead();
         await cargarCorreo();
     } catch (err) {
-        alert((err && err.message) || "No se pudo marcar");
+        await uiAlert((err && err.message) || "No se pudo marcar", "Error");
     }
 });
 
 document.getElementById("btnRecargar")?.addEventListener("click", () => cargarCorreo());
 
 cargarCorreo();
+})();
+}

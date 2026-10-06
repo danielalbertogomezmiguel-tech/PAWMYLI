@@ -49,12 +49,12 @@ if (registroForm) {
         const licencia = document.getElementById("licencia").value.trim();
 
         if (password !== confirmar) {
-            alert("Las contraseñas no coinciden.");
+            PawToast.error("Registro", "Las contraseñas no coinciden.");
             return;
         }
 
         if (password.length < 6) {
-            alert("La contraseña debe tener al menos 6 caracteres.");
+            PawToast.error("Registro", "La contraseña debe tener al menos 6 caracteres.");
             return;
         }
 
@@ -64,11 +64,11 @@ if (registroForm) {
             const file = docInput && docInput.files && docInput.files[0];
             if (file) {
                 if (file.size > 2_500_000) {
-                    alert("El archivo de licencia es demasiado grande (máx. ~2.5 MB).");
+                    PawToast.error("Registro", "El archivo de licencia es demasiado grande (máx. ~2.5 MB).");
                     return;
                 }
                 if (!/^image\//i.test(file.type) && file.type !== "application/pdf") {
-                    alert("Adjunta una imagen o PDF de la licencia.");
+                    PawToast.error("Registro", "Adjunta una imagen o PDF de la licencia.");
                     return;
                 }
                 licensePhoto = await new Promise((resolve, reject) => {
@@ -90,10 +90,14 @@ if (registroForm) {
                 photo: licensePhoto,
             });
             PawApi.setSession(result.accessToken, result.user, result.refreshToken, { remember: true });
-            alert("Registro exitoso. Bienvenido " + result.user.name);
+            PawToast.queue({
+                type: "success",
+                title: "Bienvenido",
+                message: result.user.name,
+            });
             window.location.href = "../dashboard/index.html";
         } catch (err) {
-            alert(err.message || "No se pudo registrar.");
+            PawToast.error("Registro", err.message || "No se pudo registrar.");
         }
     });
 }
@@ -104,25 +108,42 @@ if (registroForm) {
 
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
-    if (PawApi.getToken() && PawApi.getUser()) {
-        window.location.href = "../dashboard/index.html";
-    }
+    // Stale token used to bounce login ↔ dashboard until Chromium crashed
+    // (STATUS_ACCESS_VIOLATION). Only enter the app if the session is still valid.
+    (async function resumeIfSessionValid() {
+        const token = PawApi.getToken();
+        const user = PawApi.getUser();
+        if (!token || !user) return;
+        try {
+            await PawApi.api.profile();
+            window.location.replace("../dashboard/index.html");
+        } catch (_) {
+            PawApi.clearSession();
+        }
+    })();
 
     loginForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const correo = document.getElementById("correo").value.trim();
         const password = document.getElementById("password").value;
+        const btn = loginForm.querySelector("button[type='submit']");
+        if (btn) btn.disabled = true;
 
         try {
             const result = await PawApi.api.login({ email: correo, password });
             const remember = Boolean(document.getElementById("recordar")?.checked);
             PawApi.setSession(result.accessToken, result.user, result.refreshToken, { remember });
 
-            alert("Bienvenido " + result.user.name);
-            window.location.href = "../dashboard/index.html";
+            PawToast.queue({
+                type: "success",
+                title: "Bienvenido",
+                message: result.user.name,
+            });
+            window.location.replace("../dashboard/index.html");
         } catch (err) {
-            alert(err.message || "Correo o contraseña incorrectos.");
+            PawToast.error("Inicio de sesión", err.message || "Correo o contraseña incorrectos.");
+            if (btn) btn.disabled = false;
         }
     });
 }
@@ -130,3 +151,5 @@ if (loginForm) {
 function cerrarSesion() {
     PawApi.logout();
 }
+
+if (window.PawToast && PawToast.consume) PawToast.consume();

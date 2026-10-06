@@ -83,3 +83,79 @@
     background: #eef5f4;
     border-color: #2c5f5a;
 }
+
+/* Shared by PawUi / PawCodeModal (not only pacientes page) */
+.modal .cerrarModal {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    border: none;
+    background: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    color: #8a9aa8;
+    transition: color 0.2s;
+}
+
+.modal .cerrarModal:hover {
+    color: #e8556d;
+}
+
+.modal .ventana h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #2c5f5a;
+    font-weight: 700;
+}
+
+.modal .ventana label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #3d5a59;
+}
+
+.modal .ventana input[type="text"],
+.modal .ventana input[type="email"],
+.modal .ventana input[type="password"],
+.modal .ventana input:not([type]) {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 2px solid #dce3ea;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fafbfc;
+    box-sizing: border-box;
+}
+
+.modal .ventana input:focus {
+    border-color: #8fc3a7;
+}
+
+.modal .guardar {
+    margin-top: 0;
+    width: 100%;
+    border: none;
+    background: #2c5f5a;
+    color: #fff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal .guardar:hover {
+    background: #1e4440;
+}
+
+.modal .modal-acciones .btn-secundario[hidden],
+.modal .cerrarModal[hidden] {
+    display: none !important;
+}

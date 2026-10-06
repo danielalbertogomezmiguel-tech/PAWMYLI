@@ -150,10 +150,25 @@
         return "../auth/login.html";
     }
 
+    /** Avoid Chromium STATUS_ACCESS_VIOLATION from redirect storms (many parallel 401s). */
+    let authRedirecting = false;
+
+    function redirectToLogin() {
+        if (authRedirecting) return;
+        const path = (global.location.pathname || "").replace(/\\/g, "/");
+        if (path.includes("/auth/")) return;
+        authRedirecting = true;
+        try {
+            global.location.replace(authPath());
+        } catch (_) {
+            global.location.href = authPath();
+        }
+    }
+
     function requireAuth() {
         if (!getToken()) {
             clearSession();
-            global.location.href = authPath();
+            redirectToLogin();
             return false;
         }
         return true;
@@ -176,7 +191,12 @@
             /* ignore */
         }
         clearSession();
-        global.location.href = authPath();
+        authRedirecting = false;
+        try {
+            global.location.replace(authPath());
+        } catch (_) {
+            global.location.href = authPath();
+        }
     }
 
     async function refreshAccessToken() {
@@ -243,9 +263,7 @@
             const ok = await refreshAccessToken();
             if (ok) return request(path, options, true);
             clearSession();
-            if (!global.location.pathname.includes("/auth/")) {
-                global.location.href = authPath();
-            }
+            redirectToLogin();
             throw new Error(
                 sanitizeApiMessage((data && (data.message || data.error)) || "Sesión expirada", 401)
             );
@@ -253,9 +271,7 @@
 
         if (response.status === 401) {
             clearSession();
-            if (!global.location.pathname.includes("/auth/")) {
-                global.location.href = authPath();
-            }
+            redirectToLogin();
             throw new Error(
                 sanitizeApiMessage((data && (data.message || data.error)) || "Sesión expirada", 401)
             );
@@ -426,6 +442,11 @@
             return request("/patients/mine?" + q.toString());
         },
         barcode: (id) => request("/patients/" + encodeURIComponent(id) + "/barcode"),
+        emailBarcode: (id, imageBase64) =>
+            request("/patients/" + encodeURIComponent(id) + "/barcode-email", {
+                method: "POST",
+                body: JSON.stringify({ imageBase64 }),
+            }),
         updateReminder: (id, body) =>
             request("/patients/reminders/" + encodeURIComponent(id), {
                 method: "PUT",

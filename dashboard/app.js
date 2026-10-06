@@ -1,6 +1,7 @@
 if (!PawApi.requireAuth()) {
-    throw new Error("Auth required");
-}
+    // redirected to login — do not throw (Live Server / Chromium crash risk)
+} else {
+(function () {
 
 function pintarSidebar() {
     PawApi.applySidebar();
@@ -15,6 +16,15 @@ function hoyISO() {
 
 function esCitaActiva(a) {
     return !/cancelad|eliminad/i.test(String(a && a.status || ""));
+}
+
+/** Vet accepts only owner proposals; web-created wait for the owner. */
+function puedeVetAceptar(cita) {
+    if (String(cita && cita.status || "").toLowerCase() !== "solicitada") return false;
+    const notes = String((cita && cita.notes) || "");
+    const tags = [...notes.matchAll(/\[Propuesta (vet|owner)\]/gi)];
+    if (!tags.length) return true;
+    return /owner/i.test(tags[tags.length - 1][1]);
 }
 
 function semanaRango() {
@@ -36,12 +46,15 @@ function escapeHtml(value) {
 }
 
 async function aceptarSolicitudDesdeDashboard(id) {
-    if (!confirm("¿Aceptar esta solicitud y programar la cita?")) return;
+    const ok = await PawUi.confirm("¿Aceptar esta solicitud y programar la cita?", {
+        title: "Aceptar solicitud",
+    });
+    if (!ok) return;
     try {
         await PawApi.api.acceptAppointment(id, {});
         await cargarDashboard();
     } catch (err) {
-        alert((err && err.message) || "No se pudo aceptar la solicitud");
+        PawToast.error("Solicitud", (err && err.message) || "No se pudo aceptar la solicitud");
     }
 }
 
@@ -103,10 +116,13 @@ async function cargarDashboard() {
         } else {
             solicitudes.slice(0, 8).forEach((a) => {
                 const li = document.createElement("li");
+                const aceptarBtn = puedeVetAceptar(a)
+                    ? ` <button type="button" class="btn-aceptar-dash" data-id="${escapeHtml(a.id)}">Aceptar</button>`
+                    : ` <span style="opacity:.75;font-size:13px;">Esperando al dueño</span>`;
                 li.innerHTML =
                     `<strong>${escapeHtml(a.petName)}</strong> — ${escapeHtml(a.date)} ${escapeHtml(a.time || "")}` +
                     ` · ${escapeHtml(a.ownerName || "")}` +
-                    ` <button type="button" class="btn-aceptar-dash" data-id="${escapeHtml(a.id)}">Aceptar</button>`;
+                    aceptarBtn;
                 listaSolicitudes.appendChild(li);
             });
             listaSolicitudes.querySelectorAll(".btn-aceptar-dash").forEach((btn) => {
@@ -123,7 +139,7 @@ async function cargarDashboard() {
         } else {
             messages.slice(0, 6).forEach((m) => {
                 const unread = m.readAt ? "" : " · sin leer";
-                listaCorreo.innerHTML += `<li><strong>${escapeHtml(m.title)}</strong>${unread}<br><span style="opacity:.8;font-size:12px;">${escapeHtml(m.body)}</span></li>`;
+                listaCorreo.innerHTML += `<li><strong>${escapeHtml(m.title)}</strong>${unread}<span>${escapeHtml(m.body)}</span></li>`;
             });
         }
     }
@@ -164,6 +180,7 @@ async function cargarDashboard() {
 }
 
 pintarSidebar();
+if (window.PawToast && PawToast.consume) PawToast.consume();
 PawApi.syncProfileToSession().then(() => pintarSidebar()).catch(() => {});
 cargarDashboard().catch((err) => {
     const msg = (err && err.message) || "Error al cargar";
@@ -172,3 +189,5 @@ cargarDashboard().catch((err) => {
         if (el) el.innerHTML = `<li>${msg}</li>`;
     });
 });
+})();
+}
