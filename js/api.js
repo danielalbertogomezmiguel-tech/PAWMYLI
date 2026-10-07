@@ -204,21 +204,39 @@
         }
     }
 
+    async function exchangeRefreshToken(refreshToken) {
+        const res = await fetch(apiBase() + "/auth/refresh", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ refreshToken }),
+        });
+        const data = await res.json().catch(() => null);
+        return { ok: res.ok, status: res.status, data: data };
+    }
+
     async function refreshAccessToken() {
         const refreshToken = getRefreshToken();
         if (!refreshToken) return false;
         if (!refreshPromise) {
-            refreshPromise = fetch(apiBase() + "/auth/refresh", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify({ refreshToken }),
-            })
-                .then(async (res) => {
-                    const data = await res.json().catch(() => null);
-                    if (!res.ok || !data?.accessToken) return false;
-                    setSession(data.accessToken, data.user || getUser(), data.refreshToken || refreshToken);
-                    return true;
-                })
+            refreshPromise = (async () => {
+                let sent = refreshToken;
+                let result = await exchangeRefreshToken(sent);
+                // Another tab may already have rotated this refresh token.
+                if (result.status === 401) {
+                    const stored = getRefreshToken();
+                    if (stored && stored !== sent) {
+                        sent = stored;
+                        result = await exchangeRefreshToken(sent);
+                    }
+                }
+                if (!result.ok || !result.data || !result.data.accessToken) return false;
+                setSession(
+                    result.data.accessToken,
+                    result.data.user || getUser(),
+                    result.data.refreshToken || sent
+                );
+                return true;
+            })()
                 .catch(() => false)
                 .finally(() => {
                     refreshPromise = null;
@@ -264,6 +282,10 @@
             });
         }
 
+        const method = String((options && options.method) || "GET").toUpperCase();
+        // A wrong current password is 401 on this write; it is not an expired session.
+        const profileWrite = method === "PUT" && path.indexOf("/auth/profile") === 0;
+
         if (response.status === 401 && !_retried && getRefreshToken() && !path.includes("/auth/")) {
             const ok = await refreshAccessToken();
             if (ok) return request(path, options, true);
@@ -274,7 +296,7 @@
             );
         }
 
-        if (response.status === 401) {
+        if (response.status === 401 && !profileWrite) {
             clearSession();
             redirectToLogin();
             throw new Error(
@@ -283,6 +305,9 @@
         }
 
         if (!response.ok) {
+            if (response.status === 413) {
+                throw new Error("El archivo es demasiado grande.");
+            }
             const raw =
                 (data && (data.message || data.error)) ||
                 (Array.isArray(data?.issues) && data.issues[0]?.message) ||
@@ -759,6 +784,7 @@
         api,
         apiBase,
         defaultAvatar,
+        defaultUserAvatar,
         getToken,
         setSession,
         clearSession,

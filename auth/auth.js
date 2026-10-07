@@ -63,8 +63,8 @@ if (registroForm) {
             const docInput = document.getElementById("documento");
             const file = docInput && docInput.files && docInput.files[0];
             if (file) {
-                if (file.size > 2_500_000) {
-                    PawToast.error("Registro", "El archivo de licencia es demasiado grande (máx. ~2.5 MB).");
+                if (file.size > 1_400_000) {
+                    PawToast.error("Registro", "El archivo de licencia es demasiado grande (máx. ~1.4 MB).");
                     return;
                 }
                 if (!/^image\//i.test(file.type) && file.type !== "application/pdf") {
@@ -114,6 +114,10 @@ if (loginForm) {
         const token = PawApi.getToken();
         const user = PawApi.getUser();
         if (!token || !user) return;
+        if (user.role !== "vet") {
+            PawApi.clearSession();
+            return;
+        }
         try {
             await PawApi.api.profile();
             window.location.replace("../dashboard/index.html");
@@ -132,8 +136,17 @@ if (loginForm) {
 
         try {
             const result = await PawApi.api.login({ email: correo, password });
+            const user = result && result.user;
+            if (!user || user.role !== "vet") {
+                PawToast.error(
+                    "Inicio de sesión",
+                    "Esta web es para clínicas; usa la app PawMily"
+                );
+                if (btn) btn.disabled = false;
+                return;
+            }
             const remember = Boolean(document.getElementById("recordar")?.checked);
-            PawApi.setSession(result.accessToken, result.user, result.refreshToken, { remember });
+            PawApi.setSession(result.accessToken, user, result.refreshToken, { remember });
 
             PawToast.queue({
                 type: "success",

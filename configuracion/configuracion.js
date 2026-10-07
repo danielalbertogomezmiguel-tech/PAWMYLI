@@ -86,17 +86,29 @@ document.getElementById("guardarPerfil").addEventListener("click", async () => {
         address: document.getElementById("direccion").value.trim() || undefined,
     };
     const pw = document.getElementById("password").value;
-    if (pw) body.password = pw;
-    if (profile?.photo) body.photo = profile.photo;
+    const currentPw = document.getElementById("passwordActual").value;
+    if (pw && !currentPw) {
+        toast("error", "Contraseña", "Escribe la contraseña actual para cambiarla.");
+        return;
+    }
+    if (pw) {
+        body.password = pw;
+        body.currentPassword = currentPw;
+    }
 
     try {
         profile = await PawApi.api.updateProfile(body);
         guardarUsuarioEnSesion(profile);
         document.getElementById("password").value = "";
+        document.getElementById("passwordActual").value = "";
         pintarSidebar();
         toast("success", "Perfil guardado correctamente");
     } catch (err) {
-        toast("error", "No se pudo guardar el perfil", friendlyError(err));
+        toast(
+            "error",
+            pw ? "No se pudo cambiar la contraseña" : "No se pudo guardar el perfil",
+            friendlyError(err)
+        );
     }
 });
 
