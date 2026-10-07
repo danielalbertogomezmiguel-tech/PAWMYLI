@@ -245,6 +245,15 @@
         return refreshPromise;
     }
 
+    function skipsSessionRefresh(path) {
+        return (
+            path.indexOf("/auth/login") === 0 ||
+            path.indexOf("/auth/refresh") === 0 ||
+            path.indexOf("/auth/register") === 0 ||
+            path.indexOf("/auth/logout") === 0
+        );
+    }
+
     async function request(path, options = {}, _retried) {
         const base = apiBase();
         const url = base + path;
@@ -286,7 +295,7 @@
         // A wrong current password is 401 on this write; it is not an expired session.
         const profileWrite = method === "PUT" && path.indexOf("/auth/profile") === 0;
 
-        if (response.status === 401 && !_retried && getRefreshToken() && !path.includes("/auth/")) {
+        if (response.status === 401 && !_retried && getRefreshToken() && !skipsSessionRefresh(path)) {
             const ok = await refreshAccessToken();
             if (ok) return request(path, options, true);
             clearSession();

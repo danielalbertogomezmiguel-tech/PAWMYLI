@@ -351,6 +351,68 @@ test("login con role vet entra al panel", async ({ page }) => {
     expect(session.access).toBe("vet-access");
 });
 
+function dashboardApis(path) {
+    if (path.endsWith("/appointments")) return { body: { data: [] } };
+    if (path.endsWith("/patients")) return { body: { data: [], meta: { total: 0 } } };
+    if (path.endsWith("/link-requests/pending")) return { body: [] };
+    if (path.endsWith("/inbox")) return { body: { data: [] } };
+    return null;
+}
+
+test("access token vencido: /auth/profile renueva una vez y la página sigue abierta", async ({ page }) => {
+    const refreshCalls = [];
+    const profileAuth = [];
+    await installApi(page, async ({ path, method, request }) => {
+        if (path.endsWith("/auth/profile") && method === "GET") {
+            const auth = request.headers().authorization || "";
+            profileAuth.push(auth);
+            if (auth.indexOf("access-expired") !== -1) {
+                return { status: 401, body: { message: "Sesión expirada" } };
+            }
+            return { body: VET };
+        }
+        if (path.endsWith("/auth/refresh") && method === "POST") {
+            refreshCalls.push(request.postDataJSON().refreshToken);
+            return {
+                body: {
+                    accessToken: "access-2",
+                    refreshToken: "refresh-2",
+                    user: VET,
+                },
+            };
+        }
+        return dashboardApis(path) || { body: {} };
+    }, vetSession({ token: "access-expired", refresh: "refresh-valid" }));
+
+    await page.goto("/dashboard/index.html");
+    await expect(page).not.toHaveURL(/login\.html/);
+    await expect(page.locator("#listaConsultas")).toContainText("No hay consultas");
+    expect(refreshCalls).toEqual(["refresh-valid"]);
+    expect(profileAuth.filter((value) => value.indexOf("access-expired") !== -1).length).toBe(1);
+    expect(profileAuth.some((value) => value.indexOf("access-2") !== -1)).toBe(true);
+    const session = await storedSession(page);
+    expect(session.access).toBe("access-2");
+});
+
+test("si /auth/refresh responde 401 se cierra la sesión y va al login", async ({ page }) => {
+    await installApi(page, async ({ path, method }) => {
+        if (path.endsWith("/auth/profile") && method === "GET") {
+            return { status: 401, body: { message: "Sesión expirada" } };
+        }
+        if (path.endsWith("/auth/refresh") && method === "POST") {
+            return { status: 401, body: { message: "Token inválido" } };
+        }
+        return dashboardApis(path) || { body: {} };
+    }, vetSession({ token: "access-expired", refresh: "refresh-invalid" }));
+
+    await page.goto("/dashboard/index.html");
+    await expect(page).toHaveURL(/login\.html/);
+    const session = await storedSession(page);
+    expect(session.access).toBeNull();
+    expect(session.refresh).toBeNull();
+    expect(session.user).toBeNull();
+});
+
 function inboxFixture() {
     return {
         data: [
