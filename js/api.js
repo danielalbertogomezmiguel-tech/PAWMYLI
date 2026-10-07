@@ -102,6 +102,7 @@
         clearSessionKeysOnly();
         localStorage.removeItem("recordarSesion");
         localStorage.removeItem("pacienteID");
+        sessionStorage.removeItem("pacienteID");
     }
 
     function getUser() {
@@ -121,7 +122,11 @@
         const img = document.querySelector(".perfilDoctor img, .perfil img");
         if (u && title) title.textContent = u.name || "Usuario";
         if (u && img) {
-            const src = u.photo || defaultUserAvatar();
+            const fallback = defaultUserAvatar();
+            const src =
+                global.PawEscape && global.PawEscape.safeImageUrl
+                    ? global.PawEscape.safeImageUrl(u.photo, fallback)
+                    : u.photo || fallback;
             if (img.src !== src) img.src = src;
         }
         return u;

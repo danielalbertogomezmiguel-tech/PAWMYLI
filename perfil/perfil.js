@@ -3,10 +3,8 @@ if (!PawApi.requireAuth()) {
 }
 
 const DEFAULT_FOTO = PawApi.defaultAvatar();
-const BARCODE_API =
-    (window.PAWMYLI_CONFIG && window.PAWMYLI_CONFIG.barcodeApiUrl) ||
-    "https://barcode.tec-it.com/barcode.ashx";
-const pacienteId = localStorage.getItem("pacienteID");
+const pacienteId =
+    sessionStorage.getItem("pacienteID") || localStorage.getItem("pacienteID");
 const user = PawApi.getUser();
 const isOwner = user && user.role === "owner";
 let paciente = null;
@@ -17,15 +15,6 @@ if (!pacienteId) {
 
 function pintarSidebar() {
     PawApi.applySidebar();
-}
-
-function barcodeUrl(code) {
-    return (
-        BARCODE_API +
-        "?data=" +
-        encodeURIComponent(code || "SIN-CODIGO") +
-        "&code=Code128&dpi=96&imagetype=png"
-    );
 }
 
 function linkStatusLabel(status) {
@@ -219,17 +208,9 @@ function fillRelatedConsultationSelect() {
             (item.fecha || "") +
             " · " +
             consultationTypeLabel(item.type);
-        select.innerHTML += `<option value="${item.id}">${label}</option>`;
+        select.innerHTML += `<option value="${escapeHtml(item.id)}">${escapeHtml(label)}</option>`;
     });
     if (current) select.value = current;
-}
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
 }
 
 function detalleRow(label, value) {
@@ -383,8 +364,8 @@ function pintarComidas(feeding) {
     }
     meals.forEach((m) => {
         const parts = [m.time, m.amount, m.food].filter(Boolean).join(" · ");
-        box.innerHTML += `<div class="comida-item"><strong>${m.label || "Comida"}</strong>${
-            parts ? " — " + parts : ""
+        box.innerHTML += `<div class="comida-item"><strong>${escapeHtml(m.label || "Comida")}</strong>${
+            parts ? " — " + escapeHtml(parts) : ""
         }</div>`;
     });
 }
@@ -439,9 +420,9 @@ function addMealEditorRow(meal) {
     const row = document.createElement("div");
     row.className = "comida-row";
     row.innerHTML = `
-        <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${meal?.label || ""}">
-        <input class="meal-time" type="time" value="${meal?.time || "08:00"}">
-        <input class="meal-amount" type="text" placeholder="60 g" value="${meal?.amount || ""}">
+        <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${escapeHtml(meal?.label || "")}">
+        <input class="meal-time" type="time" value="${escapeHtml(meal?.time || "08:00")}">
+        <input class="meal-amount" type="text" placeholder="60 g" value="${escapeHtml(meal?.amount || "")}">
         <button type="button" class="btn-desvincular meal-remove" title="Quitar">✕</button>
     `;
     row.querySelector(".meal-remove").onclick = () => row.remove();
@@ -544,8 +525,8 @@ async function cargarFeedingLogs() {
             const reason = feedingReasonLabel(log.reason);
             const notes = log.notes ? " · " + log.notes : "";
             lista.innerHTML += `<li>
-                <span><strong>${date}</strong> · ${mealLabel}${reason ? " · " + reason : ""}${notes}</span>
-                <span class="log-status ${feedingLogStatusClass(status)}">${feedingLogStatusLabel(status)}</span>
+                <span><strong>${escapeHtml(date)}</strong> · ${escapeHtml(mealLabel)}${reason ? " · " + escapeHtml(reason) : ""}${escapeHtml(notes)}</span>
+                <span class="log-status ${feedingLogStatusClass(status)}">${escapeHtml(feedingLogStatusLabel(status))}</span>
             </li>`;
         });
     } catch (_) {
@@ -564,10 +545,10 @@ function renderFeedingSummary(summary) {
     }
     const c = summary.compliance || {};
     cards.innerHTML = `
-        <div class="card-mini"><strong>${c.percent ?? 0}%</strong><span>Cumplimiento</span></div>
-        <div class="card-mini"><strong>${c.scheduled ?? 0}</strong><span>Programadas</span></div>
-        <div class="card-mini"><strong>${(c.eaten || 0) + (c.partial || 0)}</strong><span>Registradas</span></div>
-        <div class="card-mini"><strong>${c.unlogged ?? 0}</strong><span>No realizadas</span></div>
+        <div class="card-mini"><strong>${escapeHtml(c.percent ?? 0)}%</strong><span>Cumplimiento</span></div>
+        <div class="card-mini"><strong>${escapeHtml(c.scheduled ?? 0)}</strong><span>Programadas</span></div>
+        <div class="card-mini"><strong>${escapeHtml((c.eaten || 0) + (c.partial || 0))}</strong><span>Registradas</span></div>
+        <div class="card-mini"><strong>${escapeHtml(c.unlogged ?? 0)}</strong><span>No realizadas</span></div>
     `;
     const days = (summary.week && summary.week.days) || [];
     const meals = (summary.week && summary.week.meals) || [];
@@ -578,11 +559,11 @@ function renderFeedingSummary(summary) {
     const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
     let html = "<table><thead><tr><th>Comida</th>";
     days.forEach((d, i) => {
-        html += `<th>${dayNames[i] || d.slice(5)}</th>`;
+        html += `<th>${escapeHtml(dayNames[i] || d.slice(5))}</th>`;
     });
     html += "</tr></thead><tbody>";
     meals.forEach((m) => {
-        html += `<tr><td><strong>${m.label || "Comida"}</strong></td>`;
+        html += `<tr><td><strong>${escapeHtml(m.label || "Comida")}</strong></td>`;
         (m.cells || []).forEach((cell) => {
             let mark = "⏳";
             let cls = "cell-pending";
@@ -611,7 +592,7 @@ function cargarPerfil() {
         return;
     }
 
-    document.getElementById("fotoPaciente").src = paciente.foto || DEFAULT_FOTO;
+    document.getElementById("fotoPaciente").src = PawEscape.safeImageUrl(paciente.foto, DEFAULT_FOTO);
     document.getElementById("nombrePaciente").textContent = paciente.nombre || "";
     const badge = document.getElementById("badgeLinkStatus");
     if (badge) {
@@ -669,8 +650,9 @@ function cargarPerfil() {
     const codeForBc = paciente.barcodePayload || paciente.codigo;
     if (window.PawBarcodeLocal) {
         PawBarcodeLocal.render(bc, codeForBc);
-    } else {
-        bc.src = barcodeUrl(codeForBc);
+    } else if (bc) {
+        bc.removeAttribute("src");
+        bc.alt = String(codeForBc || "");
     }
 
     const listaAlim = document.getElementById("listaAlimentacion");
@@ -703,14 +685,14 @@ function cargarPerfil() {
         ].filter(Boolean);
         if (ownerLines.length) {
             ownerLines.forEach((item) => {
-                listaAlim.innerHTML += `<li>${item}</li>`;
+                listaAlim.innerHTML += `<li>${escapeHtml(item)}</li>`;
             });
         } else {
             listaAlim.innerHTML = "<li>Sin información</li>";
         }
     } else if (paciente.alimentacion && paciente.alimentacion.length) {
         paciente.alimentacion.forEach((item) => {
-            listaAlim.innerHTML += `<li>${item}</li>`;
+            listaAlim.innerHTML += `<li>${escapeHtml(item)}</li>`;
         });
     } else {
         listaAlim.innerHTML = "<li>Sin información</li>";
@@ -744,12 +726,12 @@ function cargarPerfil() {
             const tipo = consultationTypeLabel(item.type);
             tabla.innerHTML += `
             <tr class="historial-fila" data-historial-index="${index}" title="Ver detalle">
-                <td>${num}</td>
-                <td>${item.fecha}</td>
-                <td>${tipo}</td>
-                <td>${item.motivo || "—"}</td>
-                <td>${item.veterinario || "—"}</td>
-                <td><span class="estado ${clase}">${item.estado}</span></td>
+                <td>${escapeHtml(num)}</td>
+                <td>${escapeHtml(item.fecha)}</td>
+                <td>${escapeHtml(tipo)}</td>
+                <td>${escapeHtml(item.motivo || "—")}</td>
+                <td>${escapeHtml(item.veterinario || "—")}</td>
+                <td><span class="estado ${clase}">${escapeHtml(item.estado)}</span></td>
             </tr>`;
         });
     } else {
@@ -954,7 +936,7 @@ function prepareConsultaForm() {
     if (sessionUser?.name) {
         document.getElementById("consultaVet").value = sessionUser.name;
         const list = document.getElementById("listaVeterinarios");
-        if (list) list.innerHTML = `<option value="${sessionUser.name}">`;
+        if (list) list.innerHTML = `<option value="${escapeHtml(sessionUser.name)}">`;
     }
     document.getElementById("consultaPropietario").value = (paciente && paciente.propietario) || "";
     const telEl = document.getElementById("consultaPropietarioTel");
@@ -1111,10 +1093,10 @@ PawApi.syncProfileToSession().then(() => {
         const vetInput = document.getElementById("consultaVet");
         if (vetInput && !vetInput.value.trim()) vetInput.value = PawApi.getUser().name;
         const list = document.getElementById("listaVeterinarios");
-        if (list) list.innerHTML = `<option value="${PawApi.getUser().name}">`;
+        if (list) list.innerHTML = `<option value="${escapeHtml(PawApi.getUser().name)}">`;
     }
 }).catch(() => {});
 refrescarPaciente().catch((err) => {
     document.querySelector(".perfilMascota").innerHTML =
-        `<p style='text-align:center;padding:40px;color:#e8556d;'>${err.message}</p>`;
+        `<p style='text-align:center;padding:40px;color:#e8556d;'>${escapeHtml(err.message)}</p>`;
 });

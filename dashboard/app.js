@@ -37,14 +37,6 @@ function semanaRango() {
     return { start, end };
 }
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
-
 async function aceptarSolicitudDesdeDashboard(id) {
     const ok = await PawUi.confirm("¿Aceptar esta solicitud y programar la cita?", {
         title: "Aceptar solicitud",
@@ -186,7 +178,7 @@ cargarDashboard().catch((err) => {
     const msg = (err && err.message) || "Error al cargar";
     ["listaConsultas", "listaRecordatorios", "listaSolicitudes", "listaCorreo", "listaPacientesRecientes"].forEach((id) => {
         const el = document.getElementById(id);
-        if (el) el.innerHTML = `<li>${msg}</li>`;
+        if (el) el.innerHTML = `<li>${escapeHtml(msg)}</li>`;
     });
 });
 })();

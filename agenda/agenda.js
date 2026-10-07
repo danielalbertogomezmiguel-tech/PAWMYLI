@@ -198,14 +198,6 @@ function seleccionarDia(dia) {
     actualizarFormularioFecha();
 }
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
-
 function mostrarCitas() {
     lista.innerHTML = "";
     const fechaBuscar = formatoFecha(diaSeleccionado);
@@ -274,7 +266,7 @@ async function cargarPacientesSelect() {
             pacientesLista
                 .map(
                     (p) =>
-                        `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.code)}) — ${escapeHtml(p.ownerName)}</option>`
+                        `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.code)}) — ${escapeHtml(p.ownerName)}</option>`
                 )
                 .join("");
     } catch {

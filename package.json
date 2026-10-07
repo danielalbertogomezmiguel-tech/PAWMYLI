@@ -3,6 +3,12 @@
   "private": true,
   "scripts": {
     "env:export": "node scripts/export-env.js",
-    "build": "node scripts/export-env.js"
+    "build": "node scripts/export-env.js",
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
   }
 }

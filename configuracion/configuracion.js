@@ -19,12 +19,28 @@ function friendlyError(err) {
     return raw;
 }
 
+function urlFoto(url) {
+    const fallback = PawApi.defaultUserAvatar();
+    if (window.PawEscape && PawEscape.safeImageUrl) {
+        return PawEscape.safeImageUrl(url, fallback);
+    }
+    return url || fallback;
+}
+
+function guardarUsuarioEnSesion(next) {
+    const token = PawApi.getToken && PawApi.getToken();
+    if (!token || !next) return;
+    PawApi.setSession(token, next, undefined, {
+        remember: localStorage.getItem("recordarSesion") === "true",
+    });
+}
+
 function pintarSidebar() {
     const u = profile || PawApi.getUser();
     PawApi.applySidebar(u);
     if (u?.photo) {
         const img = document.getElementById("fotoUsuario");
-        if (img) img.src = u.photo;
+        if (img) img.src = urlFoto(u.photo);
     }
 }
 
@@ -34,7 +50,7 @@ function cargarFormularios() {
         document.getElementById("correo").value = profile.email || "";
         document.getElementById("telefono").value = profile.phone || "";
         document.getElementById("licencia").value = profile.license || "";
-        if (profile.photo) document.getElementById("fotoUsuario").src = profile.photo;
+        if (profile.photo) document.getElementById("fotoUsuario").src = urlFoto(profile.photo);
     }
 
     if (clinicConfig) {
@@ -55,7 +71,7 @@ function cargarFormularios() {
 async function cargarTodo() {
     profile = await PawApi.api.profile();
     clinicConfig = await PawApi.api.getConfig();
-    localStorage.setItem("usuarioActivo", JSON.stringify(profile));
+    guardarUsuarioEnSesion(profile);
     pintarSidebar();
     cargarFormularios();
 }
@@ -75,7 +91,7 @@ document.getElementById("guardarPerfil").addEventListener("click", async () => {
 
     try {
         profile = await PawApi.api.updateProfile(body);
-        localStorage.setItem("usuarioActivo", JSON.stringify(profile));
+        guardarUsuarioEnSesion(profile);
         document.getElementById("password").value = "";
         pintarSidebar();
         toast("success", "Perfil guardado correctamente");
@@ -139,10 +155,10 @@ document.getElementById("foto").addEventListener("change", async function (e) {
         if (nextProfile) profile = nextProfile;
         const src = url || (profile && profile.photo);
         if (src) {
-            document.getElementById("fotoUsuario").src = src;
+            document.getElementById("fotoUsuario").src = urlFoto(src);
             if (profile) profile.photo = src;
         }
-        if (profile) localStorage.setItem("usuarioActivo", JSON.stringify(profile));
+        if (profile) guardarUsuarioEnSesion(profile);
         pintarSidebar();
     };
 
