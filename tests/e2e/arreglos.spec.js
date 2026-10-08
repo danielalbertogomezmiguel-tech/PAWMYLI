@@ -731,3 +731,41 @@ test("alimentación: si el paciente no trae meals, se usan las de getFeeding", a
     expect(puts[0].meals.find((m) => m.label === "Desayuno").id).toBe("meal-1");
     expect(puts[0].meals.find((m) => m.label === "Cena").id).toBe("meal-2");
 });
+
+test("alimentación: horas 12 h antiguas se muestran y se guardan en HH:MM", async ({ page }) => {
+    const puts = [];
+    const patient = patientBase({
+        feeding: {
+            status: "ACTIVE",
+            mealsPerDay: 2,
+            meals: [
+                { id: "meal-am", label: "Desayuno", time: "7:00 a. m.", amount: "60 g" },
+                { id: "meal-pm", label: "Cena", time: "8 pm", amount: "40 g" },
+            ],
+        },
+    });
+    await installApi(page, async ({ path, method, request }) => {
+        if (path.endsWith("/auth/profile")) return { body: VET };
+        if (path.endsWith("/feeding/logs")) return { body: [] };
+        if (path.endsWith("/feeding/summary")) return { body: { plan: null } };
+        if (path.endsWith("/feeding") && method === "PUT") {
+            puts.push(request.postDataJSON());
+            return { body: patient.feeding };
+        }
+        if (/\/patients\/[^/]+$/.test(path)) return { body: patient };
+        return null;
+    }, vetSession({ pacienteId: "pet-1" }));
+
+    await page.goto("/perfil/perfil.html");
+    await expect(page.locator("#editorComidas .meal-time").nth(0)).toHaveValue("07:00");
+    await expect(page.locator("#editorComidas .meal-time").nth(1)).toHaveValue("20:00");
+    await page.locator("#dietaPeso").fill("12");
+    await page.locator("#btnGuardarDietaManual").click();
+    await expect.poll(() => puts.length).toBe(1);
+    const meals = puts[0].meals;
+    expect(meals).toHaveLength(2);
+    const desayuno = meals.find((m) => m.id === "meal-am");
+    const cena = meals.find((m) => m.id === "meal-pm");
+    expect(desayuno.time).toBe("07:00");
+    expect(cena.time).toBe("20:00");
+});

@@ -545,15 +545,55 @@ function collectMealsFromEditor() {
     return meals;
 }
 
+function horaComidaParaInput(value) {
+    if (value == null) return "";
+    let text = String(value).trim().toLowerCase();
+    if (!text) return "";
+    text = text.replace(/\s+/g, " ");
+    text = text.replace(/\b([ap])\s*\.?\s*m\s*\.?/g, "$1m");
+    text = text.trim();
+
+    const reloj = /^(\d\d?)\s*:\s*(\d\d)(?:\s*:\s*(\d\d))?$/.exec(text);
+    const doce = /^(\d\d?)\s*(?::\s*(\d\d))?(?:\s*:\s*(\d\d))?\s*([ap]m)$/.exec(text);
+    let hour;
+    let minute;
+    let second;
+    let meridiem = "";
+    if (reloj) {
+        hour = Number(reloj[1]);
+        minute = Number(reloj[2]);
+        second = reloj[3] == null ? 0 : Number(reloj[3]);
+    } else if (doce) {
+        hour = Number(doce[1]);
+        minute = doce[2] == null ? 0 : Number(doce[2]);
+        second = doce[3] == null ? 0 : Number(doce[3]);
+        meridiem = doce[4];
+    } else {
+        return "";
+    }
+
+    if (minute > 59 || second > 59) return "";
+    if (meridiem) {
+        if (hour < 1 || hour > 12) return "";
+        if (meridiem === "am") hour = hour === 12 ? 0 : hour;
+        else hour = hour === 12 ? 12 : hour + 12;
+    } else if (hour > 23) {
+        return "";
+    }
+    return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+}
+
 function addMealEditorRow(meal) {
     const box = document.getElementById("editorComidas");
     if (!box) return;
     const row = document.createElement("div");
     row.className = "comida-row";
     if (meal && meal.id) row.dataset.mealId = String(meal.id);
+    const horaGuardada = meal && meal.time != null ? String(meal.time) : "";
+    const timeValue = horaGuardada.trim() ? horaComidaParaInput(horaGuardada) : "08:00";
     row.innerHTML = `
         <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${escapeHtml(meal?.label || "")}">
-        <input class="meal-time" type="time" value="${escapeHtml(meal?.time || "08:00")}">
+        <input class="meal-time" type="time" value="${escapeHtml(timeValue)}">
         <input class="meal-amount" type="text" placeholder="60 g" value="${escapeHtml(meal?.amount || "")}">
         <button type="button" class="btn-desvincular meal-remove" title="Quitar">✕</button>
     `;
