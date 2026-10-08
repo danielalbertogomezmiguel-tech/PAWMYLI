@@ -43,12 +43,17 @@ test("horaComidaParaInput convierte horas guardadas a HH:MM", () => {
         ["  8   PM  ", "20:00"],
         ["8:30 P. M.", "20:30"],
         ["7:00 A.M.", "07:00"],
+        ["8p.m.", "20:00"],
+        ["8:30p.m.", "20:30"],
+        ["8:30pm", "20:30"],
+        ["07:00 hrs", "07:00"],
+        ["7h30", "07:30"],
     ];
     validas.forEach(([input, expected]) => {
         assert.equal(horaComidaParaInput(input), expected, input);
     });
 
-    ["xx", "25:00", "13 pm", "13pm", "24:00", "8:60", ""].forEach((input) => {
+    ["xx", "25:00", "13 pm", "13pm", "24:00", "8:60", "", "7 horas"].forEach((input) => {
         assert.equal(horaComidaParaInput(input), "", input);
     });
     assert.equal(horaComidaParaInput(null), "");

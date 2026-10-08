@@ -550,7 +550,9 @@ function horaComidaParaInput(value) {
     let text = String(value).trim().toLowerCase();
     if (!text) return "";
     text = text.replace(/\s+/g, " ");
-    text = text.replace(/\b([ap])\s*\.?\s*m\s*\.?/g, "$1m");
+    text = text.replace(/([ap])\s*\.?\s*m\s*\.?/g, "$1m");
+    text = text.replace(/\s*(?:horas|hrs)\b/g, "");
+    text = text.replace(/(\d)\s*h\s*(\d)/g, "$1:$2");
     text = text.trim();
 
     const reloj = /^(\d\d?)\s*:\s*(\d\d)(?:\s*:\s*(\d\d))?$/.exec(text);
