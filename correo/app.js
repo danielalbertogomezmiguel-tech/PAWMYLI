@@ -4,14 +4,6 @@ if (!PawApi.requireAuth()) {
 (function () {
 
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
-
 function formatWhen(iso) {
     if (!iso) return "";
     try {
@@ -33,6 +25,31 @@ function hoyISO() {
         "-" +
         String(d.getDate()).padStart(2, "0")
     );
+}
+
+function esFechaIsoReal(value) {
+    const text = String(value || "").trim();
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+    if (!m) return false;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    const dt = new Date(y, mo - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+}
+
+function fechaSugeridaValida(value) {
+    const text = String(value || "").trim();
+    return esFechaIsoReal(text) && text >= hoyISO();
+}
+
+function horaSugeridaValida(value) {
+    const text = String(value || "").trim();
+    const m = /^(\d{2}):(\d{2})$/.exec(text);
+    if (!m) return false;
+    const h = Number(m[1]);
+    const min = Number(m[2]);
+    return h <= 23 && min <= 59;
 }
 
 function canActOnMessage(m, payload) {
@@ -163,18 +180,27 @@ async function sugerirFecha(appointmentId, messageId, currentDate, currentTime) 
         "Sugerir fecha",
         "Fecha"
     );
-    if (date === null || !String(date).trim()) return;
+    if (date === null) return;
+    if (!fechaSugeridaValida(date)) {
+        await uiAlert("Indica una fecha real (AAAA-MM-DD) que no sea pasada.", "Error");
+        return;
+    }
     const time = await uiPrompt(
         "Nueva hora sugerida (HH:MM)",
         currentTime || "09:00",
         "Sugerir hora",
         "Hora"
     );
-    if (time === null || !String(time).trim()) return;
+    if (time === null) return;
+    const hora = String(time).trim();
+    if (!horaSugeridaValida(hora)) {
+        await uiAlert("Indica una hora real (HH:MM).", "Error");
+        return;
+    }
     try {
         await PawApi.api.suggestAppointment(appointmentId, {
             date: String(date).trim(),
-            time: String(time).trim().slice(0, 5),
+            time: hora,
         });
         if (messageId) {
             try {

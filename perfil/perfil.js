@@ -3,10 +3,8 @@ if (!PawApi.requireAuth()) {
 }
 
 const DEFAULT_FOTO = PawApi.defaultAvatar();
-const BARCODE_API =
-    (window.PAWMYLI_CONFIG && window.PAWMYLI_CONFIG.barcodeApiUrl) ||
-    "https://barcode.tec-it.com/barcode.ashx";
-const pacienteId = localStorage.getItem("pacienteID");
+const pacienteId =
+    sessionStorage.getItem("pacienteID") || localStorage.getItem("pacienteID");
 const user = PawApi.getUser();
 const isOwner = user && user.role === "owner";
 let paciente = null;
@@ -17,15 +15,6 @@ if (!pacienteId) {
 
 function pintarSidebar() {
     PawApi.applySidebar();
-}
-
-function barcodeUrl(code) {
-    return (
-        BARCODE_API +
-        "?data=" +
-        encodeURIComponent(code || "SIN-CODIGO") +
-        "&code=Code128&dpi=96&imagetype=png"
-    );
 }
 
 function linkStatusLabel(status) {
@@ -219,17 +208,9 @@ function fillRelatedConsultationSelect() {
             (item.fecha || "") +
             " · " +
             consultationTypeLabel(item.type);
-        select.innerHTML += `<option value="${item.id}">${label}</option>`;
+        select.innerHTML += `<option value="${escapeHtml(item.id)}">${escapeHtml(label)}</option>`;
     });
     if (current) select.value = current;
-}
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
 }
 
 function detalleRow(label, value) {
@@ -322,37 +303,165 @@ function mostrarDetalleConsulta(item) {
     }
 }
 
+function unirTextos(values) {
+    return values
+        .map((v) => (v == null ? "" : String(v).trim()))
+        .filter(Boolean)
+        .join(" ");
+}
+
+function normalizarReceta(text) {
+    return String(text || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
+function interpretarHorasReceta(text) {
+    const raw = normalizarReceta(text);
+    if (!raw) return null;
+    const cada = raw.match(/cada\s+(\d+)\s*(?:horas?|hrs?)\b/);
+    if (cada) {
+        const n = Number(cada[1]);
+        return n > 0 ? n : null;
+    }
+    const veces =
+        raw.match(/(\d+)\s*veces?\s*(?:al|por)\s*dia\b/) ||
+        raw.match(/(\d+)\s*veces?\s*\/\s*dia\b/);
+    if (veces) {
+        const n = Number(veces[1]);
+        if (n > 0 && 24 % n === 0) return 24 / n;
+    }
+    return null;
+}
+
+function interpretarDiasReceta(text) {
+    const raw = normalizarReceta(text);
+    if (!raw) return null;
+    const por = raw.match(/(?:por|durante)\s+(\d+)\s*dias?\b/);
+    const simple = raw.match(/\b(\d+)\s*dias?\b/);
+    const m = por || simple;
+    if (!m) return null;
+    const n = Number(m[1]);
+    return n > 0 ? n : null;
+}
+
+function propuestaDesdeReceta(item) {
+    const payload =
+        item && item.typePayload && typeof item.typePayload === "object" ? item.typePayload : {};
+    const freq = unirTextos([
+        payload.medFrequency,
+        payload.frequency,
+        item && item.medFrequency,
+        item && item.frequency,
+    ]);
+    const dur = unirTextos([payload.duration, item && item.duration]);
+    const extra = unirTextos([
+        item && item.prescriptions,
+        payload.indications,
+        payload.prescriptions,
+    ]);
+    const junto = unirTextos([freq, dur, extra]);
+    const hours = interpretarHorasReceta(freq);
+    const days = interpretarDiasReceta(dur);
+    return {
+        hours: hours != null ? hours : interpretarHorasReceta(junto),
+        days: days != null ? days : interpretarDiasReceta(junto),
+    };
+}
+
+function esFechaIsoReal(value) {
+    const text = String(value || "").trim();
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+    if (!m) return false;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    const dt = new Date(y, mo - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+}
+
+function esHoraHHMM(value) {
+    const text = String(value || "").trim();
+    const m = /^(\d{2}):(\d{2})$/.exec(text);
+    if (!m) return false;
+    const h = Number(m[1]);
+    const min = Number(m[2]);
+    return h <= 23 && min <= 59;
+}
+
+function primeraTomaEnPasado(dateStr, timeStr) {
+    const date = String(dateStr || "").trim();
+    const time = String(timeStr || "").trim();
+    const [y, mo, d] = date.split("-").map(Number);
+    const [hh, mm] = time.split(":").map(Number);
+    const dt = new Date(y, mo - 1, d, hh, mm, 0, 0);
+    return dt.getTime() < Date.now();
+}
+
+function enteroPositivo(raw) {
+    const text = String(raw == null ? "" : raw).trim();
+    if (!/^\d+$/.test(text)) return null;
+    const n = Number(text);
+    return n > 0 ? n : null;
+}
+
 async function programarMedicamentoDesdeConsulta(item) {
     if (!paciente || !paciente.id || !item || !item.id) return;
+    const propuesta = propuestaDesdeReceta(item);
     const firstDoseDate = await PawUi.prompt(
         "Fecha de la primera toma (AAAA-MM-DD):",
         item.fecha || hoyISOLocal(),
         { title: "Programar tomas", inputLabel: "Fecha" }
     );
-    if (!firstDoseDate) return;
+    if (firstDoseDate == null) return;
+    const fecha = String(firstDoseDate).trim();
+    if (!esFechaIsoReal(fecha)) {
+        PawToast.warning("Recordatorios", "La fecha debe ser AAAA-MM-DD.");
+        return;
+    }
     const firstDoseTime = await PawUi.prompt("Hora de la primera toma (HH:MM):", "09:00", {
         title: "Programar tomas",
         inputLabel: "Hora",
     });
-    if (!firstDoseTime) return;
-    const intervalRaw = await PawUi.prompt("Horas entre tomas (ej. 8, 12, 24):", "12", {
-        title: "Programar tomas",
-        inputLabel: "Intervalo",
-    });
+    if (firstDoseTime == null) return;
+    const hora = String(firstDoseTime).trim();
+    if (!esHoraHHMM(hora)) {
+        PawToast.warning("Recordatorios", "La hora debe ser HH:MM.");
+        return;
+    }
+    if (primeraTomaEnPasado(fecha, hora)) {
+        PawToast.warning("Recordatorios", "La primera toma no puede quedar en el pasado.");
+        return;
+    }
+    const intervalRaw = await PawUi.prompt(
+        "Horas entre tomas (ej. 8, 12, 24):",
+        propuesta.hours != null ? String(propuesta.hours) : "",
+        { title: "Programar tomas", inputLabel: "Intervalo" }
+    );
     if (intervalRaw == null) return;
-    const durationRaw = await PawUi.prompt("Días de tratamiento:", "7", {
-        title: "Programar tomas",
-        inputLabel: "Días",
-    });
+    const intervalHours = enteroPositivo(intervalRaw);
+    if (intervalHours == null) {
+        PawToast.warning("Recordatorios", "Indica las horas entre tomas.");
+        return;
+    }
+    const durationRaw = await PawUi.prompt(
+        "Días de tratamiento:",
+        propuesta.days != null ? String(propuesta.days) : "",
+        { title: "Programar tomas", inputLabel: "Días" }
+    );
     if (durationRaw == null) return;
-    const intervalHours = Number(intervalRaw);
-    const durationDays = Number(durationRaw);
+    const durationDays = enteroPositivo(durationRaw);
+    if (durationDays == null) {
+        PawToast.warning("Recordatorios", "Indica los días de tratamiento.");
+        return;
+    }
     try {
         const result = await PawApi.api.scheduleMedication(paciente.id, item.id, {
-            firstDoseDate: String(firstDoseDate).trim(),
-            firstDoseTime: String(firstDoseTime).trim().slice(0, 5),
-            intervalHours: Number.isFinite(intervalHours) && intervalHours > 0 ? intervalHours : undefined,
-            durationDays: Number.isFinite(durationDays) && durationDays > 0 ? durationDays : undefined,
+            firstDoseDate: fecha,
+            firstDoseTime: hora,
+            intervalHours: intervalHours,
+            durationDays: durationDays,
         });
         PawToast.success(
             "Recordatorios",
@@ -383,8 +492,8 @@ function pintarComidas(feeding) {
     }
     meals.forEach((m) => {
         const parts = [m.time, m.amount, m.food].filter(Boolean).join(" · ");
-        box.innerHTML += `<div class="comida-item"><strong>${m.label || "Comida"}</strong>${
-            parts ? " — " + parts : ""
+        box.innerHTML += `<div class="comida-item"><strong>${escapeHtml(m.label || "Comida")}</strong>${
+            parts ? " — " + escapeHtml(parts) : ""
         }</div>`;
     });
 }
@@ -428,9 +537,52 @@ function collectMealsFromEditor() {
         const time = row.querySelector(".meal-time")?.value.trim();
         const amount = row.querySelector(".meal-amount")?.value.trim() || null;
         if (!label || !time) return;
-        meals.push({ label, time, amount, sortOrder: i });
+        const meal = { label, time, amount, sortOrder: i };
+        const id = row.dataset.mealId;
+        if (id) meal.id = id;
+        meals.push(meal);
     });
     return meals;
+}
+
+function horaComidaParaInput(value) {
+    if (value == null) return "";
+    let text = String(value).trim().toLowerCase();
+    if (!text) return "";
+    text = text.replace(/\s+/g, " ");
+    text = text.replace(/([ap])\s*\.?\s*m\s*\.?/g, "$1m");
+    text = text.replace(/\s*(?:horas|hrs)\b/g, "");
+    text = text.replace(/(\d)\s*h\s*(\d)/g, "$1:$2");
+    text = text.trim();
+
+    const reloj = /^(\d\d?)\s*:\s*(\d\d)(?:\s*:\s*(\d\d))?$/.exec(text);
+    const doce = /^(\d\d?)\s*(?::\s*(\d\d))?(?:\s*:\s*(\d\d))?\s*([ap]m)$/.exec(text);
+    let hour;
+    let minute;
+    let second;
+    let meridiem = "";
+    if (reloj) {
+        hour = Number(reloj[1]);
+        minute = Number(reloj[2]);
+        second = reloj[3] == null ? 0 : Number(reloj[3]);
+    } else if (doce) {
+        hour = Number(doce[1]);
+        minute = doce[2] == null ? 0 : Number(doce[2]);
+        second = doce[3] == null ? 0 : Number(doce[3]);
+        meridiem = doce[4];
+    } else {
+        return "";
+    }
+
+    if (minute > 59 || second > 59) return "";
+    if (meridiem) {
+        if (hour < 1 || hour > 12) return "";
+        if (meridiem === "am") hour = hour === 12 ? 0 : hour;
+        else hour = hour === 12 ? 12 : hour + 12;
+    } else if (hour > 23) {
+        return "";
+    }
+    return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
 }
 
 function addMealEditorRow(meal) {
@@ -438,10 +590,13 @@ function addMealEditorRow(meal) {
     if (!box) return;
     const row = document.createElement("div");
     row.className = "comida-row";
+    if (meal && meal.id) row.dataset.mealId = String(meal.id);
+    const horaGuardada = meal && meal.time != null ? String(meal.time) : "";
+    const timeValue = horaGuardada.trim() ? horaComidaParaInput(horaGuardada) : "08:00";
     row.innerHTML = `
-        <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${meal?.label || ""}">
-        <input class="meal-time" type="time" value="${meal?.time || "08:00"}">
-        <input class="meal-amount" type="text" placeholder="60 g" value="${meal?.amount || ""}">
+        <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${escapeHtml(meal?.label || "")}">
+        <input class="meal-time" type="time" value="${escapeHtml(timeValue)}">
+        <input class="meal-amount" type="text" placeholder="60 g" value="${escapeHtml(meal?.amount || "")}">
         <button type="button" class="btn-desvincular meal-remove" title="Quitar">✕</button>
     `;
     row.querySelector(".meal-remove").onclick = () => row.remove();
@@ -544,8 +699,8 @@ async function cargarFeedingLogs() {
             const reason = feedingReasonLabel(log.reason);
             const notes = log.notes ? " · " + log.notes : "";
             lista.innerHTML += `<li>
-                <span><strong>${date}</strong> · ${mealLabel}${reason ? " · " + reason : ""}${notes}</span>
-                <span class="log-status ${feedingLogStatusClass(status)}">${feedingLogStatusLabel(status)}</span>
+                <span><strong>${escapeHtml(date)}</strong> · ${escapeHtml(mealLabel)}${reason ? " · " + escapeHtml(reason) : ""}${escapeHtml(notes)}</span>
+                <span class="log-status ${feedingLogStatusClass(status)}">${escapeHtml(feedingLogStatusLabel(status))}</span>
             </li>`;
         });
     } catch (_) {
@@ -564,10 +719,10 @@ function renderFeedingSummary(summary) {
     }
     const c = summary.compliance || {};
     cards.innerHTML = `
-        <div class="card-mini"><strong>${c.percent ?? 0}%</strong><span>Cumplimiento</span></div>
-        <div class="card-mini"><strong>${c.scheduled ?? 0}</strong><span>Programadas</span></div>
-        <div class="card-mini"><strong>${(c.eaten || 0) + (c.partial || 0)}</strong><span>Registradas</span></div>
-        <div class="card-mini"><strong>${c.unlogged ?? 0}</strong><span>No realizadas</span></div>
+        <div class="card-mini"><strong>${escapeHtml(c.percent == null ? "Sin datos aún" : String(c.percent) + "%")}</strong><span>Cumplimiento</span></div>
+        <div class="card-mini"><strong>${escapeHtml(c.scheduled ?? 0)}</strong><span>Programadas</span></div>
+        <div class="card-mini"><strong>${escapeHtml((c.eaten || 0) + (c.partial || 0))}</strong><span>Registradas</span></div>
+        <div class="card-mini"><strong>${escapeHtml(c.unlogged ?? 0)}</strong><span>No realizadas</span></div>
     `;
     const days = (summary.week && summary.week.days) || [];
     const meals = (summary.week && summary.week.meals) || [];
@@ -578,11 +733,11 @@ function renderFeedingSummary(summary) {
     const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
     let html = "<table><thead><tr><th>Comida</th>";
     days.forEach((d, i) => {
-        html += `<th>${dayNames[i] || d.slice(5)}</th>`;
+        html += `<th>${escapeHtml(dayNames[i] || d.slice(5))}</th>`;
     });
     html += "</tr></thead><tbody>";
     meals.forEach((m) => {
-        html += `<tr><td><strong>${m.label || "Comida"}</strong></td>`;
+        html += `<tr><td><strong>${escapeHtml(m.label || "Comida")}</strong></td>`;
         (m.cells || []).forEach((cell) => {
             let mark = "⏳";
             let cls = "cell-pending";
@@ -611,7 +766,7 @@ function cargarPerfil() {
         return;
     }
 
-    document.getElementById("fotoPaciente").src = paciente.foto || DEFAULT_FOTO;
+    document.getElementById("fotoPaciente").src = PawEscape.safeImageUrl(paciente.foto, DEFAULT_FOTO);
     document.getElementById("nombrePaciente").textContent = paciente.nombre || "";
     const badge = document.getElementById("badgeLinkStatus");
     if (badge) {
@@ -669,8 +824,9 @@ function cargarPerfil() {
     const codeForBc = paciente.barcodePayload || paciente.codigo;
     if (window.PawBarcodeLocal) {
         PawBarcodeLocal.render(bc, codeForBc);
-    } else {
-        bc.src = barcodeUrl(codeForBc);
+    } else if (bc) {
+        bc.removeAttribute("src");
+        bc.alt = String(codeForBc || "");
     }
 
     const listaAlim = document.getElementById("listaAlimentacion");
@@ -703,14 +859,14 @@ function cargarPerfil() {
         ].filter(Boolean);
         if (ownerLines.length) {
             ownerLines.forEach((item) => {
-                listaAlim.innerHTML += `<li>${item}</li>`;
+                listaAlim.innerHTML += `<li>${escapeHtml(item)}</li>`;
             });
         } else {
             listaAlim.innerHTML = "<li>Sin información</li>";
         }
     } else if (paciente.alimentacion && paciente.alimentacion.length) {
         paciente.alimentacion.forEach((item) => {
-            listaAlim.innerHTML += `<li>${item}</li>`;
+            listaAlim.innerHTML += `<li>${escapeHtml(item)}</li>`;
         });
     } else {
         listaAlim.innerHTML = "<li>Sin información</li>";
@@ -729,27 +885,20 @@ function cargarPerfil() {
     tabla.innerHTML = "";
     if (paciente.historial && paciente.historial.length) {
         paciente.historial.forEach((item, index) => {
-            let clase = "";
-            switch (item.estado) {
-                case "Finalizada":
-                    clase = "finalizada";
-                    break;
-                case "En proceso":
-                    clase = "proceso";
-                    break;
-                default:
-                    clase = "cancelada";
-            }
+            const estado = String(item.estado || "").trim().toLowerCase();
+            let clase = "cancelada";
+            if (estado === "finalizada") clase = "finalizada";
+            else if (estado === "en proceso") clase = "proceso";
             const num = item.consultationNumber || "—";
             const tipo = consultationTypeLabel(item.type);
             tabla.innerHTML += `
             <tr class="historial-fila" data-historial-index="${index}" title="Ver detalle">
-                <td>${num}</td>
-                <td>${item.fecha}</td>
-                <td>${tipo}</td>
-                <td>${item.motivo || "—"}</td>
-                <td>${item.veterinario || "—"}</td>
-                <td><span class="estado ${clase}">${item.estado}</span></td>
+                <td>${escapeHtml(num)}</td>
+                <td>${escapeHtml(item.fecha)}</td>
+                <td>${escapeHtml(tipo)}</td>
+                <td>${escapeHtml(item.motivo || "—")}</td>
+                <td>${escapeHtml(item.veterinario || "—")}</td>
+                <td><span class="estado ${clase}">${escapeHtml(item.estado)}</span></td>
             </tr>`;
         });
     } else {
@@ -771,12 +920,25 @@ function cargarPerfil() {
     }
 }
 
+async function completarComidasSiFaltan() {
+    if (isOwner || !paciente || !paciente.feeding) return;
+    if (Array.isArray(paciente.feeding.meals)) return;
+    try {
+        const plan = await PawApi.api.getFeeding(pacienteId);
+        if (!plan || !Array.isArray(plan.meals)) return;
+        paciente.feeding.meals = plan.meals;
+    } catch (_) {
+        /* sin comidas: el editor sigue con las filas por defecto */
+    }
+}
+
 async function refrescarPaciente() {
     const data = await PawApi.api.getPatient(pacienteId);
     paciente = PawApi.mapPatient(data);
     if (PawApi.enrichPatientPhoto) {
         paciente = await PawApi.enrichPatientPhoto(paciente);
     }
+    await completarComidasSiFaltan();
     cargarPerfil();
     cargarFeedingLogs().catch(() => {});
 }
@@ -954,7 +1116,7 @@ function prepareConsultaForm() {
     if (sessionUser?.name) {
         document.getElementById("consultaVet").value = sessionUser.name;
         const list = document.getElementById("listaVeterinarios");
-        if (list) list.innerHTML = `<option value="${sessionUser.name}">`;
+        if (list) list.innerHTML = `<option value="${escapeHtml(sessionUser.name)}">`;
     }
     document.getElementById("consultaPropietario").value = (paciente && paciente.propietario) || "";
     const telEl = document.getElementById("consultaPropietarioTel");
@@ -1111,10 +1273,10 @@ PawApi.syncProfileToSession().then(() => {
         const vetInput = document.getElementById("consultaVet");
         if (vetInput && !vetInput.value.trim()) vetInput.value = PawApi.getUser().name;
         const list = document.getElementById("listaVeterinarios");
-        if (list) list.innerHTML = `<option value="${PawApi.getUser().name}">`;
+        if (list) list.innerHTML = `<option value="${escapeHtml(PawApi.getUser().name)}">`;
     }
 }).catch(() => {});
 refrescarPaciente().catch((err) => {
     document.querySelector(".perfilMascota").innerHTML =
-        `<p style='text-align:center;padding:40px;color:#e8556d;'>${err.message}</p>`;
+        `<p style='text-align:center;padding:40px;color:#e8556d;'>${escapeHtml(err.message)}</p>`;
 });

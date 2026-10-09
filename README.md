@@ -25,27 +25,20 @@ Dashboard web para administrar pacientes, citas, perfiles y configuración de un
 
 Todos los datos se guardan en `localStorage` (página única, sin backend).
 
-## API de Código de Barras (TEC-IT)
+## Código de barras
 
-Endpoint:
+El código PAW se dibuja en el navegador con JsBarcode. Si esa librería no carga, la página muestra el código en texto. El código no se envía a ningún servicio externo.
 
-```
-https://barcode.tec-it.com/barcode.ashx
-```
+## Pruebas
 
-Parámetros usados en el perfil del paciente:
+No usan la API real: las unitarias prueban funciones puras y las de extremo a extremo simulan la API en el navegador.
 
-| Parámetro  | Valor       | Descripción                                  |
-|------------|-------------|----------------------------------------------|
-| `data`     | PAW-XXXXXX  | Código único del paciente                    |
-| `code`     | Code128     | Simbología de código de barras               |
-| `dpi`      | 96          | Resolución de la imagen                      |
-| `imagetype`| png         | Formato de salida                            |
-
-EJemplo de uso en `perfil/perfil.js:106`:
-
-```js
-`https://barcode.tec-it.com/barcode.ashx?data=${codigo}&code=Code128&dpi=96&imagetype=png`
+```bash
+npm install
+npx playwright install chromium
+npm test
 ```
 
-Code128 es ideal para datos alfanuméricos como los códigos PAW-XXXXXX. La imagen se asigna directamente al `src` de un `<img>`.
+- `npm run test:unit` — node:test (escape de HTML, URLs de imagen y override de la API).
+- `npm run test:e2e` — Playwright, con el sitio servido en local.
+- `npm test` — las dos.

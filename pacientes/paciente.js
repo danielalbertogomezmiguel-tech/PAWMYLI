@@ -3,9 +3,6 @@ if (!PawApi.requireAuth()) {
 }
 
 const DEFAULT_FOTO = PawApi.defaultAvatar();
-const BARCODE_API =
-    (window.PAWMYLI_CONFIG && window.PAWMYLI_CONFIG.barcodeApiUrl) ||
-    "https://barcode.tec-it.com/barcode.ashx";
 const user = PawApi.getUser();
 const isOwner = user && user.role === "owner";
 let pacientes = [];
@@ -168,34 +165,34 @@ function mostrarPacientes(lista) {
         <div class="tarjeta">
             <img
                 class="foto"
-                src="${paciente.foto || DEFAULT_FOTO}"
-                onerror="this.src='${DEFAULT_FOTO}'">
+                src="${escapeHtml(PawEscape.safeImageUrl(paciente.foto, DEFAULT_FOTO))}"
+                onerror="this.src='${escapeHtml(DEFAULT_FOTO)}'">
             <div class="info">
-                <h2>${paciente.nombre}
-                    <span class="badge-link ${linkStatusClass(status)}" title="${status}">
-                        ${linkStatusLabel(status)}
+                <h2>${escapeHtml(paciente.nombre)}
+                    <span class="badge-link ${linkStatusClass(status)}" title="${escapeHtml(status)}">
+                        ${escapeHtml(linkStatusLabel(status))}
                     </span>
                 </h2>
-                <p style="font-size:14px;color:#8a9aa8;margin-bottom:6px;">Código: ${paciente.codigo}</p>
+                <p style="font-size:14px;color:#8a9aa8;margin-bottom:6px;">Código: ${escapeHtml(paciente.codigo)}</p>
                 <div class="detalles">
-                    <p><strong>Especie:</strong> ${paciente.especie}</p>
+                    <p><strong>Especie:</strong> ${escapeHtml(paciente.especie)}</p>
                     ${
                         paciente.raza
-                            ? `<p><strong>${PawSpecies.detailLabel(paciente.especie)}:</strong> ${paciente.raza}</p>`
+                            ? `<p><strong>${escapeHtml(PawSpecies.detailLabel(paciente.especie))}:</strong> ${escapeHtml(paciente.raza)}</p>`
                             : ""
                     }
-                    <p><strong>Edad:</strong> ${paciente.edad}</p>
-                    <p><strong>Sexo:</strong> ${paciente.sexo}</p>
-                    <p><strong>Peso:</strong> ${paciente.peso || "—"}</p>
-                    <p><strong>Color:</strong> ${paciente.color || "—"}</p>
-                    <p><strong>Microchip:</strong> ${paciente.microchip || "No"}</p>
+                    <p><strong>Edad:</strong> ${escapeHtml(paciente.edad)}</p>
+                    <p><strong>Sexo:</strong> ${escapeHtml(paciente.sexo)}</p>
+                    <p><strong>Peso:</strong> ${escapeHtml(paciente.peso || "—")}</p>
+                    <p><strong>Color:</strong> ${escapeHtml(paciente.color || "—")}</p>
+                    <p><strong>Microchip:</strong> ${escapeHtml(paciente.microchip || "No")}</p>
                 </div>
                 <p class="propietario">
                     <strong>Propietario:</strong>
-                    ${paciente.propietario}
+                    ${escapeHtml(paciente.propietario)}
                 </p>
             </div>
-            <button class="expediente" data-id="${paciente.id}">
+            <button class="expediente" data-id="${escapeHtml(paciente.id)}">
                 <i class="fa-solid fa-file-medical"></i>
             </button>
         </div>`;
@@ -249,7 +246,14 @@ async function cargarPacientes(search) {
 }
 
 function abrirPerfil(id) {
-    localStorage.setItem("pacienteID", id);
+    const remember = localStorage.getItem("recordarSesion") === "true";
+    if (remember) {
+        localStorage.setItem("pacienteID", id);
+        sessionStorage.removeItem("pacienteID");
+    } else {
+        sessionStorage.setItem("pacienteID", id);
+        localStorage.removeItem("pacienteID");
+    }
     window.location.href = "../perfil/perfil.html";
 }
 
@@ -259,12 +263,9 @@ function mostrarExito(patient) {
     const img = document.getElementById("exitoBarcode");
     if (window.PawBarcodeLocal) {
         PawBarcodeLocal.render(img, patient.code);
-    } else {
-        img.src =
-            BARCODE_API +
-            "?data=" +
-            encodeURIComponent(patient.code) +
-            "&code=Code128&dpi=96&imagetype=png";
+    } else if (img) {
+        img.removeAttribute("src");
+        img.alt = patient.code || "";
     }
     modalExito.classList.add("activo");
 }
@@ -285,19 +286,19 @@ function renderVinculaciones() {
         .map((r) => {
             const busy = processingIds.has(r.id);
             return `
-            <article class="tarjeta-vinculo" data-id="${r.id}">
+            <article class="tarjeta-vinculo" data-id="${escapeHtml(r.id)}">
                 <div class="vinculo-info">
-                    <h3><i class="fa-solid fa-paw"></i> ${r.patientName || "Mascota"}</h3>
-                    <p class="vinculo-meta">Solicitud de vinculación${r.patientCode ? " · " + r.patientCode : ""}</p>
-                    <p><strong>Usuario:</strong> ${r.requesterName || r.requesterEmail || "—"}</p>
-                    <p><strong>Tipo de relación:</strong> ${roleLabel(r.requestedRole)}</p>
-                    <p><strong>Fecha:</strong> ${formatDate(r.createdAt)}</p>
+                    <h3><i class="fa-solid fa-paw"></i> ${escapeHtml(r.patientName || "Mascota")}</h3>
+                    <p class="vinculo-meta">Solicitud de vinculación${r.patientCode ? " · " + escapeHtml(r.patientCode) : ""}</p>
+                    <p><strong>Usuario:</strong> ${escapeHtml(r.requesterName || r.requesterEmail || "—")}</p>
+                    <p><strong>Tipo de relación:</strong> ${escapeHtml(roleLabel(r.requestedRole))}</p>
+                    <p><strong>Fecha:</strong> ${escapeHtml(formatDate(r.createdAt))}</p>
                 </div>
                 <div class="vinculo-acciones">
-                    <button type="button" class="btn-aceptar" data-action="approve" data-id="${r.id}" ${busy ? "disabled" : ""}>
+                    <button type="button" class="btn-aceptar" data-action="approve" data-id="${escapeHtml(r.id)}" ${busy ? "disabled" : ""}>
                         ${busy ? "Procesando..." : "Aceptar"}
                     </button>
-                    <button type="button" class="btn-rechazar" data-action="reject" data-id="${r.id}" ${busy ? "disabled" : ""}>
+                    <button type="button" class="btn-rechazar" data-action="reject" data-id="${escapeHtml(r.id)}" ${busy ? "disabled" : ""}>
                         Rechazar
                     </button>
                 </div>
