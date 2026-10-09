@@ -1,93 +1,533 @@
-/* Shared responsive helpers for PawMily web */
+/* Shared responsive helpers for PawMily web.
+   Rules stay inside max-width 900px and 600px so desktop (>=1024px) is unchanged. */
 
 @media (max-width: 900px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+
+    img,
+    video,
+    svg,
+    canvas {
+        max-width: 100%;
+    }
+
     .contenedor {
         flex-direction: column;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        height: auto !important;
+        min-height: 100vh;
     }
 
     .sidebar {
         width: 100% !important;
+        max-width: 100% !important;
         height: auto !important;
-        position: static !important;
+        position: sticky !important;
+        top: 0;
+        z-index: 40;
         flex-direction: row;
         align-items: center;
-        padding: 12px 14px !important;
-        gap: 10px;
+        padding: 8px 10px !important;
+        gap: 8px;
+        min-width: 0;
+        overflow-x: auto;
     }
 
     .sidebar > div {
         display: flex;
         align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
+        gap: 8px;
+        flex-wrap: nowrap;
         width: 100%;
+        min-width: 0;
     }
 
     .perfilDoctor,
     .perfil {
         display: flex !important;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         margin-bottom: 0 !important;
         text-align: left !important;
+        flex: 0 0 auto;
+        min-width: 0;
     }
 
     .perfilDoctor img,
     .perfil img {
-        width: 48px !important;
-        height: 48px !important;
+        width: 44px !important;
+        height: 44px !important;
     }
 
     .perfilDoctor h2,
     .perfil h2 {
         margin-top: 0 !important;
-        font-size: 15px !important;
+        margin-bottom: 0 !important;
+        font-size: 14px !important;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     nav {
         flex-direction: row !important;
-        flex-wrap: wrap;
-        gap: 6px !important;
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
         margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    nav a {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px !important;
+        justify-content: center;
+        flex: 0 0 auto;
     }
 
     nav a span {
         display: none;
     }
 
-    main {
-        padding: 16px !important;
+    nav a i {
+        width: auto !important;
+        font-size: 18px;
     }
 
-    header {
+    main {
+        padding: 16px !important;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    header,
+    .topbar {
         flex-wrap: wrap;
         gap: 10px;
+        max-width: 100%;
     }
 
     header h1 {
         font-size: 24px !important;
+        min-width: 0;
     }
 
-    .fila {
-        flex-direction: column;
+    .header-actions {
+        width: 100%;
+        flex-wrap: wrap !important;
+    }
+
+    .header-actions .nuevo {
+        width: auto !important;
+        height: auto !important;
+        min-height: 44px !important;
+        position: static !important;
+        right: auto !important;
+        white-space: normal !important;
+        border-radius: 10px !important;
+    }
+
+    .fila,
+    .grid,
+    .gridPrefs,
+    .contenidoConfig,
+    .stats,
+    .dashboard,
+    .agenda,
+    .editor-comidas .comida-row,
+    .feeding-summary,
+    .detalles,
+    #formCita .fila {
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        min-width: 0;
+        max-width: 100%;
     }
 
     .agenda {
-        grid-template-columns: 1fr !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 0 !important;
     }
 
-    .dashboard {
-        grid-template-columns: 1fr !important;
+    .panelIzquierdo,
+    .panelDerecho,
+    .calendario,
+    .panel,
+    .perfilMascota,
+    .tarjeta,
+    .busqueda,
+    .stats,
+    .card,
+    .right,
+    .contenido,
+    .auth-container,
+    .auth-card,
+    .registro-card {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .panelIzquierdo,
+    .panelDerecho {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .listaCitas {
+        max-height: 320px;
+        overflow-y: auto;
+    }
+
+    .cabeceraCalendario {
+        flex-wrap: wrap;
+    }
+
+    .diasSemana,
+    .diasCalendario {
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .dia {
+        height: 44px;
+        min-height: 44px;
+        min-width: 0;
+    }
+
+    .tarjeta {
+        width: 100% !important;
+        flex-wrap: wrap;
+    }
+
+    .stats {
+        position: static !important;
+    }
+
+    .circulo {
+        max-width: 100%;
+    }
+
+    main > .panel,
+    .correo-lista,
+    .correo-item {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        max-width: 100%;
+    }
+
+    .correo-lista {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .correo-item,
+    .correo-detalle,
+    .correo-item p,
+    .contenido li {
+        overflow-wrap: anywhere;
+        max-width: 100%;
+    }
+
+    .tabla-scroll,
+    .feeding-week,
+    .panel:has(> table),
+    section:has(> table) {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tabla-scroll > table,
+    .feeding-week table {
+        width: max-content;
+        min-width: 100%;
+        display: table;
+    }
+
+    .modal {
+        padding: 8px !important;
+        align-items: stretch !important;
+    }
+
+    .modal .ventana,
+    .ventana {
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
+        margin: 8px auto !important;
+        overflow-y: auto !important;
+        padding: 20px 14px 12px !important;
+    }
+
+    .modal .modal-acciones,
+    .modal .guardar,
+    .modal .btn-secundario {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        z-index: 2;
+        min-height: 44px;
+    }
+
+    .modal .modal-acciones {
+        padding-top: 10px;
+        margin-top: 12px;
+    }
+
+    .fila > div,
+    .grupo,
+    .input-group,
+    .grid > *,
+    .gridPrefs > * {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]):not(.scan-hid-compact),
+    select,
+    textarea {
+        max-width: 100%;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .input-icon input,
+    .input input {
+        width: auto;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .scan-hid-compact {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+        opacity: 0 !important;
+    }
+
+    .qr {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        flex: 0 0 44px !important;
+    }
+
+    button:not(.filtro-punto):not(.paw-toast-close),
+    .btn,
+    .btn-auth,
+    .guardar,
+    .btn-secundario,
+    .consulta,
+    .btn-logout-perfil,
+    .topbar .btn,
+    .auth-link a {
+        min-height: 44px;
+    }
+
+    .btn-auth,
+    .guardar,
+    .consulta,
+    .btn-logout-perfil,
+    #guardarPerfil,
+    #guardarClinica,
+    #guardarPrefs {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .auth-card,
+    .registro-card {
+        padding: 24px 16px !important;
+    }
+
+    .auth-link a {
+        display: inline-flex;
+        align-items: center;
     }
 
     .vinculo-acciones {
         width: 100%;
         flex-direction: row;
+        flex-wrap: wrap;
     }
 
     .btn-aceptar,
     .btn-rechazar {
         flex: 1;
+        min-height: 44px;
+    }
+
+    .paw-toast-container {
+        left: 12px !important;
+        right: 12px !important;
+        max-width: calc(100vw - 24px) !important;
+        width: auto !important;
+    }
+
+    .paw-toast {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .hero-actions,
+    .closing .hero-actions,
+    .closing-inner .btn {
+        width: 100%;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-actions .btn,
+    .closing-inner .btn {
+        width: 100%;
+    }
+
+    .topbar {
+        max-width: 100%;
+    }
+
+    .topbar-nav {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .topbar-nav > a:not(.btn) {
+        display: none;
+    }
+
+    .topbar .btn {
+        width: auto;
+        max-width: 100%;
+    }
+
+    .topbar a.brand {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .feature-item {
+        grid-template-columns: 1fr !important;
+    }
+
+    .features,
+    .features-inner,
+    .closing,
+    .closing-inner,
+    .footer {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    a.panel-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 600px) {
+    .sidebar {
+        padding: 6px 8px !important;
+    }
+
+    .perfilDoctor h2,
+    .perfil h2 {
+        display: none !important;
+    }
+
+    .perfilDoctor img,
+    .perfil img {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    nav a {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+
+    header h1 {
+        font-size: 22px !important;
+    }
+
+    .stats .card,
+    .tarjeta,
+    .card {
+        width: 100% !important;
+    }
+
+    .circulo {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 22px !important;
+    }
+
+    .correo-actions {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+
+    .correo-actions button {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .modal .ventana,
+    .ventana {
+        padding: 16px 12px 10px !important;
+    }
+
+    .foto,
+    .foto img,
+    .fotoPerfil img {
+        max-width: 100%;
+    }
+
+    .foto img {
+        width: 140px !important;
+        height: 140px !important;
+    }
+
+    main {
+        padding: 12px !important;
+    }
+
+    .crearCita .guardar,
+    .header-actions .nuevo {
+        width: 100% !important;
     }
 }
 
