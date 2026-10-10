@@ -559,6 +559,15 @@ async function migrarCodigosSiVet() {
 migrarCodigosSiVet();
 
 document.querySelector(".qr")?.addEventListener("click", async () => {
+    const phone =
+        window.PawDevice &&
+        PawDevice.isPhoneOrTablet(navigator, (query) => window.matchMedia(query));
+    if (phone && window.PawBarcodeCamera) {
+        PawBarcodeCamera.scan({
+            onCode: (code) => resolverCodigo(code),
+        });
+        return;
+    }
     const code = await PawCodeModal.ask({
         title: "Buscar por código",
         message: "Ingresa o escanea el código de la mascota (PAW-XXXXXX).",

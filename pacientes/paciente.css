@@ -957,3 +957,86 @@ select:focus {
         gap: 12px;
     }
 }
+
+.modal.modal-escaner .ventana {
+    width: min(440px, 100%);
+    padding: 56px 20px 24px !important;
+}
+
+.modal-escaner .cerrarModal {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.modal-escaner .camara-video-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 16px;
+    background: #1e4440;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-escaner .camara-video-wrap[hidden] {
+    display: none;
+}
+
+.modal-escaner video {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 46vh;
+    object-fit: contain;
+    background: #1e4440;
+}
+
+.modal-escaner .camara-guia {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 18%;
+    bottom: 18%;
+    border: 3px solid #fff;
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+.modal-escaner .camara-error {
+    color: #e8556d;
+    font-weight: 600;
+    text-align: center;
+    margin: 0 0 14px;
+    line-height: 1.4;
+}
+
+.modal-escaner .camara-error[hidden] {
+    display: none;
+}
+
+.modal-escaner label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #3d5a59;
+}
+
+.modal-escaner input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    border: 2px solid #dce3ea;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 16px;
+    color: #1e4440;
+}
