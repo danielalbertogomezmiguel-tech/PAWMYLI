@@ -150,9 +150,7 @@
     }
 
     function authPath() {
-        const path = global.location.pathname.replace(/\\/g, "/");
-        if (path.includes("/auth/")) return "login.html";
-        return "../auth/login.html";
+        return "../index.html";
     }
 
     /** Avoid Chromium STATUS_ACCESS_VIOLATION from redirect storms (many parallel 401s). */
