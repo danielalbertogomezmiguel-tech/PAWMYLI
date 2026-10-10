@@ -267,12 +267,18 @@ input[type="file"]::file-selector-button {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
 }
 
 .grid .input-group {
     margin-bottom: 0;
+    min-width: 0;
+}
+
+.grid .input-icon {
+    min-width: 0;
+    max-width: 100%;
 }
 
 .full-width {
