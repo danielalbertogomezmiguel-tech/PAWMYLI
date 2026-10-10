@@ -154,7 +154,20 @@ const PAGES = [
     },
 ];
 
-function mockBody(path) {
+const SAMPLE_RECORD = {
+    id: "rec-1",
+    consultationNumber: 12,
+    date: "2026-06-01",
+    type: "GENERAL",
+    reason: "Control general de la mascota",
+    vetName: "Dra. Prueba",
+    status: "Finalizada",
+};
+
+function mockBody(path, withRecords) {
+    const patient = withRecords
+        ? Object.assign({}, PATIENT, { medicalRecords: [SAMPLE_RECORD] })
+        : PATIENT;
     if (path.includes("/auth/profile")) return VET;
     if (path.includes("/auth/refresh")) {
         return { accessToken: "access-1", refreshToken: "refresh-1", user: VET };
@@ -169,12 +182,13 @@ function mockBody(path) {
     if (path.includes("/appointments")) return { data: [APPT] };
     if (path.includes("/inbox")) return { data: [MESSAGE] };
     if (path.includes("/config")) return { clinicName: "Clinica Luna", clinicAddress: "Calle 1" };
-    if (/\/patients\/[^/?]+$/.test(path)) return PATIENT;
-    if (path.includes("/patients")) return { data: [PATIENT] };
+    if (/\/patients\/[^/?]+$/.test(path)) return patient;
+    if (path.includes("/patients")) return { data: [patient] };
     return {};
 }
 
-async function installApi(page, session) {
+async function installApi(page, session, options) {
+    const withRecords = !!(options && options.withRecords);
     await page.addInitScript((sess) => {
         sessionStorage.clear();
         ["pawmyliAccessToken", "pawmyliRefreshToken", "usuarioActivo", "recordarSesion", "pacienteID"].forEach(
@@ -223,7 +237,7 @@ async function installApi(page, session) {
             await route.fulfill({ status: 204, headers: CORS, body: "" });
             return;
         }
-        const payload = mockBody(path);
+        const payload = mockBody(path, withRecords);
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -275,7 +289,9 @@ test.describe("responsive layouts", () => {
                           pacienteId: screen.paciente ? "pet-1" : "",
                       }
                     : null;
-                await installApi(page, session);
+                await installApi(page, session, {
+                    withRecords: screen.name === "perfil" && viewport.width === 360,
+                });
                 await page.goto(screen.path);
                 await expect(page.locator(screen.ready).first()).toBeVisible();
                 if (screen.readyText) {
@@ -311,6 +327,66 @@ test.describe("responsive layouts", () => {
                 }
 
                 await noHorizontalScroll(page);
+
+                if (viewport.width === 360 && screen.auth) {
+                    const vetName = page.locator(".sidebar .perfilDoctor h2, .sidebar .perfil h2").first();
+                    await expect(vetName).toBeVisible();
+                    await expect(vetName).toHaveText("Dra. Prueba");
+                    const nameStyle = await vetName.evaluate((el) => {
+                        const style = getComputedStyle(el);
+                        return {
+                            textOverflow: style.textOverflow,
+                            whiteSpace: style.whiteSpace,
+                            overflowX: style.overflowX,
+                        };
+                    });
+                    expect(nameStyle.textOverflow).toBe("ellipsis");
+                    expect(nameStyle.whiteSpace).toBe("nowrap");
+                    expect(nameStyle.overflowX).toBe("hidden");
+                }
+
+                if (screen.agenda && viewport.width <= 900) {
+                    const dot = await page.locator(".filtro-punto.verde").evaluate((el) => {
+                        const box = el.getBoundingClientRect();
+                        const hit = getComputedStyle(el, "::after");
+                        return {
+                            visual: Math.max(box.width, box.height),
+                            touchW: parseFloat(hit.width),
+                            touchH: parseFloat(hit.height),
+                        };
+                    });
+                    expect(dot.visual).toBeLessThanOrEqual(18);
+                    expect(dot.touchW).toBeGreaterThanOrEqual(44);
+                    expect(dot.touchH).toBeGreaterThanOrEqual(44);
+                }
+
+                if (screen.name === "perfil" && viewport.width === 360) {
+                    const row = page.locator("#historial tr.historial-fila");
+                    await expect(row).toHaveCount(1);
+                    const card = await row.evaluate((tr) => {
+                        const cells = Array.from(tr.querySelectorAll("td"));
+                        return {
+                            display: getComputedStyle(tr).display,
+                            labels: cells.map((td) => ({
+                                data: td.getAttribute("data-label"),
+                                before: getComputedStyle(td, "::before").content,
+                            })),
+                        };
+                    });
+                    expect(card.display).toBe("block");
+                    expect(card.labels.map((item) => item.data)).toEqual([
+                        "Nº",
+                        "Fecha",
+                        "Tipo",
+                        "Motivo",
+                        "Veterinario",
+                        "Estado",
+                    ]);
+                    for (const item of card.labels) {
+                        expect(item.before).toContain(item.data);
+                    }
+                    await expect(page.getByText("Control general de la mascota")).toBeVisible();
+                }
 
                 if (viewport.width === 1280) {
                     if (screen.name === "perfil") {

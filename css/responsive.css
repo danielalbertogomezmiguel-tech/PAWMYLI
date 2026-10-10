@@ -456,6 +456,31 @@
         align-items: center;
         min-height: 44px;
     }
+
+    .filtrosEstado {
+        overflow: visible;
+    }
+
+    .filtro-punto {
+        position: relative;
+        overflow: visible;
+        width: 14px !important;
+        height: 14px !important;
+        min-width: 14px !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+    }
+
+    .filtro-punto::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+        background: transparent;
+    }
 }
 
 @media (max-width: 600px) {
@@ -463,9 +488,37 @@
         padding: 6px 8px !important;
     }
 
+    .sidebar {
+        overflow-x: hidden;
+    }
+
+    .perfilDoctor,
+    .perfil {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .perfilDoctor img,
+    .perfil img {
+        flex-shrink: 0;
+    }
+
     .perfilDoctor h2,
     .perfil h2 {
-        display: none !important;
+        display: block !important;
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 100%;
+        font-size: 12px !important;
+        line-height: 1.2;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    nav {
+        flex: 0 0 auto;
     }
 
     .perfilDoctor img,
@@ -528,6 +581,65 @@
     .crearCita .guardar,
     .header-actions .nuevo {
         width: 100% !important;
+    }
+
+    .tabla-scroll {
+        overflow-x: hidden;
+    }
+
+    .tabla-scroll > table,
+    .tabla-scroll thead,
+    .tabla-scroll tbody,
+    .tabla-scroll tr,
+    .tabla-scroll td {
+        display: block;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .tabla-scroll thead {
+        display: none;
+    }
+
+    .tabla-scroll tr {
+        background: #fff;
+        border: 1px solid #dce5ea;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(30, 68, 64, 0.06);
+    }
+
+    .tabla-scroll td {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding: 6px 0;
+        border-bottom: 1px solid #eef2f5;
+        text-align: right;
+        white-space: normal;
+    }
+
+    .tabla-scroll tr td:last-child {
+        border-bottom: none;
+    }
+
+    .tabla-scroll td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #2c5f5a;
+        text-align: left;
+        flex: 0 0 auto;
+    }
+
+    .tabla-scroll td[colspan] {
+        display: block;
+        text-align: left;
+    }
+
+    .tabla-scroll td[colspan]::before {
+        content: none;
     }
 }
 
