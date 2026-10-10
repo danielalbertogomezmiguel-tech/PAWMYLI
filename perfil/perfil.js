@@ -893,12 +893,12 @@ function cargarPerfil() {
             const tipo = consultationTypeLabel(item.type);
             tabla.innerHTML += `
             <tr class="historial-fila" data-historial-index="${index}" title="Ver detalle">
-                <td>${escapeHtml(num)}</td>
-                <td>${escapeHtml(item.fecha)}</td>
-                <td>${escapeHtml(tipo)}</td>
-                <td>${escapeHtml(item.motivo || "—")}</td>
-                <td>${escapeHtml(item.veterinario || "—")}</td>
-                <td><span class="estado ${clase}">${escapeHtml(item.estado)}</span></td>
+                <td data-label="Nº">${escapeHtml(num)}</td>
+                <td data-label="Fecha">${escapeHtml(item.fecha)}</td>
+                <td data-label="Tipo">${escapeHtml(tipo)}</td>
+                <td data-label="Motivo">${escapeHtml(item.motivo || "—")}</td>
+                <td data-label="Veterinario">${escapeHtml(item.veterinario || "—")}</td>
+                <td data-label="Estado"><span class="estado ${clase}">${escapeHtml(item.estado)}</span></td>
             </tr>`;
         });
     } else {
