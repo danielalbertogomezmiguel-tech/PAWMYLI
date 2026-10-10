@@ -43,6 +43,33 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
+.auth-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -8px -8px 4px auto;
+    border-radius: 12px;
+    color: #8a9aa8;
+    text-decoration: none;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.auth-close:hover,
+.auth-close:focus-visible {
+    color: #e8556d;
+    background: #eef2f5;
+}
+
+.auth-close:focus-visible {
+    outline: 2px solid #8fc3a7;
+    outline-offset: 2px;
+}
+
 .registro-card {
     padding: 28px 32px;
 }
@@ -240,12 +267,18 @@ input[type="file"]::file-selector-button {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
 }
 
 .grid .input-group {
     margin-bottom: 0;
+    min-width: 0;
+}
+
+.grid .input-icon {
+    min-width: 0;
+    max-width: 100%;
 }
 
 .full-width {

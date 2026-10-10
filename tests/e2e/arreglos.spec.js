@@ -394,7 +394,7 @@ test("access token vencido: /auth/profile renueva una vez y la página sigue abi
     expect(session.access).toBe("access-2");
 });
 
-test("si /auth/refresh responde 401 se cierra la sesión y va al login", async ({ page }) => {
+test("si /auth/refresh responde 401 se cierra la sesión y va a la portada", async ({ page }) => {
     await installApi(page, async ({ path, method }) => {
         if (path.endsWith("/auth/profile") && method === "GET") {
             return { status: 401, body: { message: "Sesión expirada" } };
@@ -406,11 +406,78 @@ test("si /auth/refresh responde 401 se cierra la sesión y va al login", async (
     }, vetSession({ token: "access-expired", refresh: "refresh-invalid" }));
 
     await page.goto("/dashboard/index.html");
-    await expect(page).toHaveURL(/login\.html/);
+    await expect(page).toHaveURL(/\/index\.html$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tu clínica, ordenada y al día");
     const session = await storedSession(page);
     expect(session.access).toBeNull();
     expect(session.refresh).toBeNull();
     expect(session.user).toBeNull();
+});
+
+async function logoutViaMenu(page, startPath) {
+    const logouts = [];
+    await installApi(page, async ({ path, method }) => {
+        if (path.endsWith("/auth/logout") && method === "POST") {
+            logouts.push(path);
+            return { status: 204, body: "" };
+        }
+        if (path.endsWith("/auth/profile") && method === "GET") return { body: VET };
+        if (path.endsWith("/config")) return { body: { clinicName: "Clínica Luna" } };
+        return dashboardApis(path) || { body: {} };
+    }, vetSession());
+
+    await page.goto(startPath);
+    await expect(page.locator(".sidebar")).toBeVisible();
+    await page.locator(".sidebar nav a").filter({ hasText: "Configuración" }).click();
+    await expect(page).toHaveURL(/configuracion\.html/);
+    await page.locator("#cerrarSesionPerfil").click();
+    await page.locator("#pawUiDialog [data-paw-ui-confirm]").click();
+    await expect(page).toHaveURL(/\/index\.html$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tu clínica, ordenada y al día");
+    const session = await storedSession(page);
+    expect(session.access).toBeNull();
+    expect(session.refresh).toBeNull();
+    expect(session.user).toBeNull();
+    expect(logouts).toHaveLength(1);
+}
+
+test("cerrar sesión desde el menú del dashboard termina en la portada", async ({ page }) => {
+    await logoutViaMenu(page, "/dashboard/index.html");
+});
+
+test("cerrar sesión desde el menú de agenda termina en la portada", async ({ page }) => {
+    await logoutViaMenu(page, "/agenda/agenda.html");
+});
+
+test("la X de login y registro vuelve a la portada y mide al menos 44 px", async ({ page }) => {
+    await installApi(page, async () => ({ body: {} }));
+
+    for (const path of ["/auth/login.html", "/auth/registro.html"]) {
+        await page.setViewportSize({ width: 360, height: 740 });
+        await page.goto(path);
+        const close = page.getByRole("link", { name: "Volver al inicio" });
+        await expect(close).toBeVisible();
+        await expect(close).toHaveAttribute("href", "../index.html");
+        await expect(close.locator("i")).toHaveAttribute("aria-hidden", "true");
+        const box = await close.boundingBox();
+        expect(box).toBeTruthy();
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+        const title = page.locator(".auth-card h1");
+        const titleBox = await title.boundingBox();
+        expect(titleBox.y).toBeGreaterThanOrEqual(box.y + box.height - 1);
+    }
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/auth/login.html");
+    await page.getByRole("link", { name: "Volver al inicio" }).click();
+    await expect(page).toHaveURL(/\/index\.html$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tu clínica, ordenada y al día");
+
+    await page.goto("/auth/registro.html");
+    await page.getByRole("link", { name: "Volver al inicio" }).click();
+    await expect(page).toHaveURL(/\/index\.html$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tu clínica, ordenada y al día");
 });
 
 function inboxFixture() {
