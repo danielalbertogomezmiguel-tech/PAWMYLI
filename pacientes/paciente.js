@@ -69,19 +69,16 @@ function pintarSidebar() {
 }
 
 function configurarRol() {
-    const btnMigrar = document.getElementById("btnMigrarCodigos");
     if (isOwner) {
         btnNuevo.style.display = "none";
         btnVincular.style.display = "inline-flex";
         document.getElementById("vincularCodigoLabel").textContent = "Vinculaciones";
         if (btnSolicitar) btnSolicitar.style.display = "inline-flex";
-        if (btnMigrar) btnMigrar.style.display = "none";
     } else {
         btnNuevo.style.display = "inline-flex";
         btnVincular.style.display = "inline-flex";
         document.getElementById("vincularCodigoLabel").textContent = "Vinculaciones";
         if (btnSolicitar) btnSolicitar.style.display = "none";
-        if (btnMigrar) btnMigrar.style.display = "inline-flex";
     }
 }
 
@@ -389,7 +386,7 @@ async function decideRequest(id, approve) {
         renderVinculaciones();
         await cargarPacientes(buscar.value.trim()).catch(() => {});
     } catch (err) {
-        // Reconcile: backend may have applied access even if the response failed
+        // Reconciliar: el backend pudo haber aplicado el acceso aunque la respuesta fallara
         await refreshPending({ silent: true }).catch(() => {});
         await cargarPacientes(buscar.value.trim()).catch(() => {});
         const stillPending = pendingRequests.some((r) => r.id === id);
@@ -533,31 +530,6 @@ async function resolverCodigo(code) {
     }
 }
 
-async function migrarCodigosSiVet() {
-    if (isOwner) return;
-    const btn = document.getElementById("btnMigrarCodigos");
-    if (!btn) return;
-    btn.addEventListener("click", async () => {
-        const ok = await PawUi.confirm(
-            "¿Reimprimir/migrar todos los códigos a formato seguro PAW-XXXXXX?",
-            { title: "Reimprimir códigos", confirmLabel: "Continuar" }
-        );
-        if (!ok) return;
-        try {
-            const result = await PawApi.api.migratePatientCodes();
-            toast(
-                "success",
-                "Códigos migrados",
-                (result.migrated || 0) + " etiquetas para reimprimir."
-            );
-            await cargarPacientes(buscar.value.trim());
-        } catch (err) {
-            toast("error", "No se pudo migrar", friendlyError(err));
-        }
-    });
-}
-migrarCodigosSiVet();
-
 document.querySelector(".qr")?.addEventListener("click", async () => {
     const phone =
         window.PawDevice &&
@@ -582,7 +554,7 @@ if (window.PawBarcodeHid) {
         scanInput.addEventListener("paw-barcode", (e) => {
             if (e.detail && e.detail.code) resolverCodigo(e.detail.code);
         });
-        // Keep wedge target available without stealing focus from search
+        // Dejar el campo del lector disponible sin quitar el foco de la búsqueda
         setTimeout(() => {
             if (document.activeElement === document.body) scanInput.focus();
         }, 200);

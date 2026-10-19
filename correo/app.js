@@ -1,5 +1,5 @@
 if (!PawApi.requireAuth()) {
-    // requireAuth already redirects to login — avoid throwing (breaks Live Server / console).
+    // requireAuth ya redirige al login: no lanzar error (rompe Live Server y la consola).
 } else {
 (function () {
 

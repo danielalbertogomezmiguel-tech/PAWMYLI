@@ -37,7 +37,7 @@
         ) {
             return "Error de servidor (" + (status || "?") + ")";
         }
-        // Cap very long bodies (e.g. accidental HTML)
+        // Recorta cuerpos muy largos (por ejemplo, HTML que llegó por error)
         if (text.length > 280) return "Error de servidor (" + (status || "?") + ")";
         return text;
     }
@@ -115,7 +115,7 @@
         }
     }
 
-    /** Paint vet/owner identity into sidebar; replaces hardcoded HTML placeholders. */
+    /** Pinta en la barra lateral la identidad del veterinario o del dueño; sustituye los textos fijos del HTML. */
     function applySidebar(user) {
         const u = user || getUser();
         const title = document.querySelector(".perfilDoctor h2, .perfil h2");
@@ -153,7 +153,7 @@
         return "../index.html";
     }
 
-    /** Avoid Chromium STATUS_ACCESS_VIOLATION from redirect storms (many parallel 401s). */
+    /** Evita que Chromium se caiga por una ráfaga de redirecciones (muchos 401 a la vez). */
     let authRedirecting = false;
 
     function redirectToLogin() {
@@ -219,7 +219,7 @@
             refreshPromise = (async () => {
                 let sent = refreshToken;
                 let result = await exchangeRefreshToken(sent);
-                // Another tab may already have rotated this refresh token.
+                // Otra pestaña pudo haber renovado ya este token de refresco.
                 if (result.status === 401) {
                     const stored = getRefreshToken();
                     if (stored && stored !== sent) {
@@ -290,7 +290,7 @@
         }
 
         const method = String((options && options.method) || "GET").toUpperCase();
-        // A wrong current password is 401 on this write; it is not an expired session.
+        // Una contraseña actual incorrecta también responde 401; eso no es una sesión vencida.
         const profileWrite = method === "PUT" && path.indexOf("/auth/profile") === 0;
 
         if (response.status === 401 && !_retried && getRefreshToken() && !skipsSessionRefresh(path)) {
@@ -425,7 +425,7 @@
             );
         },
         listReminders: (id) => request("/patients/" + encodeURIComponent(id) + "/reminders"),
-        /** @deprecated use createLinkRequest */
+        /** Obsoleto: usar createLinkRequest. */
         linkPatient: (code) =>
             request("/patients/link", { method: "POST", body: JSON.stringify({ code }) }),
         createLinkRequest: (code, requestedRole) =>
@@ -535,7 +535,7 @@
             const result = await request("/appointments/" + encodeURIComponent(id), {
                 method: "DELETE",
             });
-            // Soft-cancel may return the appointment; 204 would be null
+            // Una cancelación suave puede devolver la cita; un 204 llegaría como null
             return result || { id: id, status: "Eliminada" };
         },
         getConfig: () => request("/config"),
@@ -573,7 +573,7 @@
             request("/media/upload-url", { method: "POST", body: JSON.stringify(body) }),
         confirmMediaUpload: (body) =>
             request("/media/confirm", { method: "POST", body: JSON.stringify(body) }),
-        /** Upload user avatar via signed URL; returns { assetId, url?, profile? }. */
+        /** Sube el avatar con una URL firmada; devuelve { assetId, url?, profile? }. */
         uploadUserAvatar: async (file) => {
             if (!file) throw new Error("Archivo requerido");
             const mimeType = file.type || "image/jpeg";
@@ -747,7 +747,7 @@
         };
     }
 
-    /** Defense: resolve asset URLs or refetch full patient when list omitted photo. */
+    /** Si el listado vino sin foto, pide la URL del archivo o vuelve a cargar el paciente. */
     async function enrichPatientPhoto(mapped) {
         if (!mapped) return mapped;
         if (
@@ -766,7 +766,7 @@
                     return mapped;
                 }
             } catch (_) {
-                /* fall through */
+                /* seguir con el plan alterno */
             }
         }
         if (mapped.id) {
@@ -781,7 +781,7 @@
                     mapped.foto = photo;
                 }
             } catch (_) {
-                /* keep placeholder */
+                /* conservar el recuadro vacío */
             }
         }
         return mapped;

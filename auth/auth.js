@@ -108,8 +108,8 @@ if (registroForm) {
 
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
-    // Stale token used to bounce login ↔ dashboard until Chromium crashed
-    // (STATUS_ACCESS_VIOLATION). Only enter the app if the session is still valid.
+    // Un token viejo rebotaba entre login y el tablero hasta tumbar Chromium.
+    // Solo entrar a la app si la sesión sigue siendo válida.
     (async function resumeIfSessionValid() {
         const token = PawApi.getToken();
         const user = PawApi.getUser();

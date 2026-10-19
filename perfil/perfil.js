@@ -1010,7 +1010,7 @@ const syncEditSpecies = PawSpecies.bind(
     inputEditTipo
 );
 
-/** Keep full age labels like "2 años 3 meses"; only append "años" for bare numbers. */
+/** Conserva edades como "2 años 3 meses"; solo agrega "años" si el valor es un número suelto. */
 function normalizeAgeForSave(raw) {
     const value = String(raw || "").trim();
     if (!value) return "";
@@ -1197,7 +1197,7 @@ document.getElementById("formConsulta").addEventListener("submit", async functio
     if (typePayload.relatedConsultationId) {
         body.relatedConsultationId = typePayload.relatedConsultationId;
     }
-    // Promote common clinical fields for owner projection / list views
+    // Sube los campos clínicos habituales para la vista del dueño y los listados
     if (typePayload.diagnosis) body.diagnosis = typePayload.diagnosis;
     else if (typePayload.definitiveDiagnosis) body.diagnosis = typePayload.definitiveDiagnosis;
     else if (typePayload.presumptiveDiagnosis) body.diagnosis = typePayload.presumptiveDiagnosis;

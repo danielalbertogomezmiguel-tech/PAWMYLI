@@ -1,6 +1,6 @@
 (function (global) {
     /**
-     * Render Code128 locally (JsBarcode). If the library is missing, show the code as text.
+     * Dibuja el Code 128 en el navegador (JsBarcode). Si la librería no carga, muestra el código en texto.
      */
     function showAsText(el, value) {
         if (el.tagName === "IMG") {
@@ -38,7 +38,7 @@
                 }, options || {}));
                 return true;
             } catch (_err) {
-                /* library present but could not draw */
+                /* la librería está, pero no pudo dibujar */
             }
         }
 

@@ -1,5 +1,5 @@
 if (!PawApi.requireAuth()) {
-    // redirected to login — do not throw (avoids red console / blank flash)
+    // ya redirigió al login: no lanzar error (evita la consola en rojo y un pantallazo en blanco)
 } else {
 (function () {
 
@@ -15,7 +15,7 @@ let diaSeleccionado = fecha.getDate();
 let citas = [];
 let pacientesLista = [];
 
-/** Grey = all three buckets. Individual colors can be combined when grey is off. */
+/** Gris = los tres grupos. Los colores sueltos se pueden combinar cuando el gris está apagado. */
 let filtros = {
     all: true,
     completed: false,
@@ -57,21 +57,21 @@ function esFechaPasada(isoDate) {
 
 function statusDisplay(cita) {
     const raw = String(cita.status || "Programada");
-    // Legacy "Eliminada" is shown and filtered as Cancelada.
+    // El estado antiguo "Eliminada" se muestra y se filtra como Cancelada.
     if (/eliminad/i.test(raw)) return "Cancelada";
     return raw;
 }
 
-/** Vet should only accept owner proposals; web-created ones wait for the owner. */
+/** El veterinario solo debe aceptar propuestas del dueño; las creadas en la web esperan al dueño. */
 function puedeVetAceptar(cita) {
     if (String(cita.status || "").toLowerCase() !== "solicitada") return false;
     const notes = String(cita.notes || "");
     const tags = [...notes.matchAll(/\[Propuesta (vet|owner)\]/gi)];
-    if (!tags.length) return true; // classic owner request without tag
+    if (!tags.length) return true; // solicitud clásica del dueño, sin etiqueta
     return /owner/i.test(tags[tags.length - 1][1]);
 }
 
-/** Map API status → filter bucket: pending | completed | cancelled */
+/** Traduce el estado de la API al filtro: pendiente, completada o cancelada. */
 function bucketEstado(cita) {
     const status = String(cita.status || "");
     const attendance = String(cita.attendanceStatus || "");
@@ -82,7 +82,7 @@ function bucketEstado(cita) {
 
 function pasaFiltro(cita) {
     const bucket = bucketEstado(cita);
-    // Grey ("all"): every status, including Cancelada / legacy Eliminada.
+    // Gris ("todas"): cualquier estado, incluida Cancelada y la antigua Eliminada.
     if (filtros.all) return true;
     if (bucket === "completed") return filtros.completed;
     if (bucket === "pending") return filtros.pending;

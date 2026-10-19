@@ -1,9 +1,9 @@
 (function (global) {
     /**
-     * HID keyboard-wedge barcode support (Motorola SYMBOL LS1203 and similar).
-     * Strategy:
-     *  1) Prefer a focused barcode target input (scanner types into it natively).
-     *  2) Fallback to a global burst buffer with a generous inter-key gap (LS1203).
+     * Lectura de código de barras por teclado (Motorola SYMBOL LS1203 y similares).
+     * Estrategia:
+     *  1) Preferir un campo de código con el foco (el lector escribe ahí directo).
+     *  2) Si no, juntar la ráfaga de teclas en un buffer, con una pausa amplia entre teclas (LS1203).
      */
     function isBarcodeTarget(el) {
         if (!el || !el.tagName) return false;
@@ -82,7 +82,7 @@
                 const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
                 const barcodeField = isBarcodeTarget(target);
 
-                // Native wedge into barcode fields: keep chars in the input, submit on Enter.
+                // El lector escribe en el campo de código: se conservan los caracteres y se envía con Enter.
                 if (barcodeField) {
                     if (e.key === "Enter") {
                         e.preventDefault();
@@ -120,7 +120,7 @@
 
                 if (e.key.length !== 1) return;
 
-                // Ignore slow human typing in normal form fields.
+                // Ignorar la escritura lenta de una persona en los campos normales.
                 if (inField && !barcodeField && gap > MAX_GAP_MS && burstCount === 0) {
                     return;
                 }
@@ -137,7 +137,7 @@
             true
         );
 
-        // Some wedges fire keypress more reliably than keydown for printable chars.
+        // Algunos lectores disparan keypress con más fiabilidad que keydown en los caracteres imprimibles.
         global.addEventListener(
             "keypress",
             (e) => {
@@ -145,14 +145,14 @@
                 if (isBarcodeTarget(target)) return;
                 if (e.ctrlKey || e.altKey || e.metaKey) return;
                 if (!e.key || e.key.length !== 1) return;
-                // Already captured by keydown path in modern browsers; keep as backup
-                // only when buffer empty and we see a rapid PAW- start via keypress alone.
+                // En navegadores actuales keydown ya capturó el carácter; esto queda de respaldo
+                // solo si el buffer está vacío y llega un inicio rápido de PAW- por keypress.
             },
             true
         );
     }
 
-    /** Focus a dedicated scan field so LS1203 types into it. */
+    /** Pone el foco en el campo de escaneo para que el LS1203 escriba ahí. */
     function focusScanTarget() {
         const el =
             document.getElementById("scanHidInput") ||

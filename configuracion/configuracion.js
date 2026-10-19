@@ -174,7 +174,7 @@ document.getElementById("foto").addEventListener("change", async function (e) {
         pintarSidebar();
     };
 
-    // Prefer signed media upload; fall back to dataURL profile update.
+    // Primero subir la foto con URL firmada; si falla, guardar el perfil con data URL.
     if (PawApi.api.uploadUserAvatar) {
         try {
             const result = await PawApi.api.uploadUserAvatar(file);
@@ -182,7 +182,7 @@ document.getElementById("foto").addEventListener("change", async function (e) {
             toast("success", "Foto actualizada");
             return;
         } catch (_) {
-            /* fall through */
+            /* seguir con el plan alterno */
         }
     }
 

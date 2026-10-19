@@ -1,5 +1,5 @@
 if (!PawApi.requireAuth()) {
-    // redirected to login — do not throw (Live Server / Chromium crash risk)
+    // ya redirigió al login: no lanzar error (Live Server / riesgo de caída en Chromium)
 } else {
 (function () {
 
@@ -18,7 +18,7 @@ function esCitaActiva(a) {
     return !/cancelad|eliminad/i.test(String(a && a.status || ""));
 }
 
-/** Vet accepts only owner proposals; web-created wait for the owner. */
+/** El veterinario solo acepta propuestas del dueño; las citas creadas en la web esperan al dueño. */
 function puedeVetAceptar(cita) {
     if (String(cita && cita.status || "").toLowerCase() !== "solicitada") return false;
     const notes = String((cita && cita.notes) || "");
