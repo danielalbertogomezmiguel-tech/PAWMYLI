@@ -285,25 +285,63 @@
     .ventana {
         width: calc(100vw - 16px) !important;
         max-width: calc(100vw - 16px) !important;
-        max-height: calc(100dvh - 16px) !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
         margin: 8px auto !important;
-        overflow-y: auto !important;
+        overflow: auto !important;
         padding: 20px 14px 12px !important;
     }
 
+    /* El blanco sticky va en el pie. Nunca en .guardar ni .btn-secundario:
+       esos botones usan texto blanco sobre #2c5f5a y el fondo #fff los borraba. */
     .modal .modal-acciones,
-    .modal .guardar,
-    .modal .btn-secundario {
+    .modal .modal-pie {
         position: sticky;
         bottom: 0;
         background: #fff;
         z-index: 2;
-        min-height: 44px;
+        padding-top: 10px;
+        padding-bottom: 4px;
+        margin-top: 12px;
     }
 
-    .modal .modal-acciones {
-        padding-top: 10px;
-        margin-top: 12px;
+    .modal .modal-acciones .guardar,
+    .modal .modal-pie .guardar {
+        background: #2c5f5a;
+        color: #fff;
+    }
+
+    .modal .modal-acciones .guardar:hover,
+    .modal .modal-pie .guardar:hover,
+    .modal form > .guardar:hover,
+    .modal .ventana > .guardar:hover {
+        background: #1e4440;
+        color: #fff;
+    }
+
+    .modal .modal-acciones .btn-secundario,
+    .modal .modal-pie .btn-secundario {
+        background: #f7fafb;
+        color: #2c5f5a;
+    }
+
+    .modal .modal-acciones .btn-secundario:hover,
+    .modal .modal-pie .btn-secundario:hover {
+        background: #eef5f4;
+        color: #2c5f5a;
+    }
+
+    /* Si Guardar sigue siendo hijo directo del form o de la ventana,
+       la placa blanca es la sombra: el botón conserva #2c5f5a. */
+    .modal form > .guardar,
+    .modal .ventana > .guardar {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        min-height: 44px;
+        background: #2c5f5a;
+        color: #fff;
+        box-shadow: 0 -10px 0 0 #fff, 0 12px 0 0 #fff;
     }
 
     .fila > div,
