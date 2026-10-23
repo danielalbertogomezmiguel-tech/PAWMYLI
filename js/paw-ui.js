@@ -170,5 +170,30 @@
         }).then(() => undefined);
     }
 
+    function isMobileLayout() {
+        return !!(window.matchMedia && window.matchMedia("(max-width: 900px)").matches);
+    }
+
+    let modalFieldScrollTimer = 0;
+
+    document.addEventListener("focusin", (event) => {
+        const target = event.target;
+        if (!target || !target.closest || !target.matches) return;
+        if (target.classList && target.classList.contains("scan-hid-compact")) return;
+        if (!target.matches("input, textarea, select")) return;
+        if (target.matches("input[type='hidden'], input[type='checkbox'], input[type='radio'], input[type='file'], input[type='button'], input[type='submit']")) {
+            return;
+        }
+        const modal = target.closest(".modal");
+        if (!modal || !modal.classList.contains("activo")) return;
+        if (!isMobileLayout()) return;
+        window.clearTimeout(modalFieldScrollTimer);
+        modalFieldScrollTimer = window.setTimeout(() => {
+            if (!target.isConnected || document.activeElement !== target) return;
+            if (!isMobileLayout() || !modal.classList.contains("activo")) return;
+            target.scrollIntoView({ block: "center", inline: "nearest" });
+        }, 300);
+    });
+
     global.PawUi = { confirm, prompt, alert };
 })(window);
