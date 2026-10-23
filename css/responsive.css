@@ -653,3 +653,56 @@
         padding: 20px 16px;
     }
 }
+
+/* Área táctil de 44px sin cambiar el icono. En 1280 con puntero fino no aplica. */
+@media (pointer: coarse), (max-width: 900px) {
+    .modal .cerrarModal,
+    .cerrarModalConsulta,
+    .cerrarModalDetalle,
+    .cerrarModalExito,
+    .paw-toast-close,
+    .cabeceraCalendario > button,
+    .volver,
+    .btn-cerrar-panel,
+    .extras a {
+        overflow: visible;
+    }
+
+    .paw-toast-close,
+    .cabeceraCalendario > button,
+    .volver,
+    .btn-cerrar-panel,
+    .extras a {
+        position: relative;
+    }
+
+    .modal .cerrarModal::after,
+    .cerrarModalConsulta::after,
+    .cerrarModalDetalle::after,
+    .cerrarModalExito::after,
+    .paw-toast-close::after,
+    .cabeceraCalendario > button::after,
+    .volver::after,
+    .btn-cerrar-panel::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+        background: transparent;
+    }
+
+    .extras a::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        min-width: 44px;
+        height: 44px;
+        transform: translateY(-50%);
+        background: transparent;
+    }
+}
