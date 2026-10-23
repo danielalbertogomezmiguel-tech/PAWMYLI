@@ -290,6 +290,8 @@
         margin: 8px auto !important;
         overflow: auto !important;
         padding: 20px 14px 12px !important;
+        /* Respaldo; al centrar el campo, el JS lo iguala a la altura del pie. */
+        scroll-padding-bottom: 72px;
     }
 
     /* El blanco sticky va en el pie. Nunca en .guardar ni .btn-secundario:

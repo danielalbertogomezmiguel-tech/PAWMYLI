@@ -298,11 +298,49 @@ for (const viewport of MOBILE_VIEWPORTS) {
             await assertVentanaHeight(page, "#modal .ventana");
             await assertKeyboard(page, page.locator("#nombre"), button, "#modal .ventana");
 
+            await page.setViewportSize(viewport);
             await page.locator("#modal").evaluate((el) => el.classList.remove("activo"));
             await page.setViewportSize(viewport);
             await page.locator("#modalExito").evaluate((el) => el.classList.add("activo"));
             const exito = page.locator("#btnVerExpediente");
             await assertMobileFooter(page, exito, page.locator("#modalExito .modal-pie"));
+        });
+
+        test("el teclado no tapa el campo ya enfocado", async ({ page }) => {
+            test.setTimeout(60000);
+            await boot(page);
+            await page.goto("/pacientes/paciente.html");
+            await expect(page.locator("#nuevoPaciente")).toBeVisible();
+            await page.locator("#nuevoPaciente").click();
+            await expect(page.locator("#modal.activo")).toBeVisible();
+            await fillMascota(page);
+            const color = page.locator("#color");
+            await expect(color).toBeFocused();
+            await page.waitForTimeout(400);
+            await installScrollSpy(page);
+            await page.evaluate(() => {
+                window.__pawScrolls = [];
+            });
+            const openHeight = viewport.width === 360 ? 407 : 464;
+            await page.setViewportSize({ width: viewport.width, height: openHeight });
+            await expect
+                .poll(async () =>
+                    page.evaluate(() =>
+                        (window.__pawScrolls || []).some((item) => item.id === "color" && item.block === "center")
+                    )
+                )
+                .toBe(true);
+            const fieldBox = await color.boundingBox();
+            const pieBox = await page.locator("#formMascota .modal-pie").boundingBox();
+            expect(fieldBox).toBeTruthy();
+            expect(pieBox).toBeTruthy();
+            expect(fieldBox.height).toBeGreaterThan(20);
+            expect(fieldBox.y).toBeGreaterThanOrEqual(-1);
+            expect(fieldBox.y).toBeLessThan(openHeight);
+            expect(fieldBox.y + fieldBox.height).toBeLessThanOrEqual(pieBox.y + 1);
+            const padding = await page.locator("#modal .ventana").evaluate((el) => getComputedStyle(el).scrollPaddingBottom);
+            const pieHeight = Math.ceil(pieBox.height);
+            expect(parseFloat(padding)).toBeGreaterThanOrEqual(pieHeight - 1);
         });
 
         test("editar paciente y consulta", async ({ page }) => {
@@ -430,12 +468,23 @@ test.describe("guardar en escritorio 1280 sin cambio", () => {
         await page.locator("#color").blur();
         const mascota = page.locator("#formMascota .modal-pie .guardar");
         await assertDesktopButton(page, mascota, page.locator("#formMascota .modal-pie"));
-        const desktopVentana = await page.locator("#modal .ventana").evaluate((el) => getComputedStyle(el).maxHeight);
-        expect(desktopVentana).toBe("720px");
+        const desktopVentana = await page.locator("#modal .ventana").evaluate((el) => {
+            const style = getComputedStyle(el);
+            return { maxHeight: style.maxHeight, scrollPaddingBottom: style.scrollPaddingBottom };
+        });
+        expect(desktopVentana.maxHeight).toBe("720px");
+        expect(["auto", "0px"]).toContain(desktopVentana.scrollPaddingBottom);
         await installScrollSpy(page);
         await page.locator("#nombre").focus();
         await page.waitForTimeout(450);
         expect(await page.evaluate(() => window.__pawScrolls)).toEqual([]);
+        await page.evaluate(() => {
+            window.__pawScrolls = [];
+        });
+        await page.setViewportSize({ width: 1280, height: 700 });
+        await page.waitForTimeout(250);
+        expect(await page.evaluate(() => window.__pawScrolls)).toEqual([]);
+        await page.setViewportSize({ width: 1280, height: 800 });
 
         await page.locator("#modal").evaluate((el) => el.classList.remove("activo"));
         await page.locator("#modalExito").evaluate((el) => el.classList.add("activo"));
