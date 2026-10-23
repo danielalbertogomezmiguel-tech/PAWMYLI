@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { detectImageMime, assertImageFile } = require("../../js/image-upload.js");
 
 const TYPE_MSG = "Solo se permiten imágenes JPG, PNG o WebP.";
@@ -32,6 +34,21 @@ test("rechaza un exe renombrado como jpg", async () => {
 test("rechaza un pdf renombrado como jpg", async () => {
     const pdf = new File([Buffer.from("%PDF-1.7\n%fake")], "scan.jpg", { type: "image/jpeg" });
     await assert.rejects(assertImageFile(pdf), { message: TYPE_MSG });
+});
+
+test("las fotos de paciente y perfil aceptan jpg png webp y no usan capture", () => {
+    const root = path.join(__dirname, "../..");
+    for (const rel of ["pacientes/paciente.html", "configuracion/configuracion.html"]) {
+        const html = fs.readFileSync(path.join(root, rel), "utf8");
+        const input = html.match(/<input\b[^>]*\bid="foto"[^>]*>/);
+        assert.ok(input, rel);
+        assert.match(input[0], /accept="image\/jpeg,image\/png,image\/webp"/);
+        assert.equal(/\bcapture\b/.test(input[0]), false);
+    }
+    const registro = fs.readFileSync(path.join(root, "auth/registro.html"), "utf8");
+    const licencia = registro.match(/<input\b[^>]*\bid="documento"[^>]*>/);
+    assert.ok(licencia);
+    assert.match(licencia[0], /accept="\.pdf,\.png,\.jpg,\.jpeg"/);
 });
 
 test("rechaza un svg con script aunque se llame jpg", async () => {
