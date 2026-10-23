@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { detectImageMime, assertImageFile } = require("../../js/image-upload.js");
+const { detectImageMime, assertImageFile, photoFieldForSave } = require("../../js/image-upload.js");
 
 const TYPE_MSG = "Solo se permiten imágenes JPG, PNG o WebP.";
 
@@ -49,6 +49,23 @@ test("las fotos de paciente y perfil aceptan jpg png webp y no usan capture", ()
     const licencia = registro.match(/<input\b[^>]*\bid="documento"[^>]*>/);
     assert.ok(licencia);
     assert.match(licencia[0], /accept="\.pdf,\.png,\.jpg,\.jpeg"/);
+});
+
+test("guardar sin archivo nuevo omite la foto y nunca reenvía la URL firmada", () => {
+    assert.deepEqual(photoFieldForSave(undefined), {});
+    assert.deepEqual(photoFieldForSave(""), {});
+    assert.deepEqual(photoFieldForSave("https://cdn.example/luna.png?X-Amz-Signature=abc"), {});
+    assert.deepEqual(photoFieldForSave("../assets/placeholder-pet.svg"), {});
+    assert.deepEqual(photoFieldForSave("data:image/svg+xml;base64,abc"), {});
+    assert.deepEqual(photoFieldForSave("data:image/jpeg;base64,abc"), {
+        photo: "data:image/jpeg;base64,abc",
+    });
+    const perfil = fs.readFileSync(path.join(__dirname, "../../perfil/perfil.js"), "utf8");
+    const editar = perfil.slice(perfil.indexOf('getElementById("formEditar")'));
+    assert.equal(/photo:\s*paciente\.foto/.test(editar), false);
+    assert.equal(/photoUrl:\s*paciente\.foto/.test(editar), false);
+    const alta = fs.readFileSync(path.join(__dirname, "../../pacientes/paciente.js"), "utf8");
+    assert.equal(/photo:\s*DEFAULT_FOTO/.test(alta), false);
 });
 
 test("rechaza un svg con script aunque se llame jpg", async () => {

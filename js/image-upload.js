@@ -248,11 +248,19 @@
         }
     }
 
+    /** Solo un data URL recién preparado. Una URL firmada o el placeholder se omiten. */
+    function photoFieldForSave(value) {
+        const raw = String(value || "").trim();
+        if (/^data:image\/(jpeg|png|webp);base64,/i.test(raw)) return { photo: raw };
+        return {};
+    }
+
     return {
         detectImageMime: detectImageMime,
         assertImageFile: assertImageFile,
         fileWithType: fileWithType,
         prepare: prepare,
+        photoFieldForSave: photoFieldForSave,
         serverPhotoMessage: serverPhotoMessage,
     };
 });

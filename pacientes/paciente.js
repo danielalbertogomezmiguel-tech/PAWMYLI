@@ -673,7 +673,6 @@ formulario.addEventListener("submit", async function (e) {
         weight: Number.isFinite(pesoNum) && pesoNum > 0 ? pesoNum.toFixed(1).replace(/\.0$/, "") + " kg" : undefined,
         color: document.getElementById("color").value.trim() || undefined,
         microchip: document.getElementById("microchip").value,
-        photo: DEFAULT_FOTO,
     };
 
     if (!body.name || !body.species || !body.age || !body.ownerName || (askBreed && !body.breed)) {
@@ -701,7 +700,8 @@ formulario.addEventListener("submit", async function (e) {
         if (file) {
             try {
                 const prepared = await PawImageUpload.prepare(file);
-                body.photo = prepared.dataUrl;
+                const photoBody = PawImageUpload.photoFieldForSave(prepared.dataUrl);
+                if (photoBody.photo) body.photo = photoBody.photo;
             } catch (err) {
                 toast("warning", "Foto", (err && err.message) || "No se pudo preparar la foto.");
                 return;

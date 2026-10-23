@@ -1068,7 +1068,6 @@ document.getElementById("formEditar").addEventListener("submit", async function 
         ownerName: document.getElementById("editPropietario").value.trim(),
         ownerPhone: paciente.telefono || undefined,
         ownerEmail: paciente.correo || undefined,
-        photo: paciente.foto,
     };
 
     if (!body.name || !body.species || (askBreed && !body.breed)) {

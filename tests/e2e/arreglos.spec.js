@@ -168,6 +168,39 @@ test("configuración: con la actual el body lleva currentPassword", async ({ pag
     expect(puts[0].currentPassword).toBe("clave-actual");
 });
 
+test("editar paciente no reenvía la URL firmada de la foto", async ({ page }) => {
+    const puts = [];
+    const patient = patientBase({
+        photo: "https://cdn.example/luna.png?X-Amz-Signature=firmada",
+        photoUrl: "https://cdn.example/luna.png?X-Amz-Signature=firmada",
+        color: "Blanco",
+        ownerPhone: "5550001111",
+        ownerEmail: "ana@test.local",
+    });
+    await installApi(page, async ({ path, method, request }) => {
+        if (path.endsWith("/auth/profile") && method === "GET") return { body: VET };
+        if (path.endsWith("/feeding/logs")) return { body: [] };
+        if (path.endsWith("/feeding/summary")) return { body: { plan: null } };
+        if (/\/patients\/[^/]+$/.test(path) && method === "PUT") {
+            puts.push(request.postDataJSON());
+            return { body: patient };
+        }
+        if (/\/patients\/[^/]+$/.test(path)) return { body: patient };
+        return null;
+    }, vetSession({ pacienteId: "pet-1" }));
+
+    await page.goto("/perfil/perfil.html");
+    await expect(page.locator("#nombrePaciente")).toHaveText("Luna");
+    await page.locator("button.editar").click();
+    await expect(page.locator("#editNombre")).toHaveValue("Luna");
+    await page.locator("#formEditar").locator("button.guardar").click();
+    await expect.poll(() => puts.length).toBe(1);
+    expect(Object.prototype.hasOwnProperty.call(puts[0], "photo")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(puts[0], "photoUrl")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(puts[0], "foto")).toBe(false);
+    expect(puts[0].name).toBe("Luna");
+});
+
 test("configuración: guardar el perfil sin cambiar la foto no envía photo", async ({ page }) => {
     const puts = [];
     await installApi(page, async ({ path, method, request }) => {

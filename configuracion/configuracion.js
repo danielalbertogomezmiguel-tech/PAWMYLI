@@ -85,6 +85,9 @@ document.getElementById("guardarPerfil").addEventListener("click", async () => {
         clinic: document.getElementById("clinica").value.trim() || undefined,
         address: document.getElementById("direccion").value.trim() || undefined,
     };
+    delete body.photo;
+    delete body.photoUrl;
+    delete body.foto;
     const pw = document.getElementById("password").value;
     const currentPw = document.getElementById("passwordActual").value;
     if (pw && !currentPw) {
@@ -207,7 +210,12 @@ document.getElementById("foto").addEventListener("change", async function (e) {
 
     try {
         if (!prepared) prepared = await PawImageUpload.prepare(file);
-        profile = await PawApi.api.updateProfile({ photo: prepared.dataUrl });
+        const photoBody = PawImageUpload.photoFieldForSave(prepared.dataUrl);
+        if (!photoBody.photo) {
+            toast("error", "No se pudo subir la foto", "La imagen no es válida.");
+            return;
+        }
+        profile = await PawApi.api.updateProfile(photoBody);
         applyPhoto(profile, profile.photo);
         toast("success", "Foto actualizada");
     } catch (err) {
