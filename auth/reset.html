@@ -23,7 +23,7 @@
                 <label>Correo Electrónico</label>
                 <div class="input-icon">
                     <i class="fa-solid fa-envelope"></i>
-                    <input type="email" id="correo" placeholder="Ingrese su correo" required>
+                    <input type="email" id="correo" placeholder="Ingrese su correo" required maxlength="254">
                 </div>
             </div>
             <button class="btn-auth" type="submit">Enviar enlace</button>
@@ -33,14 +33,14 @@
                 <label>Nueva contraseña</label>
                 <div class="input-icon">
                     <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="password" minlength="6" required>
+                    <input type="password" id="password" minlength="6" required maxlength="72">
                 </div>
             </div>
             <div class="input-group">
                 <label>Confirmar contraseña</label>
                 <div class="input-icon">
                     <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="passwordConfirm" minlength="6" required>
+                    <input type="password" id="passwordConfirm" minlength="6" required maxlength="72">
                 </div>
             </div>
             <button class="btn-auth" type="submit">Guardar contraseña</button>
@@ -48,6 +48,7 @@
         <p class="auth-link"><a href="login.html">Volver al inicio de sesión</a></p>
     </div>
 </div>
+<script src="../js/field-limits.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>

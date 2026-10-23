@@ -83,7 +83,7 @@
         <section class="busqueda">
             <div class="input">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="buscar" placeholder="Buscar paciente...">
+                <input type="text" id="buscar" placeholder="Buscar paciente..." maxlength="100">
             </div>
             <button class="qr" type="button" title="Ingresar o escanear código">
                 <i class="fa-solid fa-barcode"></i>
@@ -97,7 +97,7 @@
                 autocomplete="off"
                 spellcheck="false"
                 aria-label="Lector USB de código de barras"
-                tabindex="-1">
+                tabindex="-1" maxlength="20">
         </section>
 
         <section class="lista">
@@ -118,7 +118,7 @@
             <div class="fila">
                 <div>
                     <label>Nombre</label>
-                    <input type="text" id="nombre">
+                    <input type="text" id="nombre" maxlength="50">
                 </div>
                 <div>
                     <label for="especie">Especie</label>
@@ -128,18 +128,18 @@
             <div class="fila" id="filaEspecieOtra" hidden>
                 <div>
                     <label for="especieOtra">¿Cuál especie?</label>
-                    <input type="text" id="especieOtra" placeholder="Ej: Alpaca" autocomplete="off">
+                    <input type="text" id="especieOtra" placeholder="Ej: Alpaca" autocomplete="off" maxlength="50">
                 </div>
                 <div></div>
             </div>
             <div class="fila">
                 <div id="campoRaza" hidden>
                     <label for="raza">Raza</label>
-                    <input type="text" id="raza" autocomplete="off">
+                    <input type="text" id="raza" autocomplete="off" maxlength="50">
                 </div>
                 <div id="campoTipo" hidden>
                     <label for="tipo">Tipo</label>
-                    <input type="text" id="tipo" placeholder="Ej: Salmón, pez globo" autocomplete="off">
+                    <input type="text" id="tipo" placeholder="Ej: Salmón, pez globo" autocomplete="off" maxlength="50">
                 </div>
                 <div>
                     <label>Sexo</label>
@@ -177,7 +177,7 @@
             <div class="fila">
                 <div>
                     <label>Propietario</label>
-                    <input type="text" id="propietario">
+                    <input type="text" id="propietario" maxlength="80">
                 </div>
                 <div>
                     <label>Peso (kg)</label>
@@ -190,7 +190,7 @@
             <div class="fila">
                 <div>
                     <label>Color</label>
-                    <input type="text" id="color" placeholder="Ej: Blanco">
+                    <input type="text" id="color" placeholder="Ej: Blanco" maxlength="50">
                 </div>
                 <div>
                     <label>Microchip</label>
@@ -238,6 +238,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="../js/field-limits.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/escape.js"></script>

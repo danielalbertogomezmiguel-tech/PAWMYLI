@@ -594,9 +594,9 @@ function addMealEditorRow(meal) {
     const horaGuardada = meal && meal.time != null ? String(meal.time) : "";
     const timeValue = horaGuardada.trim() ? horaComidaParaInput(horaGuardada) : "08:00";
     row.innerHTML = `
-        <input class="meal-label" type="text" placeholder="Ej. Desayuno" value="${escapeHtml(meal?.label || "")}">
+        <input class="meal-label" type="text" maxlength="100" placeholder="Ej. Desayuno" value="${escapeHtml(meal?.label || "")}">
         <input class="meal-time" type="time" value="${escapeHtml(timeValue)}">
-        <input class="meal-amount" type="text" placeholder="60 g" value="${escapeHtml(meal?.amount || "")}">
+        <input class="meal-amount" type="text" maxlength="100" placeholder="60 g" value="${escapeHtml(meal?.amount || "")}">
         <button type="button" class="btn-desvincular meal-remove" title="Quitar">✕</button>
     `;
     row.querySelector(".meal-remove").onclick = () => row.remove();

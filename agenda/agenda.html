@@ -114,7 +114,7 @@
                         <div class="fila">
                             <div>
                                 <label>Nombre de la mascota</label>
-                                <input type="text" id="nombreMascota" required>
+                                <input type="text" id="nombreMascota" required maxlength="50">
                             </div>
                             <div>
                                 <label>Fecha</label>
@@ -124,7 +124,7 @@
                         <div class="fila">
                             <div>
                                 <label>Nombre del dueño</label>
-                                <input type="text" id="dueno" required>
+                                <input type="text" id="dueno" required maxlength="80">
                             </div>
                             <div>
                                 <label>Hora</label>
@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         <label>Nota</label>
-                        <textarea id="nota" rows="4" placeholder="Escriba una nota..."></textarea>
+                        <textarea id="nota" rows="4" placeholder="Escriba una nota..." maxlength="2000"></textarea>
                         <button type="submit" class="guardar">Confirmar cita</button>
                     </form>
                 </div>
@@ -145,6 +145,7 @@
 
 </div>
 
+<script src="../js/field-limits.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/escape.js"></script>

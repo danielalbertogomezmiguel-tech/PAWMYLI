@@ -1,5 +1,19 @@
 /* Shared responsive helpers for PawMily web.
-   Rules stay inside max-width 900px and 600px so desktop (>=1024px) is unchanged. */
+   Rules stay inside max-width 900px and 600px so desktop (>=1024px) is unchanged.
+   The character counter is global so long textareas show n/máx on every viewport. */
+
+.field-count {
+    display: block;
+    margin: 2px 0 8px;
+    text-align: right;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #6b7280;
+}
+
+.field-count.is-full {
+    color: #b45309;
+}
 
 @media (max-width: 900px) {
     html,

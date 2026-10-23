@@ -32,7 +32,7 @@
                 <label>Correo Electrónico</label>
                 <div class="input-icon">
                     <i class="fa-solid fa-envelope"></i>
-                    <input type="email" id="correo" placeholder="Ingrese su correo" required>
+                    <input type="email" id="correo" placeholder="Ingrese su correo" required maxlength="254">
                 </div>
             </div>
 
@@ -40,7 +40,7 @@
                 <label>Contraseña</label>
                 <div class="input-icon">
                     <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+                    <input type="password" id="password" placeholder="Ingrese su contraseña" required maxlength="72">
                     <button type="button" id="mostrarPassword">
                         <i class="fa-solid fa-eye"></i>
                     </button>
@@ -68,6 +68,7 @@
 
 </div>
 
+<script src="../js/field-limits.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>

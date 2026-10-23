@@ -869,3 +869,25 @@ test("alimentación: horas 12 h antiguas se muestran y se guardan en HH:MM", asy
     expect(desayuno.time).toBe("07:00");
     expect(cena.time).toBe("20:00");
 });
+
+test("la nota de la cita no pasa de 2000 y muestra el contador", async ({ page }) => {
+    await installApi(page, async ({ path }) => {
+        if (path.endsWith("/auth/profile")) return { body: VET };
+        if (path.includes("/appointments")) return { body: { data: [] } };
+        if (path.includes("/patients")) return { body: { data: [], meta: { total: 0 } } };
+        if (path.includes("/inbox")) return { body: { data: [] } };
+        if (path.endsWith("/config")) return { body: {} };
+        return { body: {} };
+    }, vetSession());
+
+    await page.goto("/agenda/agenda.html");
+    const nota = page.locator("#nota");
+    await expect(nota).toHaveAttribute("maxlength", "2000");
+    await expect(page.locator("#nombreMascota")).toHaveAttribute("maxlength", "50");
+    await expect(page.locator("#dueno")).toHaveAttribute("maxlength", "80");
+    const counter = page.locator("#nota + .field-count");
+    await expect(counter).toHaveText("0/2000");
+    await nota.fill("a".repeat(2001));
+    await expect(nota).toHaveValue("a".repeat(2000));
+    await expect(counter).toHaveText("2000/2000");
+});
