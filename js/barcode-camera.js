@@ -115,7 +115,7 @@
             "</div>" +
             '<p class="camara-error" data-cam-error hidden></p>' +
             '<label for="pawCamaraManual">O escribe el código</label>' +
-            '<input type="text" id="pawCamaraManual" autocomplete="off" spellcheck="false" placeholder="PAW-000001">' +
+            '<input type="text" id="pawCamaraManual" maxlength="20" autocomplete="off" spellcheck="false" placeholder="PAW-000001">' +
             '<div class="modal-acciones">' +
             '<button type="button" class="guardar" data-cam-manual>Buscar</button>' +
             "</div>" +

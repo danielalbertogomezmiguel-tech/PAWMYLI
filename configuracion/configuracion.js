@@ -85,6 +85,9 @@ document.getElementById("guardarPerfil").addEventListener("click", async () => {
         clinic: document.getElementById("clinica").value.trim() || undefined,
         address: document.getElementById("direccion").value.trim() || undefined,
     };
+    delete body.photo;
+    delete body.photoUrl;
+    delete body.foto;
     const pw = document.getElementById("password").value;
     const currentPw = document.getElementById("passwordActual").value;
     if (pw && !currentPw) {
@@ -174,29 +177,51 @@ document.getElementById("foto").addEventListener("change", async function (e) {
         pintarSidebar();
     };
 
-    // Prefer signed media upload; fall back to dataURL profile update.
+    const directLimit = 5 * 1024 * 1024;
+    let prepared = null;
+    let uploadFile = file;
+    try {
+        const checked = await PawImageUpload.assertImageFile(file);
+        if (file.size > directLimit) {
+            prepared = await PawImageUpload.prepare(file);
+            uploadFile = prepared.file;
+        } else {
+            uploadFile = await PawImageUpload.fileWithType(file, checked.mime);
+        }
+    } catch (err) {
+        toast("warning", "Foto", (err && err.message) || "No se pudo preparar la foto.");
+        return;
+    }
+
     if (PawApi.api.uploadUserAvatar) {
         try {
-            const result = await PawApi.api.uploadUserAvatar(file);
+            const result = await PawApi.api.uploadUserAvatar(uploadFile);
             applyPhoto(result.profile, result.url);
             toast("success", "Foto actualizada");
             return;
-        } catch (_) {
-            /* fall through */
+        } catch (err) {
+            const server = PawImageUpload.serverPhotoMessage(err);
+            if (server) {
+                toast("error", "No se pudo subir la foto", server);
+                return;
+            }
         }
     }
 
-    const reader = new FileReader();
-    reader.onload = async function (ev) {
-        try {
-            profile = await PawApi.api.updateProfile({ photo: ev.target.result });
-            applyPhoto(profile, profile.photo);
-            toast("success", "Foto actualizada");
-        } catch (err) {
-            toast("error", "No se pudo subir la foto", friendlyError(err));
+    try {
+        if (!prepared) prepared = await PawImageUpload.prepare(file);
+        const photoBody = PawImageUpload.photoFieldForSave(prepared.dataUrl);
+        if (!photoBody.photo) {
+            toast("error", "No se pudo subir la foto", "La imagen no es válida.");
+            return;
         }
-    };
-    reader.readAsDataURL(file);
+        profile = await PawApi.api.updateProfile(photoBody);
+        applyPhoto(profile, profile.photo);
+        toast("success", "Foto actualizada");
+    } catch (err) {
+        const server = PawImageUpload.serverPhotoMessage(err);
+        toast("error", "No se pudo subir la foto", server || friendlyError(err));
+    }
 });
 
 document.getElementById("cerrarSesionPerfil").addEventListener("click", async () => {

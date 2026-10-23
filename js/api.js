@@ -29,6 +29,25 @@
         console.warn("[PawApi]", label, detail || "");
     }
 
+    const GENERIC_API_ERROR = /^(bad request|validation_error|unprocessable entity|error|internal server error)$/i;
+
+    function textsFromApiValue(value, out) {
+        if (value == null) return;
+        if (typeof value === "string") {
+            const text = value.trim();
+            if (text) out.push(text);
+            return;
+        }
+        if (Array.isArray(value)) {
+            value.forEach((item) => textsFromApiValue(item, out));
+            return;
+        }
+        if (typeof value === "object") {
+            if (typeof value.message === "string") textsFromApiValue(value.message, out);
+            else if (typeof value.msg === "string") textsFromApiValue(value.msg, out);
+        }
+    }
+
     function sanitizeApiMessage(raw, status) {
         const text = String(raw || "").trim();
         if (!text) return "Error de servidor (" + (status || "?") + ")";
@@ -37,9 +56,49 @@
         ) {
             return "Error de servidor (" + (status || "?") + ")";
         }
-        // Cap very long bodies (e.g. accidental HTML)
-        if (text.length > 280) return "Error de servidor (" + (status || "?") + ")";
+        if (text.length > 280) {
+            if (Number(status) === 400) return text.slice(0, 500);
+            return "Error de servidor (" + (status || "?") + ")";
+        }
         return text;
+    }
+
+    function apiErrorPayload(data) {
+        const chunks = [];
+        if (data && typeof data === "object") {
+            textsFromApiValue(data.message, chunks);
+            textsFromApiValue(data.issues, chunks);
+            textsFromApiValue(data.errors, chunks);
+            textsFromApiValue(data.detail, chunks);
+            textsFromApiValue(data.error, chunks);
+        } else {
+            textsFromApiValue(data, chunks);
+        }
+        const specific = chunks.filter((item) => !GENERIC_API_ERROR.test(item));
+        const chosen = [];
+        (specific.length ? specific : chunks).forEach((item) => {
+            if (!chosen.includes(item)) chosen.push(item);
+        });
+        const codeValue = data && (data.code || (typeof data.error === "string" ? data.error : ""));
+        return { raw: chosen.join(". "), code: codeValue == null ? "" : String(codeValue) };
+    }
+
+    function throwHttpError(status, data) {
+        const payload = apiErrorPayload(data);
+        const serverMessage = sanitizeApiMessage(payload.raw, status);
+        const message =
+            status === 413 ? "El archivo es demasiado grande." : serverMessage;
+        const err = new Error(message);
+        err.status = status;
+        err.code = payload.code;
+        if (
+            status === 413 &&
+            String(payload.raw || "").trim() &&
+            !/^Error de servidor/i.test(serverMessage)
+        ) {
+            err.serverMessage = serverMessage;
+        }
+        throw err;
     }
 
     function assetUrl(name) {
@@ -311,16 +370,7 @@
             );
         }
 
-        if (!response.ok) {
-            if (response.status === 413) {
-                throw new Error("El archivo es demasiado grande.");
-            }
-            const raw =
-                (data && (data.message || data.error)) ||
-                (Array.isArray(data?.issues) && data.issues[0]?.message) ||
-                "";
-            throw new Error(sanitizeApiMessage(raw, response.status));
-        }
+        if (!response.ok) throwHttpError(response.status, data);
 
         return data;
     }
@@ -593,7 +643,27 @@
                 body: file,
             });
             if (!putRes.ok) {
-                throw new Error("Error al subir el archivo (" + putRes.status + ")");
+                let data = null;
+                try {
+                    const text = await putRes.text();
+                    if (text) {
+                        try {
+                            data = JSON.parse(text);
+                        } catch (_) {
+                            data = { message: text };
+                        }
+                    }
+                } catch (_) {
+                    data = null;
+                }
+                try {
+                    throwHttpError(putRes.status, data);
+                } catch (err) {
+                    if (putRes.status !== 413 && /^Error de servidor/i.test(err.message || "")) {
+                        err.message = "Error al subir el archivo (" + putRes.status + ")";
+                    }
+                    throw err;
+                }
             }
             await api.confirmMediaUpload({
                 assetId: created.assetId,
@@ -805,5 +875,12 @@
         isDisplayablePhoto,
         isApiDebug,
         sanitizeApiMessage,
+        apiErrorPayload,
     };
-})(window);
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = {
+            sanitizeApiMessage: sanitizeApiMessage,
+            apiErrorPayload: apiErrorPayload,
+        };
+    }
+})(typeof window !== "undefined" ? window : globalThis);

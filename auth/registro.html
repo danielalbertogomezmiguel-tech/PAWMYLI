@@ -29,7 +29,7 @@
                     <label>Nombre Completo</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-user"></i>
-                        <input type="text" id="nombre" placeholder="Ingrese su nombre" required>
+                        <input type="text" id="nombre" placeholder="Ingrese su nombre" required maxlength="80">
                     </div>
                 </div>
 
@@ -37,7 +37,7 @@
                     <label>Nombre de la Clínica</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-hospital"></i>
-                        <input type="text" id="clinica" placeholder="Nombre de la clínica" required>
+                        <input type="text" id="clinica" placeholder="Nombre de la clínica" required maxlength="100">
                     </div>
                 </div>
 
@@ -45,7 +45,7 @@
                     <label>Correo Electrónico</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-envelope"></i>
-                        <input type="email" id="correo" placeholder="correo@ejemplo.com" required>
+                        <input type="email" id="correo" placeholder="correo@ejemplo.com" required maxlength="254">
                     </div>
                 </div>
 
@@ -53,7 +53,7 @@
                     <label>Dirección</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-location-dot"></i>
-                        <input type="text" id="direccion" placeholder="Dirección de la clínica" required>
+                        <input type="text" id="direccion" placeholder="Dirección de la clínica" required maxlength="200">
                     </div>
                 </div>
 
@@ -61,7 +61,7 @@
                     <label>Número de Licencia</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-id-card"></i>
-                        <input type="text" id="licencia" placeholder="Número de licencia" required>
+                        <input type="text" id="licencia" placeholder="Número de licencia" required maxlength="50">
                     </div>
                 </div>
 
@@ -74,7 +74,7 @@
                     <label>Contraseña</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-lock"></i>
-                        <input type="password" id="password" placeholder="Contraseña" required>
+                        <input type="password" id="password" placeholder="Contraseña" required maxlength="72">
                         <button type="button" class="togglePassword">
                             <i class="fa-solid fa-eye"></i>
                         </button>
@@ -85,7 +85,7 @@
                     <label>Confirmar Contraseña</label>
                     <div class="input-icon">
                         <i class="fa-solid fa-lock"></i>
-                        <input type="password" id="confirmar" placeholder="Repita la contraseña" required>
+                        <input type="password" id="confirmar" placeholder="Repita la contraseña" required maxlength="72">
                         <button type="button" class="togglePassword">
                             <i class="fa-solid fa-eye"></i>
                         </button>
@@ -107,6 +107,7 @@
 
 </div>
 
+<script src="../js/field-limits.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>

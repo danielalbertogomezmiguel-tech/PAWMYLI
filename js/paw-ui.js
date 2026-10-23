@@ -17,7 +17,7 @@
             '<p class="hint-codigo" data-paw-ui-message></p>' +
             '<div data-paw-ui-prompt-wrap style="display:none;margin-top:12px;">' +
             '<label for="pawUiPromptInput" data-paw-ui-prompt-label>Valor</label>' +
-            '<input type="text" id="pawUiPromptInput" autocomplete="off" spellcheck="false">' +
+            '<input type="text" id="pawUiPromptInput" maxlength="100" autocomplete="off" spellcheck="false">' +
             "</div>" +
             '<div class="modal-acciones">' +
             '<button type="button" class="btn-secundario" data-paw-ui-cancel>Cancelar</button>' +
@@ -56,6 +56,12 @@
             promptLabel.textContent = opts.inputLabel || "Valor";
             input.value = opts.initialValue != null ? String(opts.initialValue) : "";
             input.placeholder = opts.placeholder || "";
+            const limit =
+                global.PawFieldLimits && PawFieldLimits.promptMaxLength
+                    ? PawFieldLimits.promptMaxLength(opts.inputLabel, opts.maxLength)
+                    : Number(opts.maxLength) || 100;
+            input.maxLength = limit;
+            input.setAttribute("maxlength", String(limit));
         }
         cancelBtns.forEach((btn) => {
             if (btn.classList.contains("btn-secundario") || btn.classList.contains("cerrarModal")) {
@@ -148,6 +154,7 @@
             initialValue: initialValue != null ? initialValue : "",
             inputLabel: opts.inputLabel || "Valor",
             placeholder: opts.placeholder || "",
+            maxLength: opts.maxLength,
             confirmLabel: opts.confirmLabel || "Continuar",
             cancelLabel: opts.cancelLabel || "Cancelar",
         });

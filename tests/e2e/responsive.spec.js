@@ -411,3 +411,108 @@ test.describe("responsive layouts", () => {
         }
     }
 });
+
+function touchTarget(el) {
+    const rect = el.getBoundingClientRect();
+    const after = getComputedStyle(el, "::after");
+    const width = parseFloat(after.width);
+    const height = parseFloat(after.height);
+    const icon = el.querySelector("i");
+    const iconBox = icon ? icon.getBoundingClientRect() : null;
+    return {
+        hitW: Math.max(rect.width, Number.isFinite(width) ? width : 0),
+        hitH: Math.max(rect.height, Number.isFinite(height) ? height : 0),
+        visualW: rect.width,
+        visualH: rect.height,
+        icon: iconBox ? Math.max(iconBox.width, iconBox.height) : 0,
+    };
+}
+
+test("áreas táctiles de al menos 44px a 360", async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.clock.install({ time: new Date(2026, 5, 15, 12, 0, 0) });
+
+    await page.goto("/auth/login.html");
+    await expect(page.locator("#loginForm")).toBeVisible();
+    const forgot = await page.locator(".extras a").evaluate(touchTarget);
+    expect(forgot.hitW).toBeGreaterThanOrEqual(44);
+    expect(forgot.hitH).toBeGreaterThanOrEqual(44);
+    expect(forgot.visualH).toBeLessThan(30);
+
+    const session = {
+        token: "access-1",
+        refresh: "refresh-1",
+        user: VET,
+        pacienteId: "pet-1",
+    };
+    await installApi(page, session);
+
+    await page.goto("/agenda/agenda.html");
+    await expect(page.locator("#diasCalendario")).toBeVisible();
+    for (const id of ["#anterior", "#siguiente"]) {
+        const hit = await page.locator(id).evaluate(touchTarget);
+        expect(hit.hitW).toBeGreaterThanOrEqual(44);
+        expect(hit.hitH).toBeGreaterThanOrEqual(44);
+        expect(hit.visualW).toBeLessThan(44);
+        expect(hit.icon).toBeLessThan(40);
+    }
+
+    await page.goto("/perfil/perfil.html");
+    await expect(page.locator(".volver")).toBeVisible();
+    const back = await page.locator(".volver").evaluate(touchTarget);
+    expect(back.hitW).toBeGreaterThanOrEqual(44);
+    expect(back.hitH).toBeGreaterThanOrEqual(44);
+    expect(back.visualW).toBeLessThan(44);
+    expect(back.icon).toBeLessThan(40);
+
+    await page.locator("#modalConsulta").evaluate((el) => el.classList.add("activo"));
+    const consultaClose = await page.locator(".cerrarModalConsulta").evaluate(touchTarget);
+    expect(consultaClose.hitW).toBeGreaterThanOrEqual(44);
+    expect(consultaClose.hitH).toBeGreaterThanOrEqual(44);
+    expect(consultaClose.visualW).toBeLessThan(44);
+    expect(consultaClose.icon).toBeLessThan(40);
+
+    await page.evaluate(() => {
+        window.PawUi.confirm("¿Guardar el plan de alimentación?", { title: "Guardar plan" });
+        window.PawToast.show({ type: "info", message: "Aviso", duration: 0 });
+    });
+    const pawClose = await page.locator("#pawUiDialog .cerrarModal").evaluate(touchTarget);
+    expect(pawClose.hitW).toBeGreaterThanOrEqual(44);
+    expect(pawClose.hitH).toBeGreaterThanOrEqual(44);
+    expect(pawClose.visualW).toBeLessThan(44);
+    expect(pawClose.icon).toBeLessThan(40);
+    const toastClose = await page.locator(".paw-toast-close").evaluate(touchTarget);
+    expect(toastClose.hitW).toBeGreaterThanOrEqual(44);
+    expect(toastClose.hitH).toBeGreaterThanOrEqual(44);
+    expect(toastClose.visualW).toBeLessThan(44);
+    expect(toastClose.visualH).toBeLessThan(44);
+    expect(toastClose.icon).toBeLessThan(40);
+
+    await page.goto("/pacientes/paciente.html");
+    await expect(page.locator("#nuevoPaciente")).toBeVisible();
+    await page.locator("#nuevoPaciente").click();
+    const modalClose = await page.locator("#modal.activo .cerrarModal").evaluate(touchTarget);
+    expect(modalClose.hitW).toBeGreaterThanOrEqual(44);
+    expect(modalClose.hitH).toBeGreaterThanOrEqual(44);
+    expect(modalClose.visualW).toBeLessThan(44);
+    expect(modalClose.icon).toBeLessThan(40);
+
+    await page.locator("#modal").evaluate((el) => el.classList.remove("activo"));
+    await page.locator("#panelVinculaciones").evaluate((el) => {
+        el.hidden = false;
+    });
+    const panelClose = await page.locator("#cerrarPanelVinculaciones").evaluate(touchTarget);
+    expect(panelClose.hitW).toBeGreaterThanOrEqual(44);
+    expect(panelClose.hitH).toBeGreaterThanOrEqual(44);
+    expect(panelClose.visualW).toBeLessThan(44);
+    expect(panelClose.icon).toBeLessThan(40);
+
+    await page.evaluate(() => {
+        window.PawUi.confirm("¿Guardar el perfil?", { title: "Guardar perfil" });
+    });
+    const settingsLike = await page.locator("#pawUiDialog .cerrarModal").evaluate(touchTarget);
+    expect(settingsLike.hitW).toBeGreaterThanOrEqual(44);
+    expect(settingsLike.hitH).toBeGreaterThanOrEqual(44);
+    expect(settingsLike.icon).toBeLessThan(40);
+});

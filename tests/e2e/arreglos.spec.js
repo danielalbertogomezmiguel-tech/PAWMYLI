@@ -168,6 +168,39 @@ test("configuración: con la actual el body lleva currentPassword", async ({ pag
     expect(puts[0].currentPassword).toBe("clave-actual");
 });
 
+test("editar paciente no reenvía la URL firmada de la foto", async ({ page }) => {
+    const puts = [];
+    const patient = patientBase({
+        photo: "https://cdn.example/luna.png?X-Amz-Signature=firmada",
+        photoUrl: "https://cdn.example/luna.png?X-Amz-Signature=firmada",
+        color: "Blanco",
+        ownerPhone: "5550001111",
+        ownerEmail: "ana@test.local",
+    });
+    await installApi(page, async ({ path, method, request }) => {
+        if (path.endsWith("/auth/profile") && method === "GET") return { body: VET };
+        if (path.endsWith("/feeding/logs")) return { body: [] };
+        if (path.endsWith("/feeding/summary")) return { body: { plan: null } };
+        if (/\/patients\/[^/]+$/.test(path) && method === "PUT") {
+            puts.push(request.postDataJSON());
+            return { body: patient };
+        }
+        if (/\/patients\/[^/]+$/.test(path)) return { body: patient };
+        return null;
+    }, vetSession({ pacienteId: "pet-1" }));
+
+    await page.goto("/perfil/perfil.html");
+    await expect(page.locator("#nombrePaciente")).toHaveText("Luna");
+    await page.locator("button.editar").click();
+    await expect(page.locator("#editNombre")).toHaveValue("Luna");
+    await page.locator("#formEditar").locator("button.guardar").click();
+    await expect.poll(() => puts.length).toBe(1);
+    expect(Object.prototype.hasOwnProperty.call(puts[0], "photo")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(puts[0], "photoUrl")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(puts[0], "foto")).toBe(false);
+    expect(puts[0].name).toBe("Luna");
+});
+
 test("configuración: guardar el perfil sin cambiar la foto no envía photo", async ({ page }) => {
     const puts = [];
     await installApi(page, async ({ path, method, request }) => {
@@ -835,4 +868,26 @@ test("alimentación: horas 12 h antiguas se muestran y se guardan en HH:MM", asy
     const cena = meals.find((m) => m.id === "meal-pm");
     expect(desayuno.time).toBe("07:00");
     expect(cena.time).toBe("20:00");
+});
+
+test("la nota de la cita no pasa de 2000 y muestra el contador", async ({ page }) => {
+    await installApi(page, async ({ path }) => {
+        if (path.endsWith("/auth/profile")) return { body: VET };
+        if (path.includes("/appointments")) return { body: { data: [] } };
+        if (path.includes("/patients")) return { body: { data: [], meta: { total: 0 } } };
+        if (path.includes("/inbox")) return { body: { data: [] } };
+        if (path.endsWith("/config")) return { body: {} };
+        return { body: {} };
+    }, vetSession());
+
+    await page.goto("/agenda/agenda.html");
+    const nota = page.locator("#nota");
+    await expect(nota).toHaveAttribute("maxlength", "2000");
+    await expect(page.locator("#nombreMascota")).toHaveAttribute("maxlength", "50");
+    await expect(page.locator("#dueno")).toHaveAttribute("maxlength", "80");
+    const counter = page.locator("#nota + .field-count");
+    await expect(counter).toHaveText("0/2000");
+    await nota.fill("a".repeat(2001));
+    await expect(nota).toHaveValue("a".repeat(2000));
+    await expect(counter).toHaveText("2000/2000");
 });

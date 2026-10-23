@@ -1,5 +1,19 @@
 /* Shared responsive helpers for PawMily web.
-   Rules stay inside max-width 900px and 600px so desktop (>=1024px) is unchanged. */
+   Rules stay inside max-width 900px and 600px so desktop (>=1024px) is unchanged.
+   The character counter is global so long textareas show n/máx on every viewport. */
+
+.field-count {
+    display: block;
+    margin: 2px 0 8px;
+    text-align: right;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #6b7280;
+}
+
+.field-count.is-full {
+    color: #b45309;
+}
 
 @media (max-width: 900px) {
     html,
@@ -651,5 +665,58 @@
 
     .modal .ventana {
         padding: 20px 16px;
+    }
+}
+
+/* Área táctil de 44px sin cambiar el icono. En 1280 con puntero fino no aplica. */
+@media (pointer: coarse), (max-width: 900px) {
+    .modal .cerrarModal,
+    .cerrarModalConsulta,
+    .cerrarModalDetalle,
+    .cerrarModalExito,
+    .paw-toast-close,
+    .cabeceraCalendario > button,
+    .volver,
+    .btn-cerrar-panel,
+    .extras a {
+        overflow: visible;
+    }
+
+    .paw-toast-close,
+    .cabeceraCalendario > button,
+    .volver,
+    .btn-cerrar-panel,
+    .extras a {
+        position: relative;
+    }
+
+    .modal .cerrarModal::after,
+    .cerrarModalConsulta::after,
+    .cerrarModalDetalle::after,
+    .cerrarModalExito::after,
+    .paw-toast-close::after,
+    .cabeceraCalendario > button::after,
+    .volver::after,
+    .btn-cerrar-panel::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+        background: transparent;
+    }
+
+    .extras a::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        min-width: 44px;
+        height: 44px;
+        transform: translateY(-50%);
+        background: transparent;
     }
 }

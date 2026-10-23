@@ -194,27 +194,27 @@
                     <div class="fila">
                         <div>
                             <label>Tipo de alimento</label>
-                            <input type="text" id="dietaFoodType" placeholder="Ej. croqueta seca">
+                            <input type="text" id="dietaFoodType" placeholder="Ej. croqueta seca" maxlength="100">
                         </div>
                         <div>
                             <label>Marca / producto</label>
-                            <input type="text" id="dietaBrand" placeholder="Opcional">
+                            <input type="text" id="dietaBrand" placeholder="Opcional" maxlength="100">
                         </div>
                     </div>
                     <label>Permitidos</label>
-                    <textarea id="dietaPermitidos" rows="2" placeholder="Alimentos que puede consumir..."></textarea>
+                    <textarea id="dietaPermitidos" rows="2" placeholder="Alimentos que puede consumir..." maxlength="2000"></textarea>
                     <label>Prohibidos</label>
-                    <textarea id="dietaProhibidos" rows="2" placeholder="Alimentos a evitar..."></textarea>
+                    <textarea id="dietaProhibidos" rows="2" placeholder="Alimentos a evitar..." maxlength="2000"></textarea>
                     <label>Notas / recomendaciones</label>
-                    <textarea id="dietaNotas" rows="2" placeholder="Indicaciones especiales..."></textarea>
+                    <textarea id="dietaNotas" rows="2" placeholder="Indicaciones especiales..." maxlength="2000"></textarea>
                     <div class="fila" style="margin-top:10px;">
                         <div>
                             <label>Cantidad diaria recomendada</label>
-                            <input type="text" id="dietaResultado" placeholder="Ej. 180 g">
+                            <input type="text" id="dietaResultado" placeholder="Ej. 180 g" maxlength="100">
                         </div>
                         <div>
                             <label>kcal/día</label>
-                            <input type="text" id="dietaKcal" placeholder="Opcional">
+                            <input type="text" id="dietaKcal" placeholder="Opcional" maxlength="100">
                         </div>
                     </div>
 
@@ -283,7 +283,7 @@
                 </div>
                 <div>
                     <label>Nº consulta</label>
-                    <input type="text" id="consultaNumero" readonly placeholder="Se asigna al guardar">
+                    <input type="text" id="consultaNumero" readonly placeholder="Se asigna al guardar" maxlength="20">
                 </div>
             </div>
 
@@ -325,42 +325,42 @@
                 <div class="fila">
                     <div>
                         <label for="consultaMotivo">Motivo</label>
-                        <input type="text" id="consultaMotivo" name="reason" placeholder="Motivo de la consulta" required>
+                        <input type="text" id="consultaMotivo" name="reason" placeholder="Motivo de la consulta" required maxlength="500">
                     </div>
                     <div>
                         <label for="consultaVet">Veterinario</label>
-                        <input type="text" id="consultaVet" name="vetName" list="listaVeterinarios" placeholder="Nombre del veterinario" autocomplete="name">
+                        <input type="text" id="consultaVet" name="vetName" list="listaVeterinarios" placeholder="Nombre del veterinario" autocomplete="name" maxlength="80">
                         <datalist id="listaVeterinarios"></datalist>
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label for="consultaPropietario">Propietario</label>
-                        <input type="text" id="consultaPropietario" name="ownerName" readonly>
+                        <input type="text" id="consultaPropietario" name="ownerName" readonly maxlength="80">
                         <label for="consultaPropietarioTel">Teléfono del propietario</label>
-                        <input type="text" id="consultaPropietarioTel" readonly>
+                        <input type="text" id="consultaPropietarioTel" readonly maxlength="20">
                         <label for="consultaPropietarioEmail">Correo del propietario</label>
-                        <input type="text" id="consultaPropietarioEmail" readonly>
+                        <input type="text" id="consultaPropietarioEmail" readonly maxlength="254">
                     </div>
                     <div>
                         <label for="consultaPeso">Peso</label>
-                        <input type="text" id="consultaPeso" name="weight" placeholder="Ej: 10.2 kg">
+                        <input type="text" id="consultaPeso" name="weight" placeholder="Ej: 10.2 kg" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label for="consultaTemp">Temperatura</label>
-                        <input type="text" id="consultaTemp" name="temperature" placeholder="Ej: 38.5 °C">
+                        <input type="text" id="consultaTemp" name="temperature" placeholder="Ej: 38.5 °C" maxlength="100">
                     </div>
                     <div>
                         <label for="consultaFC">Frecuencia cardíaca</label>
-                        <input type="text" id="consultaFC" name="heartRate" placeholder="Ej: 90 lpm">
+                        <input type="text" id="consultaFC" name="heartRate" placeholder="Ej: 90 lpm" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label for="consultaFR">Frecuencia respiratoria</label>
-                        <input type="text" id="consultaFR" name="respiratoryRate" placeholder="Ej: 24 rpm">
+                        <input type="text" id="consultaFR" name="respiratoryRate" placeholder="Ej: 24 rpm" maxlength="100">
                     </div>
                     <div>
                         <label for="consultaSeguimiento">Fecha de seguimiento</label>
@@ -375,66 +375,66 @@
                     <div></div>
                 </div>
                 <label for="consultaObservaciones">Observaciones</label>
-                <textarea id="consultaObservaciones" name="observations" rows="2" placeholder="Observaciones generales..."></textarea>
+                <textarea id="consultaObservaciones" name="observations" rows="2" placeholder="Observaciones generales..." maxlength="2000"></textarea>
                 <label for="consultaNotasPrivadas">Notas privadas <span class="label-hint">(solo veterinario)</span></label>
-                <textarea id="consultaNotasPrivadas" name="privateNotes" rows="2" placeholder="Notas internas del veterinario..."></textarea>
+                <textarea id="consultaNotasPrivadas" name="privateNotes" rows="2" placeholder="Notas internas del veterinario..." maxlength="2000"></textarea>
             </fieldset>
 
             <!-- GENERAL -->
             <fieldset class="consulta-tipo-seccion" data-tipo="GENERAL" id="seccionGENERAL">
                 <legend>Consulta general</legend>
                 <label>Anamnesis</label>
-                <textarea name="anamnesis" rows="2"></textarea>
+                <textarea name="anamnesis" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Hidratación</label>
-                        <input type="text" name="hydration">
+                        <input type="text" name="hydration" maxlength="100">
                     </div>
                     <div>
                         <label>Mucosas</label>
-                        <input type="text" name="mucousMembranes">
+                        <input type="text" name="mucousMembranes" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Condición corporal</label>
-                        <input type="text" name="bodyCondition">
+                        <input type="text" name="bodyCondition" maxlength="100">
                     </div>
                     <div>
                         <label>Próximo control</label>
-                        <input type="text" name="nextControl">
+                        <input type="text" name="nextControl" maxlength="100">
                     </div>
                 </div>
                 <label>Examen físico</label>
-                <textarea name="physicalExam" rows="2"></textarea>
+                <textarea name="physicalExam" rows="2" maxlength="2000"></textarea>
                 <label>Hallazgos</label>
-                <textarea name="findings" rows="2"></textarea>
+                <textarea name="findings" rows="2" maxlength="2000"></textarea>
                 <label>Diagnóstico</label>
-                <textarea name="diagnosis" rows="2"></textarea>
+                <textarea name="diagnosis" rows="2" maxlength="2000"></textarea>
                 <label>Tratamiento</label>
-                <textarea name="treatment" rows="2"></textarea>
+                <textarea name="treatment" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Medicamento</label>
-                        <input type="text" name="medication">
+                        <input type="text" name="medication" maxlength="100">
                     </div>
                     <div>
                         <label>Dosis</label>
-                        <input type="text" name="dose">
+                        <input type="text" name="dose" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Frecuencia</label>
-                        <input type="text" name="medFrequency">
+                        <input type="text" name="medFrequency" maxlength="100">
                     </div>
                     <div>
                         <label>Duración</label>
-                        <input type="text" name="duration">
+                        <input type="text" name="duration" maxlength="100">
                     </div>
                 </div>
                 <label>Indicaciones</label>
-                <textarea name="indications" rows="2"></textarea>
+                <textarea name="indications" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- PREVENTIVA -->
@@ -443,45 +443,45 @@
                 <div class="fila">
                     <div>
                         <label>Condición corporal</label>
-                        <input type="text" name="bodyCondition">
+                        <input type="text" name="bodyCondition" maxlength="100">
                     </div>
                     <div>
                         <label>Próximo control</label>
-                        <input type="text" name="nextControl">
+                        <input type="text" name="nextControl" maxlength="100">
                     </div>
                 </div>
                 <label>Examen físico</label>
-                <textarea name="physicalExam" rows="2"></textarea>
+                <textarea name="physicalExam" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Vacunas revisadas</label>
-                        <input type="text" name="vaccinesReviewed">
+                        <input type="text" name="vaccinesReviewed" maxlength="100">
                     </div>
                     <div>
                         <label>Desparasitación revisada</label>
-                        <input type="text" name="dewormingReviewed">
+                        <input type="text" name="dewormingReviewed" maxlength="100">
                     </div>
                 </div>
                 <label>Prevención de parásitos</label>
-                <textarea name="parasitePrevention" rows="2"></textarea>
+                <textarea name="parasitePrevention" rows="2" maxlength="2000"></textarea>
                 <label>Recomendaciones</label>
-                <textarea name="recommendations" rows="2"></textarea>
+                <textarea name="recommendations" rows="2" maxlength="2000"></textarea>
                 <label>Notas de alimentación</label>
-                <textarea name="feedingNotes" rows="2"></textarea>
+                <textarea name="feedingNotes" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Higiene</label>
-                        <input type="text" name="hygiene">
+                        <input type="text" name="hygiene" maxlength="100">
                     </div>
                     <div>
                         <label>Actividad</label>
-                        <input type="text" name="activity">
+                        <input type="text" name="activity" maxlength="100">
                     </div>
                 </div>
                 <label>Valoración</label>
-                <textarea name="assessment" rows="2"></textarea>
+                <textarea name="assessment" rows="2" maxlength="2000"></textarea>
                 <label>Indicaciones</label>
-                <textarea name="indications" rows="2"></textarea>
+                <textarea name="indications" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- VACUNACION -->
@@ -490,21 +490,21 @@
                 <div class="fila">
                     <div>
                         <label>Vacuna</label>
-                        <input type="text" name="vaccine">
+                        <input type="text" name="vaccine" maxlength="100">
                     </div>
                     <div>
                         <label>Enfermedad prevenida</label>
-                        <input type="text" name="diseasePrevented">
+                        <input type="text" name="diseasePrevented" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Fabricante</label>
-                        <input type="text" name="manufacturer">
+                        <input type="text" name="manufacturer" maxlength="100">
                     </div>
                     <div>
                         <label>Lote</label>
-                        <input type="text" name="lot">
+                        <input type="text" name="lot" maxlength="50">
                     </div>
                 </div>
                 <div class="fila">
@@ -520,29 +520,29 @@
                 <div class="fila">
                     <div>
                         <label>Dosis</label>
-                        <input type="text" name="dose">
+                        <input type="text" name="dose" maxlength="100">
                     </div>
                     <div>
                         <label>Vía</label>
-                        <input type="text" name="route">
+                        <input type="text" name="route" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Sitio de aplicación</label>
-                        <input type="text" name="site">
+                        <input type="text" name="site" maxlength="100">
                     </div>
                     <div>
                         <label>Próxima dosis</label>
-                        <input type="text" name="nextDose">
+                        <input type="text" name="nextDose" maxlength="100">
                     </div>
                 </div>
                 <label>Reacciones previas</label>
-                <textarea name="priorReactions" rows="2"></textarea>
+                <textarea name="priorReactions" rows="2" maxlength="2000"></textarea>
                 <label>Reacciones posteriores</label>
-                <textarea name="postReactions" rows="2"></textarea>
+                <textarea name="postReactions" rows="2" maxlength="2000"></textarea>
                 <label>Notas de vacuna</label>
-                <textarea name="vaccineNotes" rows="2"></textarea>
+                <textarea name="vaccineNotes" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- DESPARASITACION -->
@@ -551,31 +551,31 @@
                 <div class="fila">
                     <div>
                         <label>Tipo de parásito</label>
-                        <input type="text" name="parasiteType">
+                        <input type="text" name="parasiteType" maxlength="50">
                     </div>
                     <div>
                         <label>Producto</label>
-                        <input type="text" name="product">
+                        <input type="text" name="product" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Principio activo</label>
-                        <input type="text" name="activeIngredient">
+                        <input type="text" name="activeIngredient" maxlength="100">
                     </div>
                     <div>
                         <label>Dosis</label>
-                        <input type="text" name="dose">
+                        <input type="text" name="dose" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Frecuencia</label>
-                        <input type="text" name="frequency">
+                        <input type="text" name="frequency" maxlength="100">
                     </div>
                     <div>
                         <label>Vía</label>
-                        <input type="text" name="route">
+                        <input type="text" name="route" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
@@ -585,94 +585,94 @@
                     </div>
                     <div>
                         <label>Peso para dosis</label>
-                        <input type="text" name="weightForDose">
+                        <input type="text" name="weightForDose" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Próxima desparasitación</label>
-                        <input type="text" name="nextDeworming">
+                        <input type="text" name="nextDeworming" maxlength="100">
                     </div>
                     <div></div>
                 </div>
                 <label>Notas</label>
-                <textarea name="notes" rows="2"></textarea>
+                <textarea name="notes" rows="2" maxlength="2000"></textarea>
                 <label>Recomendaciones</label>
-                <textarea name="recommendations" rows="2"></textarea>
+                <textarea name="recommendations" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- ENFERMEDAD -->
             <fieldset class="consulta-tipo-seccion" data-tipo="ENFERMEDAD" id="seccionENFERMEDAD" hidden>
                 <legend>Enfermedad</legend>
                 <label>Síntomas</label>
-                <textarea name="symptoms" rows="2"></textarea>
+                <textarea name="symptoms" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Inicio de síntomas</label>
-                        <input type="text" name="symptomOnset">
+                        <input type="text" name="symptomOnset" maxlength="100">
                     </div>
                     <div>
                         <label>Evolución</label>
-                        <input type="text" name="evolution">
+                        <input type="text" name="evolution" maxlength="100">
                     </div>
                 </div>
                 <label>Antecedentes relevantes</label>
-                <textarea name="relevantHistory" rows="2"></textarea>
+                <textarea name="relevantHistory" rows="2" maxlength="2000"></textarea>
                 <label>Signos clínicos</label>
-                <textarea name="clinicalSigns" rows="2"></textarea>
+                <textarea name="clinicalSigns" rows="2" maxlength="2000"></textarea>
                 <label>Examen físico</label>
-                <textarea name="physicalExam" rows="2"></textarea>
+                <textarea name="physicalExam" rows="2" maxlength="2000"></textarea>
                 <label>Estudios realizados</label>
-                <textarea name="testsDone" rows="2"></textarea>
+                <textarea name="testsDone" rows="2" maxlength="2000"></textarea>
                 <label>Resultados</label>
-                <textarea name="results" rows="2"></textarea>
+                <textarea name="results" rows="2" maxlength="2000"></textarea>
                 <label>Diagnóstico presuntivo</label>
-                <textarea name="presumptiveDiagnosis" rows="2"></textarea>
+                <textarea name="presumptiveDiagnosis" rows="2" maxlength="2000"></textarea>
                 <label>Diagnóstico definitivo</label>
-                <textarea name="definitiveDiagnosis" rows="2"></textarea>
+                <textarea name="definitiveDiagnosis" rows="2" maxlength="2000"></textarea>
                 <label>Tratamiento</label>
-                <textarea name="treatment" rows="2"></textarea>
+                <textarea name="treatment" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Medicamento</label>
-                        <input type="text" name="medication">
+                        <input type="text" name="medication" maxlength="100">
                     </div>
                     <div>
                         <label>Dosis</label>
-                        <input type="text" name="dose">
+                        <input type="text" name="dose" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Frecuencia</label>
-                        <input type="text" name="medFrequency">
+                        <input type="text" name="medFrequency" maxlength="100">
                     </div>
                     <div>
                         <label>Duración</label>
-                        <input type="text" name="duration">
+                        <input type="text" name="duration" maxlength="100">
                     </div>
                 </div>
                 <label>Indicaciones</label>
-                <textarea name="indications" rows="2"></textarea>
+                <textarea name="indications" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Pronóstico</label>
-                        <input type="text" name="prognosis">
+                        <input type="text" name="prognosis" maxlength="100">
                     </div>
                     <div>
                         <label>Próximo control</label>
-                        <input type="text" name="nextControl">
+                        <input type="text" name="nextControl" maxlength="100">
                     </div>
                 </div>
                 <label>Notas</label>
-                <textarea name="notes" rows="2"></textarea>
+                <textarea name="notes" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- TRAUMATOLOGIA -->
             <fieldset class="consulta-tipo-seccion" data-tipo="TRAUMATOLOGIA" id="seccionTRAUMATOLOGIA" hidden>
                 <legend>Traumatología</legend>
                 <label>Motivo del trauma</label>
-                <textarea name="traumaReason" rows="2"></textarea>
+                <textarea name="traumaReason" rows="2" maxlength="500"></textarea>
                 <div class="fila">
                     <div>
                         <label>Fecha y hora del evento</label>
@@ -680,75 +680,75 @@
                     </div>
                     <div>
                         <label>Tipo de lesión</label>
-                        <input type="text" name="injuryType">
+                        <input type="text" name="injuryType" maxlength="50">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Zona afectada</label>
-                        <input type="text" name="affectedZone">
+                        <input type="text" name="affectedZone" maxlength="100">
                     </div>
                     <div>
                         <label>Cómo ocurrió</label>
-                        <input type="text" name="howOccurred">
+                        <input type="text" name="howOccurred" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Dolor</label>
-                        <input type="text" name="pain">
+                        <input type="text" name="pain" maxlength="100">
                     </div>
                     <div>
                         <label>Inflamación</label>
-                        <input type="text" name="inflammation">
+                        <input type="text" name="inflammation" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Heridas</label>
-                        <input type="text" name="wounds">
+                        <input type="text" name="wounds" maxlength="100">
                     </div>
                     <div>
                         <label>Movilidad</label>
-                        <input type="text" name="mobility">
+                        <input type="text" name="mobility" maxlength="100">
                     </div>
                 </div>
                 <div class="fila">
                     <div>
                         <label>Cojera</label>
-                        <input type="text" name="limp">
+                        <input type="text" name="limp" maxlength="100">
                     </div>
                     <div>
                         <label>Próximo control</label>
-                        <input type="text" name="nextControl">
+                        <input type="text" name="nextControl" maxlength="100">
                     </div>
                 </div>
                 <label>Examen físico</label>
-                <textarea name="physicalExam" rows="2"></textarea>
+                <textarea name="physicalExam" rows="2" maxlength="2000"></textarea>
                 <label>Estudios</label>
-                <textarea name="studies" rows="2"></textarea>
+                <textarea name="studies" rows="2" maxlength="2000"></textarea>
                 <label>Notas de imagen</label>
-                <textarea name="imagingNotes" rows="2"></textarea>
+                <textarea name="imagingNotes" rows="2" maxlength="2000"></textarea>
                 <label>Resultados</label>
-                <textarea name="results" rows="2"></textarea>
+                <textarea name="results" rows="2" maxlength="2000"></textarea>
                 <label>Diagnóstico</label>
-                <textarea name="diagnosis" rows="2"></textarea>
+                <textarea name="diagnosis" rows="2" maxlength="2000"></textarea>
                 <label>Tratamiento</label>
-                <textarea name="treatment" rows="2"></textarea>
+                <textarea name="treatment" rows="2" maxlength="2000"></textarea>
                 <div class="fila">
                     <div>
                         <label>Medicamento</label>
-                        <input type="text" name="medication">
+                        <input type="text" name="medication" maxlength="100">
                     </div>
                     <div>
                         <label>Inmovilización</label>
-                        <input type="text" name="immobilization">
+                        <input type="text" name="immobilization" maxlength="100">
                     </div>
                 </div>
                 <label>Recomendaciones</label>
-                <textarea name="recommendations" rows="2"></textarea>
+                <textarea name="recommendations" rows="2" maxlength="2000"></textarea>
                 <label>Notas</label>
-                <textarea name="notes" rows="2"></textarea>
+                <textarea name="notes" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- REPRODUCTIVA -->
@@ -757,15 +757,15 @@
                 <div class="fila">
                     <div>
                         <label>Estado reproductivo</label>
-                        <input type="text" name="reproductiveStatus">
+                        <input type="text" name="reproductiveStatus" maxlength="50">
                     </div>
                     <div class="campo-sexo-hembra">
                         <label>Ciclo / celo</label>
-                        <input type="text" name="cycleHeat">
+                        <input type="text" name="cycleHeat" maxlength="50">
                     </div>
                 </div>
                 <label>Historial reproductivo</label>
-                <textarea name="reproductiveHistory" rows="2"></textarea>
+                <textarea name="reproductiveHistory" rows="2" maxlength="2000"></textarea>
                 <div class="fila campo-sexo-hembra">
                     <div>
                         <label>Último celo</label>
@@ -776,33 +776,33 @@
                 <div class="fila">
                     <div>
                         <label>Gestaciones previas</label>
-                        <input type="text" name="priorGestations">
+                        <input type="text" name="priorGestations" maxlength="100">
                     </div>
                     <div>
                         <label>Partos previos</label>
-                        <input type="text" name="priorBirths">
+                        <input type="text" name="priorBirths" maxlength="100">
                     </div>
                 </div>
                 <label>Problemas previos</label>
-                <textarea name="priorProblems" rows="2"></textarea>
+                <textarea name="priorProblems" rows="2" maxlength="2000"></textarea>
                 <label>Examen reproductivo</label>
-                <textarea name="reproductiveExam" rows="2"></textarea>
+                <textarea name="reproductiveExam" rows="2" maxlength="2000"></textarea>
                 <label>Hallazgos</label>
-                <textarea name="findings" rows="2"></textarea>
+                <textarea name="findings" rows="2" maxlength="2000"></textarea>
                 <label>Estudios realizados</label>
-                <textarea name="testsDone" rows="2"></textarea>
+                <textarea name="testsDone" rows="2" maxlength="2000"></textarea>
                 <label>Resultados</label>
-                <textarea name="results" rows="2"></textarea>
+                <textarea name="results" rows="2" maxlength="2000"></textarea>
                 <label>Diagnóstico</label>
-                <textarea name="diagnosis" rows="2"></textarea>
+                <textarea name="diagnosis" rows="2" maxlength="2000"></textarea>
                 <label>Tratamiento</label>
-                <textarea name="treatment" rows="2"></textarea>
+                <textarea name="treatment" rows="2" maxlength="2000"></textarea>
                 <label>Recomendaciones</label>
-                <textarea name="recommendations" rows="2"></textarea>
+                <textarea name="recommendations" rows="2" maxlength="2000"></textarea>
                 <label>Seguimiento</label>
-                <textarea name="followUp" rows="2"></textarea>
+                <textarea name="followUp" rows="2" maxlength="2000"></textarea>
                 <label>Notas</label>
-                <textarea name="notes" rows="2"></textarea>
+                <textarea name="notes" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <!-- SEGUIMIENTO -->
@@ -817,37 +817,37 @@
                     </div>
                     <div>
                         <label>Próximo control</label>
-                        <input type="text" name="nextControl">
+                        <input type="text" name="nextControl" maxlength="100">
                     </div>
                 </div>
                 <label>Motivo de seguimiento</label>
-                <textarea name="followUpReason" rows="2"></textarea>
+                <textarea name="followUpReason" rows="2" maxlength="500"></textarea>
                 <label>Evolución</label>
-                <textarea name="evolution" rows="2"></textarea>
+                <textarea name="evolution" rows="2" maxlength="2000"></textarea>
                 <label>Cambios desde última visita</label>
-                <textarea name="changesSince" rows="2"></textarea>
+                <textarea name="changesSince" rows="2" maxlength="2000"></textarea>
                 <label>Signos actuales</label>
-                <textarea name="currentSigns" rows="2"></textarea>
+                <textarea name="currentSigns" rows="2" maxlength="2000"></textarea>
                 <label>Respuesta al tratamiento</label>
-                <textarea name="treatmentResponse" rows="2"></textarea>
+                <textarea name="treatmentResponse" rows="2" maxlength="2000"></textarea>
                 <label>Medicación actual</label>
-                <textarea name="currentMeds" rows="2"></textarea>
+                <textarea name="currentMeds" rows="2" maxlength="2000"></textarea>
                 <label>Cumplimiento del tratamiento</label>
-                <textarea name="treatmentCompliance" rows="2"></textarea>
+                <textarea name="treatmentCompliance" rows="2" maxlength="2000"></textarea>
                 <label>Nuevos hallazgos</label>
-                <textarea name="newFindings" rows="2"></textarea>
+                <textarea name="newFindings" rows="2" maxlength="2000"></textarea>
                 <label>Nuevos estudios</label>
-                <textarea name="newTests" rows="2"></textarea>
+                <textarea name="newTests" rows="2" maxlength="2000"></textarea>
                 <label>Resultados</label>
-                <textarea name="results" rows="2"></textarea>
+                <textarea name="results" rows="2" maxlength="2000"></textarea>
                 <label>Estado actual</label>
-                <textarea name="currentStatus" rows="2"></textarea>
+                <textarea name="currentStatus" rows="2" maxlength="2000"></textarea>
                 <label>Modificación del tratamiento</label>
-                <textarea name="treatmentModification" rows="2"></textarea>
+                <textarea name="treatmentModification" rows="2" maxlength="2000"></textarea>
                 <label>Nuevas indicaciones</label>
-                <textarea name="newIndications" rows="2"></textarea>
+                <textarea name="newIndications" rows="2" maxlength="2000"></textarea>
                 <label>Notas</label>
-                <textarea name="notes" rows="2"></textarea>
+                <textarea name="notes" rows="2" maxlength="2000"></textarea>
             </fieldset>
 
             <button class="guardar" type="submit">Guardar Consulta</button>
@@ -875,7 +875,7 @@
             <div class="fila">
                 <div>
                     <label>Nombre</label>
-                    <input type="text" id="editNombre">
+                    <input type="text" id="editNombre" maxlength="50">
                 </div>
                 <div>
                     <label for="editEspecie">Especie</label>
@@ -885,22 +885,22 @@
             <div class="fila" id="filaEditEspecieOtra" hidden>
                 <div>
                     <label for="editEspecieOtra">¿Cuál especie?</label>
-                    <input type="text" id="editEspecieOtra" placeholder="Ej: Alpaca" autocomplete="off">
+                    <input type="text" id="editEspecieOtra" placeholder="Ej: Alpaca" autocomplete="off" maxlength="50">
                 </div>
                 <div></div>
             </div>
             <div class="fila">
                 <div id="campoEditRaza" hidden>
                     <label for="editRaza">Raza</label>
-                    <input type="text" id="editRaza" autocomplete="off">
+                    <input type="text" id="editRaza" autocomplete="off" maxlength="50">
                 </div>
                 <div id="campoEditTipo" hidden>
                     <label for="editTipo">Tipo</label>
-                    <input type="text" id="editTipo" placeholder="Ej: Salmón, pez globo" autocomplete="off">
+                    <input type="text" id="editTipo" placeholder="Ej: Salmón, pez globo" autocomplete="off" maxlength="50">
                 </div>
                 <div>
                     <label>Edad</label>
-                    <input type="text" id="editEdad">
+                    <input type="text" id="editEdad" maxlength="100">
                 </div>
             </div>
             <div class="fila">
@@ -913,13 +913,13 @@
                 </div>
                 <div>
                     <label>Peso</label>
-                    <input type="text" id="editPeso">
+                    <input type="text" id="editPeso" maxlength="100">
                 </div>
             </div>
             <div class="fila">
                 <div>
                     <label>Color</label>
-                    <input type="text" id="editColor">
+                    <input type="text" id="editColor" maxlength="50">
                 </div>
                 <div>
                     <label>Microchip</label>
@@ -932,7 +932,7 @@
             <div class="fila">
                 <div>
                     <label>Propietario</label>
-                    <input type="text" id="editPropietario">
+                    <input type="text" id="editPropietario" maxlength="80">
                 </div>
             </div>
             <button class="guardar" type="submit">Guardar Cambios</button>
@@ -941,6 +941,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="../js/field-limits.js"></script>
 <script src="../js/env.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/escape.js"></script>

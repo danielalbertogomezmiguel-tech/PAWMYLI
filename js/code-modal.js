@@ -16,7 +16,7 @@
             '<h2 id="pawModalCodigoTitle">Ingresar código</h2>' +
             '<p class="hint-codigo" data-paw-code-hint></p>' +
             '<label for="pawInputCodigo">Código PAW / lector USB</label>' +
-            '<input type="text" id="pawInputCodigo" data-barcode-target="1" autocomplete="off" spellcheck="false" ' +
+            '<input type="text" id="pawInputCodigo" maxlength="20" data-barcode-target="1" autocomplete="off" spellcheck="false" ' +
             'placeholder="Escanea aquí o escribe PAW-000001" inputmode="text">' +
             '<p class="hint-codigo" style="margin-top:10px;font-size:13px;">' +
             "Con lector Motorola LS1203: deja el cursor en este campo y escanea." +
