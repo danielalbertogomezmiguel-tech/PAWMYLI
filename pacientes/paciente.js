@@ -601,15 +601,6 @@ buscar.addEventListener("keyup", () => {
     }, 300);
 });
 
-function readFotoAsDataUrl(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
-        reader.readAsDataURL(file);
-    });
-}
-
 function approximateAgeLabel(year, month) {
     const y = Number(year);
     const m = Number(month);
@@ -708,11 +699,13 @@ formulario.addEventListener("submit", async function (e) {
 
     try {
         if (file) {
-            if (file.size > 1.5 * 1024 * 1024) {
-                toast("warning", "Foto demasiado grande", "La foto debe pesar menos de 1.5 MB.");
+            try {
+                const prepared = await PawImageUpload.prepare(file);
+                body.photo = prepared.dataUrl;
+            } catch (err) {
+                toast("warning", "Foto", (err && err.message) || "No se pudo preparar la foto.");
                 return;
             }
-            body.photo = await readFotoAsDataUrl(file);
         }
         const created = await PawApi.api.createPatient(body, { idempotencyKey: idempotencyKey });
         formulario.reset();
@@ -721,7 +714,8 @@ formulario.addEventListener("submit", async function (e) {
         mostrarExito(created);
         toast("success", "Paciente registrado");
     } catch (err) {
-        toast("error", "No se pudo registrar", friendlyError(err));
+        const server = window.PawImageUpload && PawImageUpload.serverPhotoMessage(err);
+        toast("error", "No se pudo registrar", server || friendlyError(err));
     } finally {
         creatingPatient = false;
         if (submitBtn) {

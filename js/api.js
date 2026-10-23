@@ -42,6 +42,43 @@
         return text;
     }
 
+    function apiErrorPayload(data) {
+        const issue =
+            data && Array.isArray(data.issues) && data.issues[0] && data.issues[0].message
+                ? String(data.issues[0].message)
+                : "";
+        let raw = "";
+        if (data && typeof data.message === "string" && data.message.trim() && data.message !== "VALIDATION_ERROR") {
+            raw = data.message;
+        } else if (issue) {
+            raw = issue;
+        } else if (data && typeof data.error === "string" && data.error !== "VALIDATION_ERROR") {
+            raw = data.error;
+        } else if (data && (data.message || data.error)) {
+            raw = String(data.message || data.error);
+        }
+        const codeValue = data && (data.code || data.error);
+        return { raw: raw, code: codeValue == null ? "" : String(codeValue) };
+    }
+
+    function throwHttpError(status, data) {
+        const payload = apiErrorPayload(data);
+        const serverMessage = sanitizeApiMessage(payload.raw, status);
+        const message =
+            status === 413 ? "El archivo es demasiado grande." : serverMessage;
+        const err = new Error(message);
+        err.status = status;
+        err.code = payload.code;
+        if (
+            status === 413 &&
+            String(payload.raw || "").trim() &&
+            !/^Error de servidor/i.test(serverMessage)
+        ) {
+            err.serverMessage = serverMessage;
+        }
+        throw err;
+    }
+
     function assetUrl(name) {
         const path = global.location.pathname.replace(/\\/g, "/");
         if (path.includes("/auth/") || path.includes("/dashboard/") || path.includes("/pacientes/") ||
@@ -311,16 +348,7 @@
             );
         }
 
-        if (!response.ok) {
-            if (response.status === 413) {
-                throw new Error("El archivo es demasiado grande.");
-            }
-            const raw =
-                (data && (data.message || data.error)) ||
-                (Array.isArray(data?.issues) && data.issues[0]?.message) ||
-                "";
-            throw new Error(sanitizeApiMessage(raw, response.status));
-        }
+        if (!response.ok) throwHttpError(response.status, data);
 
         return data;
     }
@@ -593,7 +621,27 @@
                 body: file,
             });
             if (!putRes.ok) {
-                throw new Error("Error al subir el archivo (" + putRes.status + ")");
+                let data = null;
+                try {
+                    const text = await putRes.text();
+                    if (text) {
+                        try {
+                            data = JSON.parse(text);
+                        } catch (_) {
+                            data = { message: text };
+                        }
+                    }
+                } catch (_) {
+                    data = null;
+                }
+                try {
+                    throwHttpError(putRes.status, data);
+                } catch (err) {
+                    if (putRes.status !== 413 && /^Error de servidor/i.test(err.message || "")) {
+                        err.message = "Error al subir el archivo (" + putRes.status + ")";
+                    }
+                    throw err;
+                }
             }
             await api.confirmMediaUpload({
                 assetId: created.assetId,
