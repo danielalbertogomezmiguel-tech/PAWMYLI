@@ -170,5 +170,64 @@
         }).then(() => undefined);
     }
 
+    function isMobileLayout() {
+        return !!(window.matchMedia && window.matchMedia("(max-width: 900px)").matches);
+    }
+
+    function isModalTextField(target) {
+        if (!target || !target.closest || !target.matches) return false;
+        if (target.classList && target.classList.contains("scan-hid-compact")) return false;
+        if (!target.matches("input, textarea, select")) return false;
+        if (target.matches("input[type='hidden'], input[type='checkbox'], input[type='radio'], input[type='file'], input[type='button'], input[type='submit']")) {
+            return false;
+        }
+        return true;
+    }
+
+    function activeModalField(target) {
+        if (!isModalTextField(target)) return null;
+        const modal = target.closest(".modal");
+        if (!modal || !modal.classList.contains("activo")) return null;
+        return modal;
+    }
+
+    function reserveFooterSpace(modal) {
+        const ventana = modal.querySelector(".ventana");
+        if (!ventana) return;
+        const footer = modal.querySelector(".modal-pie, .modal-acciones");
+        const height = footer ? Math.ceil(footer.getBoundingClientRect().height) : 0;
+        ventana.style.scrollPaddingBottom = height > 0 ? height + "px" : "";
+    }
+
+    let modalFieldScrollTimer = 0;
+
+    function scheduleModalFieldScroll(target, delay) {
+        if (!isMobileLayout()) return;
+        const modal = activeModalField(target);
+        if (!modal) return;
+        window.clearTimeout(modalFieldScrollTimer);
+        modalFieldScrollTimer = window.setTimeout(() => {
+            if (!target.isConnected || document.activeElement !== target) return;
+            if (!isMobileLayout()) return;
+            const current = activeModalField(target);
+            if (!current) return;
+            reserveFooterSpace(current);
+            target.scrollIntoView({ block: "center", inline: "nearest" });
+        }, delay);
+    }
+
+    document.addEventListener("focusin", (event) => {
+        scheduleModalFieldScroll(event.target, 300);
+    });
+
+    function recenterFocusedModalField() {
+        scheduleModalFieldScroll(document.activeElement, 150);
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", recenterFocusedModalField);
+    }
+    window.addEventListener("resize", recenterFocusedModalField);
+
     global.PawUi = { confirm, prompt, alert };
 })(window);
