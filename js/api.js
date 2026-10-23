@@ -29,6 +29,25 @@
         console.warn("[PawApi]", label, detail || "");
     }
 
+    const GENERIC_API_ERROR = /^(bad request|validation_error|unprocessable entity|error|internal server error)$/i;
+
+    function textsFromApiValue(value, out) {
+        if (value == null) return;
+        if (typeof value === "string") {
+            const text = value.trim();
+            if (text) out.push(text);
+            return;
+        }
+        if (Array.isArray(value)) {
+            value.forEach((item) => textsFromApiValue(item, out));
+            return;
+        }
+        if (typeof value === "object") {
+            if (typeof value.message === "string") textsFromApiValue(value.message, out);
+            else if (typeof value.msg === "string") textsFromApiValue(value.msg, out);
+        }
+    }
+
     function sanitizeApiMessage(raw, status) {
         const text = String(raw || "").trim();
         if (!text) return "Error de servidor (" + (status || "?") + ")";
@@ -37,28 +56,31 @@
         ) {
             return "Error de servidor (" + (status || "?") + ")";
         }
-        // Cap very long bodies (e.g. accidental HTML)
-        if (text.length > 280) return "Error de servidor (" + (status || "?") + ")";
+        if (text.length > 280) {
+            if (Number(status) === 400) return text.slice(0, 500);
+            return "Error de servidor (" + (status || "?") + ")";
+        }
         return text;
     }
 
     function apiErrorPayload(data) {
-        const issue =
-            data && Array.isArray(data.issues) && data.issues[0] && data.issues[0].message
-                ? String(data.issues[0].message)
-                : "";
-        let raw = "";
-        if (data && typeof data.message === "string" && data.message.trim() && data.message !== "VALIDATION_ERROR") {
-            raw = data.message;
-        } else if (issue) {
-            raw = issue;
-        } else if (data && typeof data.error === "string" && data.error !== "VALIDATION_ERROR") {
-            raw = data.error;
-        } else if (data && (data.message || data.error)) {
-            raw = String(data.message || data.error);
+        const chunks = [];
+        if (data && typeof data === "object") {
+            textsFromApiValue(data.message, chunks);
+            textsFromApiValue(data.issues, chunks);
+            textsFromApiValue(data.errors, chunks);
+            textsFromApiValue(data.detail, chunks);
+            textsFromApiValue(data.error, chunks);
+        } else {
+            textsFromApiValue(data, chunks);
         }
-        const codeValue = data && (data.code || data.error);
-        return { raw: raw, code: codeValue == null ? "" : String(codeValue) };
+        const specific = chunks.filter((item) => !GENERIC_API_ERROR.test(item));
+        const chosen = [];
+        (specific.length ? specific : chunks).forEach((item) => {
+            if (!chosen.includes(item)) chosen.push(item);
+        });
+        const codeValue = data && (data.code || (typeof data.error === "string" ? data.error : ""));
+        return { raw: chosen.join(". "), code: codeValue == null ? "" : String(codeValue) };
     }
 
     function throwHttpError(status, data) {
@@ -853,5 +875,12 @@
         isDisplayablePhoto,
         isApiDebug,
         sanitizeApiMessage,
+        apiErrorPayload,
     };
-})(window);
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = {
+            sanitizeApiMessage: sanitizeApiMessage,
+            apiErrorPayload: apiErrorPayload,
+        };
+    }
+})(typeof window !== "undefined" ? window : globalThis);
