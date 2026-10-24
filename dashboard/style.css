@@ -296,6 +296,41 @@ header .header-sub {
     margin-bottom: 0;
 }
 
+.contenido ul.panel-list {
+    position: relative;
+}
+
+/* El tope de altura lo pone el dashboard al medir la tercera fila. */
+.contenido ul.panel-list--more {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(44, 95, 90, 0.4) transparent;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: auto;
+    box-shadow: inset 0 -12px 8px -10px rgba(20, 53, 50, 0.18);
+}
+
+.contenido ul.panel-list--more::-webkit-scrollbar {
+    width: 6px;
+}
+
+.contenido ul.panel-list--more::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.contenido ul.panel-list--more::-webkit-scrollbar-thumb {
+    background: rgba(44, 95, 90, 0.35);
+    border-radius: 999px;
+}
+
+@media (min-width: 901px) {
+    .contenido ul.panel-list--more {
+        overscroll-behavior-y: contain;
+    }
+}
+
 @media (max-width: 1024px) {
     .dashboard { grid-template-columns: 1fr; }
     .sidebar { width: 220px; padding: 20px 14px; }
