@@ -162,19 +162,60 @@ document.getElementById("guardarPrefs").addEventListener("click", async () => {
     }
 });
 
+let fotoPreviewUrl = "";
+
+function revokeFotoPreview() {
+    if (!fotoPreviewUrl) return;
+    try {
+        URL.revokeObjectURL(fotoPreviewUrl);
+    } catch (_) {
+        /* el objeto ya no existe */
+    }
+    fotoPreviewUrl = "";
+}
+
 document.getElementById("foto").addEventListener("change", async function (e) {
-    const file = e.target.files[0];
+    const input = e.target;
+    const file = input.files && input.files[0];
+    input.value = "";
     if (!file) return;
 
-    const applyPhoto = (nextProfile, url) => {
+    const img = document.getElementById("fotoUsuario");
+    const previousSrc = img ? img.src : "";
+    const previousStored = profile && profile.photo ? String(profile.photo) : "";
+    revokeFotoPreview();
+    try {
+        fotoPreviewUrl = URL.createObjectURL(file);
+        if (img) img.src = fotoPreviewUrl;
+    } catch (_) {
+        fotoPreviewUrl = "";
+    }
+
+    const restorePrevious = () => {
+        revokeFotoPreview();
+        if (img && previousSrc) img.src = previousSrc;
+    };
+
+    const applyPhoto = (nextProfile, url, localDataUrl) => {
         if (nextProfile) profile = nextProfile;
-        const src = url || (profile && profile.photo);
-        if (src) {
-            document.getElementById("fotoUsuario").src = urlFoto(src);
-            if (profile) profile.photo = src;
-        }
+        const serverSrc = String(url || (profile && profile.photo) || "");
+        const serverChanged = Boolean(serverSrc) && serverSrc !== previousStored;
+        if (serverChanged && profile) profile.photo = serverSrc;
         if (profile) guardarUsuarioEnSesion(profile);
         pintarSidebar();
+        if (!img) return;
+        if (serverChanged) {
+            img.src = urlFoto(serverSrc);
+            revokeFotoPreview();
+            return;
+        }
+        const local = localDataUrl || fotoPreviewUrl;
+        if (local) {
+            img.src = local;
+            if (localDataUrl) revokeFotoPreview();
+            return;
+        }
+        if (serverSrc) img.src = urlFoto(serverSrc);
     };
 
     const directLimit = 5 * 1024 * 1024;
@@ -189,6 +230,7 @@ document.getElementById("foto").addEventListener("change", async function (e) {
             uploadFile = await PawImageUpload.fileWithType(file, checked.mime);
         }
     } catch (err) {
+        restorePrevious();
         toast("warning", "Foto", (err && err.message) || "No se pudo preparar la foto.");
         return;
     }
@@ -196,12 +238,13 @@ document.getElementById("foto").addEventListener("change", async function (e) {
     if (PawApi.api.uploadUserAvatar) {
         try {
             const result = await PawApi.api.uploadUserAvatar(uploadFile);
-            applyPhoto(result.profile, result.url);
+            applyPhoto(result.profile, result.url, prepared && prepared.dataUrl);
             toast("success", "Foto actualizada");
             return;
         } catch (err) {
             const server = PawImageUpload.serverPhotoMessage(err);
             if (server) {
+                restorePrevious();
                 toast("error", "No se pudo subir la foto", server);
                 return;
             }
@@ -212,13 +255,15 @@ document.getElementById("foto").addEventListener("change", async function (e) {
         if (!prepared) prepared = await PawImageUpload.prepare(file);
         const photoBody = PawImageUpload.photoFieldForSave(prepared.dataUrl);
         if (!photoBody.photo) {
+            restorePrevious();
             toast("error", "No se pudo subir la foto", "La imagen no es válida.");
             return;
         }
         profile = await PawApi.api.updateProfile(photoBody);
-        applyPhoto(profile, profile.photo);
+        applyPhoto(profile, profile.photo, prepared.dataUrl);
         toast("success", "Foto actualizada");
     } catch (err) {
+        restorePrevious();
         const server = PawImageUpload.serverPhotoMessage(err);
         toast("error", "No se pudo subir la foto", server || friendlyError(err));
     }
