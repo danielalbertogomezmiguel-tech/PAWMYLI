@@ -1022,6 +1022,42 @@ function normalizeAgeForSave(raw) {
     return value;
 }
 
+function revocarPreviewFotoEditar() {
+    const nueva = document.getElementById("editFotoNueva");
+    if (!nueva || !nueva.dataset.objectUrl) return;
+    URL.revokeObjectURL(nueva.dataset.objectUrl);
+    delete nueva.dataset.objectUrl;
+}
+
+function limpiarFotoEditar() {
+    const input = document.getElementById("editFoto");
+    const nueva = document.getElementById("editFotoNueva");
+    const wrap = document.getElementById("editFotoNuevaWrap");
+    const actual = document.getElementById("editFotoActual");
+    if (input) input.value = "";
+    revocarPreviewFotoEditar();
+    if (nueva) nueva.removeAttribute("src");
+    if (wrap) wrap.hidden = true;
+    if (actual) actual.src = PawEscape.safeImageUrl(paciente && paciente.foto, DEFAULT_FOTO);
+}
+
+document.getElementById("editFoto").addEventListener("change", function (e) {
+    const file = e.target.files && e.target.files[0];
+    const nueva = document.getElementById("editFotoNueva");
+    const wrap = document.getElementById("editFotoNuevaWrap");
+    if (!file || !nueva || !wrap) {
+        revocarPreviewFotoEditar();
+        if (nueva) nueva.removeAttribute("src");
+        if (wrap) wrap.hidden = true;
+        return;
+    }
+    revocarPreviewFotoEditar();
+    const url = URL.createObjectURL(file);
+    nueva.dataset.objectUrl = url;
+    nueva.src = url;
+    wrap.hidden = false;
+});
+
 document.querySelector(".editar").addEventListener("click", () => {
     if (isOwner) return;
     document.getElementById("editNombre").value = paciente.nombre;
@@ -1038,6 +1074,7 @@ document.querySelector(".editar").addEventListener("click", () => {
     document.getElementById("editColor").value = paciente.color || "";
     document.getElementById("editMicrochip").value = paciente.microchip || "No";
     document.getElementById("editPropietario").value = paciente.propietario;
+    limpiarFotoEditar();
     modal.classList.add("activo");
 });
 
@@ -1082,18 +1119,40 @@ document.getElementById("formEditar").addEventListener("submit", async function 
 
     const submitBtn = this.querySelector("button[type='submit'], button.guardar");
     const originalLabel = submitBtn ? submitBtn.textContent : "";
+    const fotoInput = document.getElementById("editFoto");
+    const file = fotoInput && fotoInput.files && fotoInput.files[0];
     updatingPaciente = true;
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = "Guardando...";
     }
     try {
+        if (file) {
+            try {
+                const prepared = await PawImageUpload.prepare(file);
+                const photoBody = PawImageUpload.photoFieldForSave(prepared.dataUrl);
+                if (photoBody.photo) body.photo = photoBody.photo;
+            } catch (err) {
+                if (fotoInput) fotoInput.value = "";
+                limpiarFotoEditar();
+                PawToast.warning("Foto", (err && err.message) || "No se pudo preparar la foto.");
+                return;
+            }
+        }
         await PawApi.api.updatePatient(pacienteId, body);
         await refrescarPaciente();
+        if (body.photo) {
+            const foto = document.getElementById("fotoPaciente");
+            if (foto) foto.src = PawEscape.safeImageUrl(body.photo, DEFAULT_FOTO);
+            if (paciente) paciente.foto = body.photo;
+        }
+        if (fotoInput) fotoInput.value = "";
+        limpiarFotoEditar();
         modal.classList.remove("activo");
         PawToast.success("Paciente", "Paciente actualizado correctamente.");
     } catch (err) {
-        PawToast.error("Paciente", err.message || "No se pudo actualizar.");
+        const server = window.PawImageUpload && PawImageUpload.serverPhotoMessage(err);
+        PawToast.error("Paciente", server || (err && err.message) || "No se pudo actualizar.");
     } finally {
         updatingPaciente = false;
         if (submitBtn) {

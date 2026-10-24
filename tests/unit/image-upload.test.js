@@ -45,6 +45,13 @@ test("las fotos de paciente y perfil aceptan jpg png webp y no usan capture", ()
         assert.match(input[0], /accept="image\/jpeg,image\/png,image\/webp"/);
         assert.equal(/\bcapture\b/.test(input[0]), false);
     }
+    const editarHtml = fs.readFileSync(path.join(root, "perfil/perfil.html"), "utf8");
+    const editFoto = editarHtml.match(/<input\b[^>]*\bid="editFoto"[^>]*>/);
+    assert.ok(editFoto);
+    assert.match(editFoto[0], /accept="image\/jpeg,image\/png,image\/webp"/);
+    assert.equal(/\bcapture\b/.test(editFoto[0]), false);
+    assert.match(editarHtml, /id="editFotoActual"/);
+    assert.match(editarHtml, /id="editFotoNueva"/);
     const registro = fs.readFileSync(path.join(root, "auth/registro.html"), "utf8");
     const licencia = registro.match(/<input\b[^>]*\bid="documento"[^>]*>/);
     assert.ok(licencia);
@@ -64,8 +71,17 @@ test("guardar sin archivo nuevo omite la foto y nunca reenvía la URL firmada", 
     const editar = perfil.slice(perfil.indexOf('getElementById("formEditar")'));
     assert.equal(/photo:\s*paciente\.foto/.test(editar), false);
     assert.equal(/photoUrl:\s*paciente\.foto/.test(editar), false);
+    assert.match(editar, /PawImageUpload\.prepare\(/);
+    assert.match(editar, /photoFieldForSave\(/);
+    assert.match(editar, /fotoInput\.value = ""/);
+    assert.match(editar, /serverPhotoMessage\(/);
+    assert.match(editar, /getElementById\("fotoPaciente"\)/);
     const alta = fs.readFileSync(path.join(__dirname, "../../pacientes/paciente.js"), "utf8");
     assert.equal(/photo:\s*DEFAULT_FOTO/.test(alta), false);
+    const config = fs.readFileSync(path.join(__dirname, "../../configuracion/configuracion.js"), "utf8");
+    const fotoPerfil = config.slice(config.indexOf('getElementById("foto")'));
+    assert.match(fotoPerfil, /input\.value = ""/);
+    assert.match(fotoPerfil, /fotoUsuario/);
 });
 
 test("rechaza un svg con script aunque se llame jpg", async () => {

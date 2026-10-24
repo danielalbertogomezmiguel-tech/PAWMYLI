@@ -737,6 +737,53 @@ tbody td {
     flex: 1;
 }
 
+.foto-editar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.foto-editar-vistas {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.foto-editar figure {
+    margin: 0;
+    text-align: center;
+}
+
+.foto-editar figure[hidden] {
+    display: none !important;
+}
+
+.foto-editar img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #8fc3a7;
+    display: block;
+    background: #f4f7f7;
+}
+
+.foto-editar figcaption {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5d6f6e;
+}
+
+.foto-editar input[type="file"] {
+    flex: 1 1 160px;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    font-size: 14px;
+}
+
 label {
     display: block;
     margin-bottom: 6px;
